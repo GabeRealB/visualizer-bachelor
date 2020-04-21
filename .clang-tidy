@@ -1,0 +1,4 @@
+Checks: '-*,clang-analyzer-*,performance-*,portability-*'
+WarningsAsErrors: '-*,clang-analyzer-*,performance-*,portability-*'
+HeaderFilterRegex:  './include/'
+AnalyzeTemporaryDtors:  true

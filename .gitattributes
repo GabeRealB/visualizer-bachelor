@@ -1,0 +1,19 @@
+# Auto detect text files and perform LF normalization
+*       text=auto
+
+# Documents
+*.md    text
+*.txt   text
+
+# Scripts
+*.sh    text eol=lf
+hooks/  text eol=lf
+
+# Serialisation
+*.json  text
+
+# Sources
+*.c     text diff=c
+*.h     text diff=c
+*.cpp   text diff=cpp
+*.hpp   text diff=cpp

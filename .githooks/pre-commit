@@ -1,0 +1,19 @@
+#!/bin/bash
+
+format_file() {
+    file="${1}"
+    echo "Formatting file: $file"
+    if [[ -f $file ]]; then
+        clang-format -i -style=file "$file"
+        git add "$file"
+    fi
+}
+
+case "${1}" in
+--about)
+    echo "Runs clang-format on source files" ;;
+*)
+    for file in $(git diff-index --cached --name-only HEAD | grep -E '\.(c|cpp|h|hpp)$'); do
+        format_file "${file}"
+    done ;;
+esac

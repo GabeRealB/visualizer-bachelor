@@ -1,0 +1,37 @@
+if(DEFINED CMAKE_BUILD_TYPE)
+    set(BUILD_TYPE "")
+    string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
+    if (${BUILD_TYPE} STREQUAL "DEBUG")
+        set(DISABLE_OPTIMIZATIONS ON)
+    endif ()
+endif()
+
+if (MSVC)
+    set(COMPILER_FLAGS /W4 /WX /EHca)
+else()
+    set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions)
+endif ()
+
+if(NOT DISABLE_OPTIMIZATIONS)
+    if (MSVC)
+        list(APPEND COMPILER_FLAGS /O2)
+    else()
+        list(APPEND COMPILER_FLAGS -O2)
+    endif ()
+endif()
+
+if(ENABLE_NATIVE_ARCH AND NOT MSVC)
+    list(APPEND COMPILER_FLAGS -march=native)
+endif()
+
+
+add_library(visualizer STATIC VisualizerConfiguration.cpp)
+target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json)
+target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
+foreach(FLAG IN LISTS COMPILER_FLAGS)
+    target_compile_options(visualizer PUBLIC ${FLAG})
+    message(STATUS "Added ${FLAG} to the compilation flags")
+endforeach()
+
+add_executable(visualizer_main main.cpp)
+target_link_libraries(visualizer_main PRIVATE visualizer)

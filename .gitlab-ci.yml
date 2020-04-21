@@ -1,0 +1,28 @@
+stages:
+  - build
+  - test
+
+before_script:
+  - apt-get update --yes
+  - apt-get install --yes cmake clang-tidy
+
+build:gcc:
+  stage: build
+  image: "gcc:latest"
+  script:
+    - mkdir build_gcc
+    - cd build_gcc
+    - cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build . --target visualizer
+    - cmake --build . --target visualizer_main
+    - cmake --build . --target visualizer_tests
+  artifacts:
+    paths:
+      - build_gcc
+
+test:gcc:
+  stage: test
+  image: "gcc:latest"
+  script:
+    - cd build_gcc/test
+    - ./visualizer_tests
