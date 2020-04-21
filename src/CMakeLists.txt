@@ -25,7 +25,7 @@ if(ENABLE_NATIVE_ARCH AND NOT MSVC)
 endif()
 
 
-add_library(visualizer STATIC VisualizerConfiguration.cpp)
+add_library(visualizer STATIC VisualizerConfiguration.cpp ../include/visualizer/VisualizerConfiguration.hpp)
 target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
 foreach(FLAG IN LISTS COMPILER_FLAGS)
