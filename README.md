@@ -1,22 +1,26 @@
+## Toolchain
+
+- C++-Standard: ISO-C++ 17
+- Compiler Flags: `-Werror -Wall -Wextra -Wpedantic -O2`
+- Build: CMake
+- Style guide: [Webkit](https://webkit.org/code-style-guidelines/)
+    - Umsetzung mit `clang-format`/`clang-tidy`
+- Dokumentation: javadoc
+- Tests: [doctest](https://github.com/onqtam/doctest)
+- Git:
+    - [Repo]
+    - Gitflow Workflow
+    - Rebase statt Mergen
+
+## Repo-Aufbau
+
+- extern/
+- include/
+- src/
+- test/
+
 ## Todo
-1. Style guide aussuchen.
-    - https://google.github.io/styleguide/cppguide.html
-    - https://webkit.org/code-style-guidelines/
-2. Toolchain/CMake
-    - doctest
-    - clang-format
-    - clang-tidy
-    - C++ 17
-    - Wall
-    - Werror
-    - Wextra
-    - Wpedantic
-    - O2
-    - Git flow
-    - Rebase
-3. Aufbau
-    - include/src/test/bin/extern
-    - Methode zum parsen from JSON
-    - Global main
-    - Namespace visualizer
-4. Termin mit Ari ausmachen Montag 14:00-15:00 Uhr
+
+- Externe Builds aus CMake entfernen, falls möglich
+- S. Präsentation 28.4.
+- `tiling` durch `tiling_size` oder ähnliches ersetzen
