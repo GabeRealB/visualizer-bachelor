@@ -1,37 +1,46 @@
-if(DEFINED CMAKE_BUILD_TYPE)
+if (DEFINED CMAKE_BUILD_TYPE)
     set(BUILD_TYPE "")
     string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
     if (${BUILD_TYPE} STREQUAL "DEBUG")
         set(DISABLE_OPTIMIZATIONS ON)
     endif ()
-endif()
+endif ()
 
 if (MSVC)
     set(COMPILER_FLAGS /W4 /WX /EHca)
-else()
+else ()
     set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions)
 endif ()
 
-if(NOT DISABLE_OPTIMIZATIONS)
+if (NOT DISABLE_OPTIMIZATIONS)
     if (MSVC)
         list(APPEND COMPILER_FLAGS /O2)
-    else()
+    else ()
         list(APPEND COMPILER_FLAGS -O2)
     endif ()
-endif()
+endif ()
 
-if(ENABLE_NATIVE_ARCH AND NOT MSVC)
+if (ENABLE_NATIVE_ARCH AND NOT MSVC)
     list(APPEND COMPILER_FLAGS -march=native)
-endif()
+endif ()
 
 
-add_library(visualizer STATIC VisualizerConfiguration.cpp ../include/visualizer/VisualizerConfiguration.hpp)
+add_library(visualizer STATIC VisualizerConfiguration.cpp
+        ../include/visualizer/VisualizerConfiguration.hpp
+        ../include/visualizer/Mesh.hpp
+        ../include/visualizer/Scene.hpp
+        ../include/visualizer/SubScene.hpp
+        ../include/visualizer/DrawableCube.hpp
+        ../include/visualizer/Camera.hpp
+        ../include/visualizer/Visualizer.hpp
+        ../include/visualizer/Utilities.hpp
+        )
 target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
-foreach(FLAG IN LISTS COMPILER_FLAGS)
+foreach (FLAG IN LISTS COMPILER_FLAGS)
     target_compile_options(visualizer PUBLIC ${FLAG})
     message(STATUS "Added ${FLAG} to the compilation flags")
-endforeach()
+endforeach ()
 
 add_executable(visualizer_main main.cpp)
 target_link_libraries(visualizer_main PRIVATE visualizer)
