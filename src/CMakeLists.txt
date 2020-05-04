@@ -34,6 +34,8 @@ add_library(visualizer STATIC VisualizerConfiguration.cpp
         ../include/visualizer/Camera.hpp
         ../include/visualizer/Visualizer.hpp
         ../include/visualizer/Utilities.hpp
+        DrawableCube.cpp
+        Utilities.cpp
         )
 target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
