@@ -37,7 +37,7 @@ add_library(visualizer STATIC VisualizerConfiguration.cpp
         DrawableCube.cpp
         Utilities.cpp
         )
-target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm)
+target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm glfw)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
 foreach (FLAG IN LISTS COMPILER_FLAGS)
     target_compile_options(visualizer PUBLIC ${FLAG})
