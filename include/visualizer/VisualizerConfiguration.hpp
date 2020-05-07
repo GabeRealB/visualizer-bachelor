@@ -10,34 +10,36 @@
 namespace Visualizer {
 
 /**
- * Three-dimensional Vector.
- * @tparam T
+ * N-dimensional Vector.
+ * @tparam T Type of the vector.
+ * @tparam N Dimension of the vector.
  */
-template <typename T> struct Vector3 {
-    T x;
-    T y;
-    T z;
+template <typename T, std::size_t N> struct VectorN {
+    T data[N];
+
+    T& operator[](std::size_t idx) { return data[idx]; }
+    const T& operator[](std::size_t idx) const { return data[idx]; }
 };
 
 /**
  * Color info.
  */
-using Color = Vector3<std::uint8_t>;
+using Color = VectorN<std::uint8_t, 3>;
 
 /**
  * Size info.
  */
-using Size = Vector3<std::uint32_t>;
+using Size = VectorN<std::uint32_t, 3>;
 
 /**
  * Position info.
  */
-using Position = Vector3<std::int32_t>;
+using Position = VectorN<std::int32_t, 3>;
 
 /**
  * Tiling info.
  */
-using TilingInfo = Vector3<std::uint32_t>;
+using TilingInfo = VectorN<std::uint32_t, 3>;
 
 /**
  * Order in which the dimensions are traversed.
@@ -116,31 +118,41 @@ std::optional<VisualizerConfiguration> loadConfig(const std::filesystem::path& f
 bool saveConfig(const std::filesystem::path& filePath, const VisualizerConfiguration& config);
 
 /**
- * @brief Compares two Vector3 instances for equality.
+ * @brief Compares two VectorN instances for equality.
  *
  * @tparam T Vector type.
+ * @tparam N Vector size.
  * @param lhs Left-hand side.
  * @param rhs Right-hand side.
  *
  * @return <code>true<code> if equal.
  * @return <code>false<code> otherwise.
  */
-template <typename T> bool operator==(const Vector3<T>& lhs, const Vector3<T>& rhs)
+template <typename T, std::size_t N>
+bool operator==(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
 {
-    return (lhs.x == rhs.x) && (lhs.y == rhs.y) && (lhs.z == rhs.z);
+    for (std::size_t i = 0; i < N; ++i) {
+        if (lhs[i] != rhs[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 /**
- * @brief Compares two Vector3 instances for inequality.
+ * @brief Compares two VectorN instances for inequality.
  *
  * @tparam T Vector type.
+ * @tparam N Vector size.
  * @param lhs Left-hand side.
  * @param rhs Right-hand side.
  *
- * @return <code>true<code> if equal.
+ * @return <code>true<code> if unequal.
  * @return <code>false<code> otherwise.
  */
-template <typename T> bool operator!=(const Vector3<T>& lhs, const Vector3<T>& rhs)
+template <typename T, std::size_t N>
+bool operator!=(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
 {
     return !(lhs == rhs);
 }
@@ -212,32 +224,33 @@ bool operator==(const VisualizerConfiguration& lhs, const VisualizerConfiguratio
 bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs);
 
 /**
- * @brief Serializes a three-dimensional vector.
+ * @brief Serializes a N-dimensional vector.
  *
  * @tparam T Vector type.
+ * @tparam N Vector dimension.
  * @param json Output.
  * @param vec Input.
  */
-template <typename T> void to_json(nlohmann::json& json, const Vector3<T>& vec)
+template <typename T, std::size_t N> void to_json(nlohmann::json& json, const VectorN<T, N>& vec)
 {
-
-    json[0] = vec.x;
-    json[1] = vec.y;
-    json[2] = vec.z;
+    for (std::size_t i = 0; i < N; ++i) {
+        json[i] = vec[i];
+    }
 }
 
 /**
- * @brief Deserializes a three-dimensional vector.
+ * @brief Deserializes a N-dimensional vector.
  *
  * @tparam T Vector type.
+ * @tparam N Vector dimension.
  * @param json Input.
  * @param vec Output vector.
  */
-template <typename T> void from_json(const nlohmann::json& json, Vector3<T>& vec)
+template <typename T, std::size_t N> void from_json(const nlohmann::json& json, VectorN<T, N>& vec)
 {
-    json.at(0).get_to(vec.x);
-    json.at(1).get_to(vec.y);
-    json.at(2).get_to(vec.z);
+    for (std::size_t i = 0; i < N; ++i) {
+        json.at(i).get_to(vec[i]);
+    }
 }
 
 /**
