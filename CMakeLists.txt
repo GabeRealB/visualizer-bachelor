@@ -10,10 +10,10 @@ option(ENABLE_NATIVE_ARCH "Enables the flag -march=native if it exists" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
-if (MSVC)
-    set(CMAKE_CXX_CLANG_TIDY clang-tidy --extra-arg=/EHca)
+if (WIN32)
+    set(CMAKE_CXX_CLANG_TIDY clang-tidy --extra-arg-before=--driver-mode=cl --extra-arg=/EHca)
 else()
     set(CMAKE_CXX_CLANG_TIDY clang-tidy)
 endif()
