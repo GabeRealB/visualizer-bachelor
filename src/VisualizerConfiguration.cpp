@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 
 namespace Visualizer {
 
@@ -32,7 +33,8 @@ std::optional<VisualizerConfiguration> loadConfig(const std::filesystem::path& f
             nlohmann::json j{};
             file >> j;
             return { j.get<VisualizerConfiguration>() };
-        } catch (nlohmann::json::exception&) {
+        } catch (nlohmann::json::exception& e) {
+            std::cerr << e.what() << std::endl;
             return std::nullopt;
         }
     }
@@ -41,11 +43,13 @@ std::optional<VisualizerConfiguration> loadConfig(const std::filesystem::path& f
 bool saveConfig(const std::filesystem::path& filePath, const VisualizerConfiguration& config)
 {
     try {
-        nlohmann::json j{ config };
+        nlohmann::json j{};
+        j = config;
         std::ofstream file{ filePath };
         file << std::setw(4) << j << std::endl;
         return true;
-    } catch (std::exception&) {
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
         return false;
     }
 }
@@ -68,7 +72,8 @@ bool operator!=(const OuterCube& lhs, const OuterCube& rhs) { return !(lhs == rh
 
 bool operator==(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs)
 {
-    return lhs.cubes == rhs.cubes;
+    return (lhs.resolution == rhs.resolution) && (lhs.fullscreen == rhs.fullscreen)
+        && (lhs.cubes == rhs.cubes);
 }
 
 bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs)
@@ -78,10 +83,10 @@ bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguratio
 
 void to_json(nlohmann::json& json, const InnerCube& cube)
 {
-    json = nlohmann::json{ { InnerCube::colorJSONKey, cube.color },
-        { InnerCube::tilingJSONKey, cube.tiling },
-        { InnerCube::traversalOrderJSONKey, cube.traversalOrder },
-        { InnerCube::innerCubesJSONKey, cube.innerCubes } };
+    json[InnerCube::colorJSONKey] = cube.color;
+    json[InnerCube::tilingJSONKey] = cube.tiling;
+    json[InnerCube::traversalOrderJSONKey] = cube.traversalOrder;
+    json[InnerCube::innerCubesJSONKey] = cube.innerCubes;
 }
 
 void to_json(nlohmann::json& json, const OuterCube& cube)
@@ -93,7 +98,9 @@ void to_json(nlohmann::json& json, const OuterCube& cube)
 
 void to_json(nlohmann::json& json, const VisualizerConfiguration& config)
 {
-    json = nlohmann::json{ VisualizerConfiguration::cubesJSONKey, config.cubes };
+    json[VisualizerConfiguration::resolutionJSONKey] = config.resolution;
+    json[VisualizerConfiguration::fullscreenJSONKey] = config.fullscreen;
+    json[VisualizerConfiguration::cubesJSONKey] = config.cubes;
 }
 
 void from_json(const nlohmann::json& json, InnerCube& cube)
@@ -119,6 +126,8 @@ void from_json(const nlohmann::json& json, OuterCube& cube)
 
 void from_json(const nlohmann::json& json, VisualizerConfiguration& config)
 {
+    json.at(VisualizerConfiguration::resolutionJSONKey).get_to(config.resolution);
+    json.at(VisualizerConfiguration::fullscreenJSONKey).get_to(config.fullscreen);
     json.at(VisualizerConfiguration::cubesJSONKey).get_to(config.cubes);
 }
 }

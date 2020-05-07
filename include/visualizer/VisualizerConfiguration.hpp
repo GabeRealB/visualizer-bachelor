@@ -42,6 +42,11 @@ using Position = VectorN<std::int32_t, 3>;
 using TilingInfo = VectorN<std::uint32_t, 3>;
 
 /**
+ * Resolution info.
+ */
+using Resolution = VectorN<std::uint32_t, 2>;
+
+/**
  * Order in which the dimensions are traversed.
  */
 enum class TraversalOrder : std::uint8_t {
@@ -91,8 +96,12 @@ struct OuterCube : public InnerCube {
  * The configuration of the visualizer.
  */
 struct VisualizerConfiguration {
+    Resolution resolution;
+    bool fullscreen;
     std::vector<OuterCube> cubes;
 
+    static constexpr auto resolutionJSONKey{ "resolution" };
+    static constexpr auto fullscreenJSONKey{ "fullscreen" };
     static constexpr auto cubesJSONKey{ "cubes" };
 };
 
@@ -233,9 +242,7 @@ bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguratio
  */
 template <typename T, std::size_t N> void to_json(nlohmann::json& json, const VectorN<T, N>& vec)
 {
-    for (std::size_t i = 0; i < N; ++i) {
-        json[i] = vec[i];
-    }
+    json = vec.data;
 }
 
 /**
@@ -248,9 +255,7 @@ template <typename T, std::size_t N> void to_json(nlohmann::json& json, const Ve
  */
 template <typename T, std::size_t N> void from_json(const nlohmann::json& json, VectorN<T, N>& vec)
 {
-    for (std::size_t i = 0; i < N; ++i) {
-        json.at(i).get_to(vec[i]);
-    }
+    json.get_to(vec.data);
 }
 
 /**

@@ -66,10 +66,10 @@ TEST_SUITE("VisualizerConfiguration")
         std::mt19937 gen{ rd() };
 
         std::uniform_int_distribution<std::int32_t> positionDistribution{
-            std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::min()
+            std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()
         };
         std::uniform_int_distribution<std::uint32_t> sizeDistribution{
-            std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::min()
+            std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()
         };
 
         Visualizer::Position position{ positionDistribution(gen), positionDistribution(gen),
@@ -87,11 +87,20 @@ TEST_SUITE("VisualizerConfiguration")
     {
         std::random_device rd{};
         std::mt19937 gen{ rd() };
+        std::uniform_int_distribution<std::uint32_t> resolutionWidthDistribution{
+            std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()
+        };
+        std::uniform_int_distribution<std::uint32_t> resolutionHeightDistribution{
+            std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()
+        };
+        std::uniform_int_distribution<std::uint32_t> fullscreenDistribution{ 0, 1 };
         std::uniform_int_distribution<std::size_t> numOuterCubesDistribution{ 0, 3 };
         std::uniform_int_distribution<std::size_t> numChildrenDistribution{ 0, 8 };
 
         Visualizer::VisualizerConfiguration config{};
 
+        config.resolution = { resolutionWidthDistribution(gen), resolutionHeightDistribution(gen) };
+        config.fullscreen = fullscreenDistribution(gen) == 1;
         config.cubes.reserve(numOuterCubesDistribution(gen));
         for (std::size_t i = 0; i < config.cubes.size(); ++i) {
             config.cubes.push_back(generateRandomOuterCube(numChildrenDistribution(gen)));
@@ -103,27 +112,23 @@ TEST_SUITE("VisualizerConfiguration")
     Visualizer::VisualizerConfiguration generateValidConfig()
     {
         Visualizer::VisualizerConfiguration config{};
+
+        config.resolution = { 1920, 1080 };
+        config.fullscreen = false;
+
         std::size_t numChildren = 1;
-
         Visualizer::Position position{ 1, 1, 1 };
-
         Visualizer::Size size{ 5, 5, 5 };
-
         Visualizer::TilingInfo tilingInfo{ 2, 2, 2 };
-
         Visualizer::Color color{ 255, 255, 255 };
-
         Visualizer::TraversalOrder traversalOrder{ Visualizer::TraversalOrder::YXZ };
 
         std::vector<Visualizer::InnerCube> children{};
         children.reserve(numChildren);
 
         Visualizer::TilingInfo innerCubeTilingInfo{ 2, 2, 2 };
-
         Visualizer::Color innerCubeColor{ 255, 255, 255 };
-
         Visualizer::TraversalOrder innerCubTraversalOrder{ Visualizer::TraversalOrder::YXZ };
-
         std::vector<Visualizer::InnerCube> innerCubeChildren{};
         innerCubeChildren.reserve(0);
 
