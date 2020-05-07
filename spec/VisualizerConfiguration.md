@@ -12,6 +12,11 @@ int32_type
     : [-2^31, 2^31 - 1]
     ;
 
+boolean_type
+    : 'true'
+    | 'false'
+    ;
+
 color_type
     : '[' uint8_type ',' uint8_type ','uint8_type ']'
     ;
@@ -59,6 +64,8 @@ outer_cube_type
 
 visualizer_configuration_type
     :   '{'
+            '"resolution": [' uint32_type ',' uint32_type '],'
+            '"fullscreen": ' boolean_type ','
             '"cubes": [' (outer_cube_type ',')* ']'
         '}'
     ;
@@ -67,6 +74,8 @@ visualizer_configuration_type
 ## Example
 ````json
 {
+    "resolution" : [1920, 1080],
+    "fullscreen" : false,
     "cubes": [
         {
             "position": [1,1,1],
