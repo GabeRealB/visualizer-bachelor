@@ -6,7 +6,7 @@ if (DEFINED CMAKE_BUILD_TYPE)
     endif ()
 endif ()
 
-if (MSVC)
+if (WIN32)
     set(COMPILER_FLAGS /W4 /WX /EHca)
 else ()
     set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions)
@@ -43,6 +43,11 @@ foreach (FLAG IN LISTS COMPILER_FLAGS)
     target_compile_options(visualizer PUBLIC ${FLAG})
     message(STATUS "Added ${FLAG} to the compilation flags")
 endforeach ()
+
+add_custom_command(TARGET visualizer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${PROJECT_SOURCE_DIR}/config.json"
+        $<TARGET_FILE_DIR:visualizer>)
 
 add_executable(visualizer_main main.cpp)
 target_link_libraries(visualizer_main PRIVATE visualizer)

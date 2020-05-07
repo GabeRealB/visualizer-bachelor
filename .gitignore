@@ -18,3 +18,5 @@ _deps
 install_manifest.txt
 Makefile
 Testing
+
+test/config.json
