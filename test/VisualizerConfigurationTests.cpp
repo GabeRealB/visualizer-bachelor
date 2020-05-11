@@ -168,7 +168,7 @@ TEST_SUITE("VisualizerConfiguration")
 
     TEST_CASE("Load a valid config")
     {
-        auto configFilePath{ "../../test/config.json" };
+        auto configFilePath{ "config.json" };
         REQUIRE_EQ(std::filesystem::exists(configFilePath), true);
 
         using namespace Visualizer;
@@ -182,7 +182,7 @@ TEST_SUITE("VisualizerConfiguration")
 
     TEST_CASE("Load a valid config and save it again")
     {
-        auto configFilePath{ "../../test/config.json" };
+        auto configFilePath{ "config.json" };
         auto tmpDir{ std::filesystem::temp_directory_path() };
         auto visualizerTmpDir{ tmpDir / "visualizer_tests" };
 
