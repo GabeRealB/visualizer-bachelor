@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <glad/glad.h>
 #include <memory>
 #include <optional>
@@ -13,6 +14,7 @@ namespace detail {
 
     struct ComponentInfo {
         std::size_t index;
+        std::size_t alignment;
         void (*destructorFunc)(const void*);
         void (*moveFunc)(void*, void*);
     };
@@ -63,7 +65,7 @@ public:
             auto suitableIndex{ getSuitableIndex<T>() };
 
             if (!suitableIndex) {
-                growComponentVector(sizeof(T));
+                growComponentVector(sizeof(T), alignof(T));
                 suitableIndex = getSuitableIndex<T>();
             }
 
@@ -74,6 +76,7 @@ public:
 
             detail::ComponentInfo componentInfo{};
             componentInfo.index = m_components.size() - sizeof(T);
+            componentInfo.alignment = alignof(T);
             componentInfo.moveFunc = [](void* src, void* dst) {
                 auto tSrc{ static_cast<T*>(src) };
                 auto tDst{ static_cast<T*>(dst) };
@@ -83,6 +86,7 @@ public:
 
             auto id{ detail::typeId<T>() };
             m_componentInfos[id] = std::move(componentInfo);
+            m_indexMap.push_back(id);
 
             ptr = reinterpret_cast<T*>(&m_components[*suitableIndex]);
         }
@@ -98,6 +102,9 @@ public:
 
             auto id{ detail::typeId<T>() };
             m_componentInfos.erase(id);
+
+            auto indexPos{ std::find(m_indexMap.begin(), m_indexMap.end(), id) };
+            m_indexMap.erase(indexPos);
         }
     }
 
@@ -126,7 +133,7 @@ public:
     }
 
 private:
-    void growComponentVector(std::size_t neededSize);
+    void growComponentVector(std::size_t neededSize, std::size_t neededAlignment);
 
     template <typename T> std::optional<std::size_t> getSuitableIndex()
     {
@@ -145,6 +152,7 @@ private:
     }
 
     std::vector<std::byte> m_components;
+    std::vector<detail::TypeIdT> m_indexMap;
     std::unordered_map<detail::TypeIdT, detail::ComponentInfo> m_componentInfos;
 };
 
