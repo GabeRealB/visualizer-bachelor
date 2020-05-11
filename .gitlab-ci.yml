@@ -4,7 +4,7 @@ stages:
 
 before_script:
   - apt-get update --yes
-  - apt-get install --yes cmake clang-tidy libxrandr-dev
+  - apt-get install --yes cmake clang-tidy libglu1-mesa-dev xorg-dev
 
 build:gcc:
   stage: build
