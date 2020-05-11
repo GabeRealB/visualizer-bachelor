@@ -1,2 +1,3 @@
+#include <visualizer/Visualizer.hpp>
 
-int main() {}
+int main() { return Visualizer::run("config.json"); }

@@ -30,13 +30,18 @@ add_library(visualizer STATIC VisualizerConfiguration.cpp
         ../include/visualizer/Mesh.hpp
         ../include/visualizer/Scene.hpp
         ../include/visualizer/SubScene.hpp
-        ../include/visualizer/DrawableCube.hpp
+        ../include/visualizer/Systems.hpp
         ../include/visualizer/Camera.hpp
         ../include/visualizer/Visualizer.hpp
-        ../include/visualizer/Utilities.hpp
-        DrawableCube.cpp
-        Utilities.cpp
-        Visualizer.cpp)
+        ../include/visualizer/GenericBuffer.hpp
+        ../include/visualizer/SceneObject.hpp
+        ../include/visualizer/VertexAttributeBuffer.hpp
+        GenericBuffer.cpp
+        Mesh.cpp
+        SceneObject.cpp
+        VertexAttributeBuffer.cpp
+        Systems.cpp
+        Visualizer.cpp ../include/visualizer/Transform.hpp Transform.cpp ../include/visualizer/CubeTickInfo.hpp Scene.cpp)
 target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm glfw glad)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
 foreach (FLAG IN LISTS COMPILER_FLAGS)
