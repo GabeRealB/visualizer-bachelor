@@ -1,23 +1,20 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include <visualizer/SubScene.hpp>
+#include <visualizer/VisualizerConfiguration.hpp>
 
 namespace Visualizer {
 
-class Scene {
-public:
-    Scene() = default;
-
-    void addSubScene(SubScene&& subScene);
-    std::vector<SubScene>& subScenes();
-
-    void tick();
-    void draw();
-
-private:
+struct Scene {
     std::vector<SubScene> m_subScenes;
 };
+
+std::optional<Scene> loadScene(const VisualizerConfiguration& config);
+
+void tick(Scene& scene);
+void draw(const Scene& scene);
 
 }
