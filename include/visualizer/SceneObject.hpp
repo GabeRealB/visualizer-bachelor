@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -80,12 +81,17 @@ public:
             componentInfo.moveFunc = [](void* src, void* dst) {
                 auto tSrc{ static_cast<T*>(src) };
                 auto tDst{ static_cast<T*>(dst) };
-                *tDst = std::move(*tSrc);
+
+                if constexpr (std::is_trivially_copyable<T>::value) {
+                    *tDst = *tSrc;
+                } else {
+                    *tDst = std::move(*tSrc);
+                }
             };
             componentInfo.destructorFunc = [](const void* p) { static_cast<const T*>(p)->~T(); };
 
             auto id{ detail::typeId<T>() };
-            m_componentInfos[id] = std::move(componentInfo);
+            m_componentInfos[id] = componentInfo;
             m_indexMap.push_back(id);
 
             ptr = reinterpret_cast<T*>(&m_components[*suitableIndex]);
