@@ -3,25 +3,17 @@
 #include <vector>
 
 #include <visualizer/Camera.hpp>
-#include <visualizer/DrawableCube.hpp>
+#include <visualizer/SceneObject.hpp>
+#include <visualizer/Systems.hpp>
 
 namespace Visualizer {
 
-class SubScene {
-public:
-    SubScene() = default;
-
-    Camera& camera();
-
-    void addDrawableCube(DrawableCube& cube);
-    std::vector<DrawableCube>& drawableCubes();
-
-    void tick();
-    void draw();
-
-private:
+struct SubScene {
     Camera m_camera;
-    std::vector<DrawableCube> m_drawableCubes;
+    std::vector<SceneObject> m_Objects;
 };
+
+void tick(SubScene& subScene);
+void draw(const SubScene& subScene);
 
 }
