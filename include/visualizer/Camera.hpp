@@ -2,7 +2,7 @@
 
 namespace Visualizer {
 
-class Camera {
+struct Camera {
 };
 
 }
