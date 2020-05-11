@@ -1,4 +1,5 @@
 #pragma once
+#include <glm/glm.hpp>
 #include <memory>
 #include <unordered_map>
 #include <variant>
@@ -63,7 +64,7 @@ public:
      * @param vertices Vertices of the mesh.
      * @param count Number of vertices.
      */
-    void setVertices(const ttgl::vec4f* vertices, GLsizeiptr count);
+    void setVertices(const glm::vec4* vertices, GLsizeiptr count);
 
     /**
      * @brief Creates a new GenericBuffer to store the indices.

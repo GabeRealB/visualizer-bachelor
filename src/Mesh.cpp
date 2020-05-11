@@ -1,5 +1,6 @@
 #include <visualizer/Mesh.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
 namespace Visualizer {
@@ -93,7 +94,7 @@ void Mesh::operator=(Mesh&& mesh) noexcept
     m_buffers = std::exchange(mesh.m_buffers, {});
 }
 
-void Mesh::setVertices(const ttgl::vec4f* vertices, GLsizeiptr count)
+void Mesh::setVertices(const glm::vec4* vertices, GLsizeiptr count)
 {
     bind();
 
@@ -105,8 +106,13 @@ void Mesh::setVertices(const ttgl::vec4f* vertices, GLsizeiptr count)
         m_buffers.erase(bufferKeyValue);
     }
 
+    const void* dataPtr{ nullptr };
+    if (vertices != nullptr) {
+        dataPtr = glm::value_ptr(*vertices);
+    }
+
     auto ptr{ std::make_shared<VertexAttributeBuffer>(
-        0, 4, GL_FLOAT, false, 0, nullptr, count * sizeof(float) * 4, GL_STATIC_DRAW, vertices) };
+        0, 4, GL_FLOAT, false, 0, nullptr, count * sizeof(float) * 4, GL_STATIC_DRAW, dataPtr) };
     ptr->bind();
 
     unbind();
