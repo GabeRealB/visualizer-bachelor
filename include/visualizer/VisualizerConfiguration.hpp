@@ -27,11 +27,6 @@ template <typename T, std::size_t N> struct VectorN {
 using Color = VectorN<std::uint8_t, 3>;
 
 /**
- * Size info.
- */
-using Size = VectorN<std::uint32_t, 3>;
-
-/**
  * Position info.
  */
 using Position = VectorN<std::int32_t, 3>;
@@ -65,16 +60,16 @@ struct InnerCube {
     Color color;
     TilingInfo tiling;
     TraversalOrder traversalOrder;
-    std::vector<InnerCube> innerCubes;
+    std::shared_ptr<InnerCube> innerCube;
 
     static constexpr auto colorJSONKey{ "color" };
     static constexpr auto tilingJSONKey{ "tiling" };
     static constexpr auto traversalOrderJSONKey{ "traversal_order" };
-    static constexpr auto innerCubesJSONKey{ "inner_cubes" };
+    static constexpr auto innerCubeJSONKey{ "inner_cube" };
 
     InnerCube() = default;
     InnerCube(Color color, TilingInfo tiling, TraversalOrder traversalOrder,
-        std::vector<InnerCube> innerCubes);
+        std::shared_ptr<InnerCube> innerCube);
 };
 
 /**
@@ -82,14 +77,12 @@ struct InnerCube {
  */
 struct OuterCube : public InnerCube {
     Position position;
-    Size size;
 
     static constexpr auto positionJSONKey{ "position" };
-    static constexpr auto sizeJSONKey{ "size" };
 
     OuterCube() = default;
-    OuterCube(Position pos, Size size, Color color, TilingInfo tiling,
-        TraversalOrder traversalOrder, std::vector<InnerCube> innerCubes);
+    OuterCube(Position pos, Color color, TilingInfo tiling, TraversalOrder traversalOrder,
+        std::shared_ptr<InnerCube> innerCube);
 };
 
 /**

@@ -50,14 +50,13 @@ TEST_SUITE("VisualizerConfiguration")
             break;
         }
 
-        std::vector<Visualizer::InnerCube> children{};
-        children.reserve(numChildren);
-
-        for (std::size_t i = 0; i < numChildren; ++i) {
-            children.push_back(generateRandomInnerCube(numChildrenDistribution(gen)));
+        std::shared_ptr<Visualizer::InnerCube> child{ nullptr };
+        if (numChildren > 0) {
+            child = std::make_shared<Visualizer::InnerCube>(
+                generateRandomInnerCube(numChildrenDistribution(gen)));
         }
 
-        return { color, tilingInfo, traversalOrder, std::move(children) };
+        return { color, tilingInfo, traversalOrder, std::move(child) };
     }
 
     Visualizer::OuterCube generateRandomOuterCube(std::size_t numChildren)
@@ -68,19 +67,13 @@ TEST_SUITE("VisualizerConfiguration")
         std::uniform_int_distribution<std::int32_t> positionDistribution{
             std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()
         };
-        std::uniform_int_distribution<std::uint32_t> sizeDistribution{
-            std::numeric_limits<std::uint32_t>::min(), std::numeric_limits<std::uint32_t>::max()
-        };
 
         Visualizer::Position position{ positionDistribution(gen), positionDistribution(gen),
             positionDistribution(gen) };
 
-        Visualizer::Size size{ sizeDistribution(gen), sizeDistribution(gen),
-            sizeDistribution(gen) };
-
         auto innerCube{ generateRandomInnerCube(numChildren) };
-        return { position, size, innerCube.color, innerCube.tiling, innerCube.traversalOrder,
-            std::move(innerCube.innerCubes) };
+        return { position, innerCube.color, innerCube.tiling, innerCube.traversalOrder,
+            std::move(innerCube.innerCube) };
     }
 
     Visualizer::VisualizerConfiguration generateRandomConfig()
@@ -116,27 +109,19 @@ TEST_SUITE("VisualizerConfiguration")
         config.resolution = { 1920, 1080 };
         config.fullscreen = false;
 
-        std::size_t numChildren = 1;
         Visualizer::Position position{ 1, 1, 1 };
-        Visualizer::Size size{ 5, 5, 5 };
         Visualizer::TilingInfo tilingInfo{ 2, 2, 2 };
         Visualizer::Color color{ 255, 255, 255 };
         Visualizer::TraversalOrder traversalOrder{ Visualizer::TraversalOrder::YXZ };
 
-        std::vector<Visualizer::InnerCube> children{};
-        children.reserve(numChildren);
-
         Visualizer::TilingInfo innerCubeTilingInfo{ 2, 2, 2 };
         Visualizer::Color innerCubeColor{ 255, 255, 255 };
-        Visualizer::TraversalOrder innerCubTraversalOrder{ Visualizer::TraversalOrder::YXZ };
-        std::vector<Visualizer::InnerCube> innerCubeChildren{};
-        innerCubeChildren.reserve(0);
+        Visualizer::TraversalOrder innerCubeTraversalOrder{ Visualizer::TraversalOrder::YXZ };
 
-        children.emplace_back(innerCubeColor, innerCubeTilingInfo, innerCubTraversalOrder,
-            std::move(innerCubeChildren));
+        auto child{ std::make_shared<Visualizer::InnerCube>(
+            innerCubeColor, innerCubeTilingInfo, innerCubeTraversalOrder, nullptr) };
 
-        config.cubes.emplace_back(
-            position, size, color, tilingInfo, traversalOrder, std::move(children));
+        config.cubes.emplace_back(position, color, tilingInfo, traversalOrder, std::move(child));
 
         return config;
     }
@@ -189,6 +174,8 @@ TEST_SUITE("VisualizerConfiguration")
         REQUIRE_EQ(std::filesystem::exists(configFilePath), true);
         REQUIRE_EQ(std::filesystem::exists(visualizerTmpDir), false);
 
+        std::filesystem::create_directory(visualizerTmpDir);
+
         using namespace Visualizer;
 
         auto loadedConfig{ loadConfig(configFilePath) };
@@ -197,11 +184,13 @@ TEST_SUITE("VisualizerConfiguration")
         auto testConfigPath{ visualizerTmpDir / "load_and_save_valid_config.json" };
         REQUIRE_EQ(saveConfig(testConfigPath, *loadedConfig), true);
 
-        auto testConfig{ loadConfig(configFilePath) };
+        auto testConfig{ loadConfig(testConfigPath) };
 
         REQUIRE_EQ(loadedConfig.has_value(), true);
         REQUIRE_EQ(testConfig.has_value(), true);
         CHECK_EQ(*testConfig, *loadedConfig);
+
+        std::filesystem::remove_all(visualizerTmpDir);
     }
 
     TEST_CASE("Save and load valid config")
@@ -232,7 +221,7 @@ TEST_SUITE("VisualizerConfiguration")
 
         nlohmann::json json{ { InnerCube::colorJSONKey, Position{} },
             { InnerCube::tilingJSONKey, TilingInfo{} },
-            { InnerCube::innerCubesJSONKey, std::vector<InnerCube>{} } };
+            { InnerCube::innerCubeJSONKey, generateRandomInnerCube(0) } };
 
         InnerCube cube{};
         json.get_to(cube);
