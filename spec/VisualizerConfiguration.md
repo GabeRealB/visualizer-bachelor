@@ -21,10 +21,6 @@ color_type
     : '[' uint8_type ',' uint8_type ','uint8_type ']'
     ;
 
-size_type
-    : '[' uint32_type ',' uint32_type ','uint32_type ']'
-    ;
-
 position_type
     : '[' int32_type ',' int32_type ','int32_type ']'
     ;
@@ -47,18 +43,17 @@ inner_cube_type
             '"color":' color_type ',' 
             '"tiling":' tiling_info_type ','
             ('"traversal_order":' traversal_order_type ',')?
-            '"inner_cubes": [' (inner_cube_type ',')* ']' 
+            ('"inner_cube":' inner_cube_type)?
         '}'
     ;
 
 outer_cube_type
     :   '{'
             '"position":' position_type ',' 
-            '"size":' size_type ',' 
             '"color":' color_type ',' 
             '"tiling":' tiling_info_type ','
             ('"traversal_order":' traversal_order_type ',')?
-            '"inner_cubes": [' (inner_cube_type ',')* ']' 
+            ('"inner_cube":' inner_cube_type)?
         '}'
     ;
 
@@ -83,14 +78,11 @@ visualizer_configuration_type
             "tiling": [2,2,2],
             "color": [255,255,255],
             "traversal_order": 102,
-            "inner_cubes": [
-                {
-                    "tiling": [2,2,2],
-                    "color": [255,255,255],
-                    "traversal_order": 102,
-                    "inner_cubes": []
-                }
-            ]
+            "inner_cube": {
+                "tiling": [2,2,2],
+                "color": [255,255,255],
+                "traversal_order": 102
+            }
         }
     ]
 }
