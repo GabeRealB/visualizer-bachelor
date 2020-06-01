@@ -3,20 +3,20 @@
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 
 #include <visualizer/Scene.hpp>
-#include <visualizer/SceneObject.hpp>
+#include <visualizer/Shader.hpp>
 #include <visualizer/VisualizerConfiguration.hpp>
 
-GLFWwindow* createWindow(const Visualizer::VisualizerConfiguration& config);
+GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
+std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
+    const std::filesystem::path& vs, const std::filesystem::path& fs);
 
 namespace Visualizer {
-
-struct t {
-    int a;
-};
 
 int run(const std::filesystem::path& configurationPath)
 {
@@ -41,6 +41,8 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     glfwMakeContextCurrent(window);
 
@@ -61,6 +63,9 @@ int run(const std::filesystem::path& configurationPath)
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        tick(*scene);
+        draw(*scene);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -70,24 +75,23 @@ int run(const std::filesystem::path& configurationPath)
 
     return 0;
 }
-
 }
 
-GLFWwindow* createWindow(const Visualizer::VisualizerConfiguration& config)
+GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config)
 {
-    auto screenWidth{ config.resolution[0] };
-    auto screenHeight{ config.resolution[1] };
-    auto fullscreen{ config.fullscreen };
     auto windowName{ "Visualizer" };
     auto monitor{ glfwGetPrimaryMonitor() };
     auto videoMode{ glfwGetVideoMode(monitor) };
 
-    if (screenWidth == 0 || screenHeight == 0) {
-        screenWidth = videoMode->width;
-        screenHeight = videoMode->height;
+    if (config.resolution[0] == 0 || config.resolution[1] == 0) {
+        config.resolution[0] = videoMode->width;
+        config.resolution[1] = videoMode->height;
     }
 
-    if (fullscreen) {
+    auto screenWidth{ config.resolution[0] };
+    auto screenHeight{ config.resolution[1] };
+
+    if (config.fullscreen) {
         return glfwCreateWindow(screenWidth, screenHeight, windowName, monitor, nullptr);
     } else {
         glfwWindowHint(GLFW_RED_BITS, videoMode->redBits);
@@ -100,7 +104,20 @@ GLFWwindow* createWindow(const Visualizer::VisualizerConfiguration& config)
     }
 }
 
-void framebufferSizeCallback(GLFWwindow*, int width, int height)
+void framebufferSizeCallback(GLFWwindow*, int width, int height) { glViewport(0, 0, width, height); }
+
+std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
+    const std::filesystem::path& vs, const std::filesystem::path& fs)
 {
-    glViewport(0, 0, width, height);
+    auto vertexShader{ Visualizer::Shader::create(vs, Visualizer::ShaderType::VertexShader) };
+    if (!vertexShader) {
+        return nullptr;
+    }
+
+    auto fragmentShader{ Visualizer::Shader::create(fs, Visualizer::ShaderType::FragmentShader) };
+    if (!fragmentShader) {
+        return nullptr;
+    }
+
+    return Visualizer::ShaderProgram::create(*vertexShader, *fragmentShader);
 }
