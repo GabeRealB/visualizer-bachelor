@@ -12,16 +12,16 @@
         1
       ],
       "tiling": [
-        10,
-        10,
-        10
+        2,
+        2,
+        2
       ],
       "color": [
         255,
-        64,
-        64
+        255,
+        255
       ],
-      "traversal_order": 12,
+      "traversal_order": 102,
       "inner_cube": {
         "tiling": [
           2,
@@ -29,10 +29,11 @@
           2
         ],
         "color": [
-          64,
           255,
-          64
-        ]
+          255,
+          255
+        ],
+        "traversal_order": 102
       }
     }
   ]
