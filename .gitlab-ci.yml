@@ -4,15 +4,16 @@ stages:
 
 before_script:
   - apt-get update --yes
-  - apt-get install --yes cmake clang-tidy libglu1-mesa-dev xorg-dev
+  - apt-get upgrade --yes
+  - apt-get install --yes gcc-10 g++-10 cmake clang-tidy libglu1-mesa-dev xorg-dev
 
 build:gcc:
   stage: build
-  image: "gcc:latest"
+  image: "ubuntu:latest"
   script:
     - mkdir build_gcc
     - cd build_gcc
-    - cmake -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_BUILD_TYPE=Release ..
+    - cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_BUILD_TYPE=Release ..
     - cmake --build . --target visualizer
     - cmake --build . --target visualizer_main
     - cmake --build . --target visualizer_tests
@@ -22,7 +23,7 @@ build:gcc:
 
 test:gcc:
   stage: test
-  image: "gcc:latest"
+  image: "ubuntu:latest"
   script:
     - cd build_gcc/test
     - ./visualizer_tests
