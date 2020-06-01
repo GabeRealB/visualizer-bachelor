@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (WIN32)
     set(CMAKE_CXX_CLANG_TIDY clang-tidy --extra-arg-before=--driver-mode=cl --extra-arg=/EHca)
 else()
-    set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+    set(CMAKE_CXX_CLANG_TIDY clang-tidy -extra-arg=-Wno-unknown-warning-option)
 endif()
 
 add_subdirectory(extern)

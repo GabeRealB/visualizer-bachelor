@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <optional>
@@ -313,10 +314,10 @@ public:
         }
 
         if constexpr (std::is_trivially_copyable_v<T>) {
-            std::memcpy(dataPtr, values.data(), sizeof(T) * Size);
+            std::memcpy(dataPtr, values.data(), sizeof(T) * values.size());
         } else {
             auto pos{ dataPtr };
-            for (std::size_t i = 0; i < Size; i++, pos++) {
+            for (std::size_t i = 0; i < values.size(); i++, pos++) {
                 *pos = values[i];
             }
         }

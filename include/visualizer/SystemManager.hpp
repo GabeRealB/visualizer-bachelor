@@ -6,6 +6,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 #include <visualizer/System.hpp>
 #include <visualizer/TypeId.hpp>

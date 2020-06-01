@@ -65,7 +65,7 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
         }
     }
 
-    for (std::size_t i = innerCubes.size() - 1; i >= 0; --i) {
+    for (std::size_t i = innerCubes.size() - 1; i + 1 != 0; --i) {
         auto current{ innerCubes[i] };
         auto& currentTickInfo{ tickInfos[i] };
         if (i != innerCubes.size() - 1) {
