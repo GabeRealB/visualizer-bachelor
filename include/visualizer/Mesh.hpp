@@ -142,8 +142,7 @@ private:
 
     std::unordered_map<MeshAttributes, int> m_attributesMap;
     std::unordered_map<int,
-        std::variant<std::shared_ptr<const GenericBuffer>,
-            std::shared_ptr<const VertexAttributeBuffer>>>
+        std::variant<std::shared_ptr<const GenericBuffer>, std::shared_ptr<const VertexAttributeBuffer>>>
         m_buffers;
 };
 

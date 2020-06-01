@@ -4,16 +4,14 @@
 
 namespace Visualizer {
 
-VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType,
-    GLboolean normalized, GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage)
-    : VertexAttributeBuffer{ index, elementSize, elementType, normalized, stride, offset, size,
-        usage, nullptr }
+VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized,
+    GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage)
+    : VertexAttributeBuffer{ index, elementSize, elementType, normalized, stride, offset, size, usage, nullptr }
 {
 }
 
-VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType,
-    GLboolean normalized, GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage,
-    const void* data)
+VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized,
+    GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage, const void* data)
     : GenericBuffer{ GL_ARRAY_BUFFER, size, usage, data }
     , m_index{ index }
     , m_elementSize{ elementSize }

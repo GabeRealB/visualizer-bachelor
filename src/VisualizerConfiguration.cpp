@@ -6,8 +6,8 @@
 
 namespace Visualizer {
 
-InnerCube::InnerCube(Color color, TilingInfo tiling, TraversalOrder traversalOrder,
-    std::shared_ptr<InnerCube> innerCube)
+InnerCube::InnerCube(
+    Color color, TilingInfo tiling, TraversalOrder traversalOrder, std::shared_ptr<InnerCube> innerCube)
     : color{ color }
     , tiling{ tiling }
     , traversalOrder{ traversalOrder }
@@ -15,8 +15,8 @@ InnerCube::InnerCube(Color color, TilingInfo tiling, TraversalOrder traversalOrd
 {
 }
 
-OuterCube::OuterCube(Position pos, Color color, TilingInfo tiling, TraversalOrder traversalOrder,
-    std::shared_ptr<InnerCube> innerCube)
+OuterCube::OuterCube(
+    Position pos, Color color, TilingInfo tiling, TraversalOrder traversalOrder, std::shared_ptr<InnerCube> innerCube)
     : InnerCube(color, tiling, traversalOrder, std::move(innerCube))
     , position{ pos }
 {
@@ -65,8 +65,7 @@ static bool deepSharedPtrEqualityCheck(const std::shared_ptr<T>& lhs, const std:
 
 bool operator==(const InnerCube& lhs, const InnerCube& rhs)
 {
-    return (lhs.color == rhs.color) && (lhs.tiling == rhs.tiling)
-        && (lhs.traversalOrder == rhs.traversalOrder)
+    return (lhs.color == rhs.color) && (lhs.tiling == rhs.tiling) && (lhs.traversalOrder == rhs.traversalOrder)
         && (deepSharedPtrEqualityCheck(lhs.innerCube, rhs.innerCube));
 }
 
@@ -74,22 +73,17 @@ bool operator!=(const InnerCube& lhs, const InnerCube& rhs) { return !(lhs == rh
 
 bool operator==(const OuterCube& lhs, const OuterCube& rhs)
 {
-    return (lhs.position == rhs.position)
-        && static_cast<const InnerCube&>(lhs) == static_cast<const InnerCube&>(rhs);
+    return (lhs.position == rhs.position) && static_cast<const InnerCube&>(lhs) == static_cast<const InnerCube&>(rhs);
 }
 
 bool operator!=(const OuterCube& lhs, const OuterCube& rhs) { return !(lhs == rhs); }
 
 bool operator==(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs)
 {
-    return (lhs.resolution == rhs.resolution) && (lhs.fullscreen == rhs.fullscreen)
-        && (lhs.cubes == rhs.cubes);
+    return (lhs.resolution == rhs.resolution) && (lhs.fullscreen == rhs.fullscreen) && (lhs.cubes == rhs.cubes);
 }
 
-bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs)
-{
-    return !(lhs == rhs);
-}
+bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs) { return !(lhs == rhs); }
 
 void to_json(nlohmann::json& json, const InnerCube& cube)
 {
@@ -119,13 +113,11 @@ void from_json(const nlohmann::json& json, InnerCube& cube)
     json.at(InnerCube::colorJSONKey).get_to(cube.color);
     json.at(InnerCube::tilingJSONKey).get_to(cube.tiling);
 
-    if (auto innerCubeSearch = json.find(InnerCube::innerCubeJSONKey);
-        innerCubeSearch != json.end()) {
+    if (auto innerCubeSearch = json.find(InnerCube::innerCubeJSONKey); innerCubeSearch != json.end()) {
         cube.innerCube = std::make_shared<InnerCube>(innerCubeSearch->get<InnerCube>());
     }
 
-    if (auto traversalOrderSearch = json.find(InnerCube::traversalOrderJSONKey);
-        traversalOrderSearch != json.end()) {
+    if (auto traversalOrderSearch = json.find(InnerCube::traversalOrderJSONKey); traversalOrderSearch != json.end()) {
         traversalOrderSearch->get_to(cube.traversalOrder);
     } else {
         cube.traversalOrder = TraversalOrder::XYZ;

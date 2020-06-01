@@ -23,8 +23,8 @@ public:
      * @param size Size of the buffer.
      * @param usage Usage info of the buffer.
      */
-    VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized,
-        GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage);
+    VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized, GLsizei stride,
+        const void* offset, GLsizeiptr size, GLenum usage);
 
     /**
      * @brief Creates a new buffer.
@@ -39,8 +39,8 @@ public:
      * @param usage Usage info of the buffer.
      * @param data Buffer data.
      */
-    VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized,
-        GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage, const void* data);
+    VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized, GLsizei stride,
+        const void* offset, GLsizeiptr size, GLenum usage, const void* data);
 
     /**
      * @brief Copy constructor.

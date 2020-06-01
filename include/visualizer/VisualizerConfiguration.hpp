@@ -44,14 +44,7 @@ using Resolution = VectorN<std::uint32_t, 2>;
 /**
  * Order in which the dimensions are traversed.
  */
-enum class TraversalOrder : std::uint8_t {
-    XYZ = 12,
-    XZY = 21,
-    YXZ = 102,
-    YZX = 201,
-    ZXY = 120,
-    ZYX = 210
-};
+enum class TraversalOrder : std::uint8_t { XYZ = 12, XZY = 21, YXZ = 102, YZX = 201, ZXY = 120, ZYX = 210 };
 
 /**
  * An inner cube.
@@ -68,8 +61,7 @@ struct InnerCube {
     static constexpr auto innerCubeJSONKey{ "inner_cube" };
 
     InnerCube() = default;
-    InnerCube(Color color, TilingInfo tiling, TraversalOrder traversalOrder,
-        std::shared_ptr<InnerCube> innerCube);
+    InnerCube(Color color, TilingInfo tiling, TraversalOrder traversalOrder, std::shared_ptr<InnerCube> innerCube);
 };
 
 /**
@@ -130,8 +122,7 @@ bool saveConfig(const std::filesystem::path& filePath, const VisualizerConfigura
  * @return <code>true<code> if equal.
  * @return <code>false<code> otherwise.
  */
-template <typename T, std::size_t N>
-bool operator==(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
+template <typename T, std::size_t N> bool operator==(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
 {
     for (std::size_t i = 0; i < N; ++i) {
         if (lhs[i] != rhs[i]) {
@@ -153,8 +144,7 @@ bool operator==(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
  * @return <code>true<code> if unequal.
  * @return <code>false<code> otherwise.
  */
-template <typename T, std::size_t N>
-bool operator!=(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
+template <typename T, std::size_t N> bool operator!=(const VectorN<T, N>& lhs, const VectorN<T, N>& rhs)
 {
     return !(lhs == rhs);
 }
@@ -233,10 +223,7 @@ bool operator!=(const VisualizerConfiguration& lhs, const VisualizerConfiguratio
  * @param json Output.
  * @param vec Input.
  */
-template <typename T, std::size_t N> void to_json(nlohmann::json& json, const VectorN<T, N>& vec)
-{
-    json = vec.data;
-}
+template <typename T, std::size_t N> void to_json(nlohmann::json& json, const VectorN<T, N>& vec) { json = vec.data; }
 
 /**
  * @brief Deserializes a N-dimensional vector.

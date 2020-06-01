@@ -18,8 +18,7 @@ TEST_SUITE("VisualizerConfiguration")
         std::uniform_int_distribution<std::size_t> numChildrenDistribution{ 0, numChildren - 1 };
 
         Visualizer::Color color{ static_cast<std::uint8_t>(colorDistribution(gen)),
-            static_cast<std::uint8_t>(colorDistribution(gen)),
-            static_cast<std::uint8_t>(colorDistribution(gen)) };
+            static_cast<std::uint8_t>(colorDistribution(gen)), static_cast<std::uint8_t>(colorDistribution(gen)) };
 
         Visualizer::TilingInfo tilingInfo{ tilingInfoDistribution(gen), tilingInfoDistribution(gen),
             tilingInfoDistribution(gen) };
@@ -52,8 +51,7 @@ TEST_SUITE("VisualizerConfiguration")
 
         std::shared_ptr<Visualizer::InnerCube> child{ nullptr };
         if (numChildren > 0) {
-            child = std::make_shared<Visualizer::InnerCube>(
-                generateRandomInnerCube(numChildrenDistribution(gen)));
+            child = std::make_shared<Visualizer::InnerCube>(generateRandomInnerCube(numChildrenDistribution(gen)));
         }
 
         return { color, tilingInfo, traversalOrder, std::move(child) };
@@ -64,9 +62,8 @@ TEST_SUITE("VisualizerConfiguration")
         std::random_device rd{};
         std::mt19937 gen{ rd() };
 
-        std::uniform_int_distribution<std::int32_t> positionDistribution{
-            std::numeric_limits<std::int32_t>::min(), std::numeric_limits<std::int32_t>::max()
-        };
+        std::uniform_int_distribution<std::int32_t> positionDistribution{ std::numeric_limits<std::int32_t>::min(),
+            std::numeric_limits<std::int32_t>::max() };
 
         Visualizer::Position position{ positionDistribution(gen), positionDistribution(gen),
             positionDistribution(gen) };
@@ -219,8 +216,7 @@ TEST_SUITE("VisualizerConfiguration")
     {
         using namespace Visualizer;
 
-        nlohmann::json json{ { InnerCube::colorJSONKey, Position{} },
-            { InnerCube::tilingJSONKey, TilingInfo{} },
+        nlohmann::json json{ { InnerCube::colorJSONKey, Position{} }, { InnerCube::tilingJSONKey, TilingInfo{} },
             { InnerCube::innerCubeJSONKey, generateRandomInnerCube(0) } };
 
         InnerCube cube{};
