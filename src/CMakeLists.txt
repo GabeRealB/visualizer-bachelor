@@ -11,9 +11,9 @@ if (WIN32)
 else ()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions -Wno-deprecated-volatile)
-    else()
+    else ()
         set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions -Wno-volatile)
-    endif()
+    endif ()
 endif ()
 
 if (NOT DISABLE_OPTIMIZATIONS)
@@ -53,6 +53,7 @@ set(VISUALIZER_INCLUDES
         ../include/visualizer/SystemManager.hpp
         ../include/visualizer/SystemManager.impl
         ../include/visualizer/Systems.hpp
+        ../include/visualizer/Texture.hpp
         ../include/visualizer/Transform.hpp
         ../include/visualizer/TupleUtils.hpp
         ../include/visualizer/TypeId.hpp
@@ -80,6 +81,7 @@ set(VISUALIZER_SRC
         Shader.cpp
         SystemManager.cpp
         Systems.cpp
+        Texture.cpp
         Transform.cpp
         VertexAttributeBuffer.cpp
         Visualizer.cpp
