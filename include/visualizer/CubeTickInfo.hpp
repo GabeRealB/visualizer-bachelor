@@ -5,11 +5,13 @@
 namespace Visualizer {
 
 struct CubeTickInfo {
-    const glm::ivec3 limits;
-    const glm::ivec3 order;
+    glm::ivec3 limits;
+    glm::ivec3 order;
     glm::ivec3 currentIter;
-    const int tickRate;
+    glm::vec3 startPos;
+    int tickRate;
     int currentTick;
+    bool canTick;
 };
 
 }
