@@ -44,9 +44,11 @@ set(VISUALIZER_INCLUDES
         ../include/visualizer/EntityManager.hpp
         ../include/visualizer/EntityQuery.hpp
         ../include/visualizer/EntityQuery.impl
+        ../include/visualizer/Framebuffer.hpp
         ../include/visualizer/GenericBuffer.hpp
         ../include/visualizer/Mesh.hpp
         ../include/visualizer/MeshDrawingSystem.hpp
+        ../include/visualizer/Renderbuffer.hpp
         ../include/visualizer/Scene.hpp
         ../include/visualizer/Shader.hpp
         ../include/visualizer/System.hpp
@@ -74,9 +76,11 @@ set(VISUALIZER_SRC
         EntityComponentMap.cpp
         EntityManager.cpp
         EntityQuery.cpp
+        Framebuffer.cpp
         GenericBuffer.cpp
         Mesh.cpp
         MeshDrawingSystem.cpp
+        Renderbuffer.cpp
         Scene.cpp
         Shader.cpp
         SystemManager.cpp
