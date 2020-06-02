@@ -9,15 +9,18 @@
 
 namespace Visualizer {
 
-MeshDrawingSystem::MeshDrawingSystem()
+MeshDrawingSystem::MeshDrawingSystem(std::shared_ptr<Texture2D> texture)
     : m_meshQuery{ EntityQuery{}.with<std::shared_ptr<Mesh>, Material, Transform>() }
     , m_cameraQuery{ EntityQuery{}.with<Camera, Transform>() }
+    , m_frameBuffer{}
     , m_componentManager{}
 {
+    m_frameBuffer.attachBuffer(FramebufferAttachment::Color0, std::move(texture));
 }
 
 void MeshDrawingSystem::run(void*)
 {
+    m_frameBuffer.bind(FramebufferBinding::ReadWrite);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -57,6 +60,7 @@ void MeshDrawingSystem::run(void*)
 
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_BLEND);
+    m_frameBuffer.unbind(FramebufferBinding::ReadWrite);
 }
 
 void MeshDrawingSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }

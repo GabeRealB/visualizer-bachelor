@@ -2,13 +2,16 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <memory>
 #include <string_view>
+#include <vector>
 
 #include <visualizer/CameraMovementSystem.hpp>
 #include <visualizer/CubeInitializationSystem.hpp>
 #include <visualizer/CubeMovementSystem.hpp>
 #include <visualizer/MeshDrawingSystem.hpp>
 #include <visualizer/SystemManager.hpp>
+#include <visualizer/Texture.hpp>
 
 namespace Visualizer {
 
@@ -71,6 +74,9 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
         return std::nullopt;
     }
 
+    std::vector<std::shared_ptr<Texture2D>> renderTargets;
+    renderTargets.reserve(conf.cubes.size());
+
     for (auto& outerCube : conf.cubes) {
         scene.worlds.emplace_back();
         auto& world{ scene.worlds.back() };
@@ -83,7 +89,14 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
         systemManager->addSystem<CubeMovementSystem>("tick"sv);
         systemManager->addSystem<CameraMovementSystem>("tick"sv);
 
-        systemManager->addSystem<MeshDrawingSystem>("draw"sv);
+        auto texture{ std::make_shared<Texture2D>() };
+        texture->addAttribute(TextureMinificationFilter::Linear);
+        texture->addAttribute(TextureMagnificationFilter::Linear);
+        texture->copyData(TextureFormat::RGBA, TextureInternalFormat::Short, 0,
+            static_cast<GLsizei>(conf.resolution[0]), static_cast<GLsizei>(conf.resolution[1]), 0, nullptr);
+        renderTargets.push_back(texture);
+
+        systemManager->addSystem<MeshDrawingSystem>("draw"sv, texture);
     }
 
     auto initializationData{ CubeInitializationSystem::Data{ std::move(cubeShaderProgram) } };
