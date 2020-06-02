@@ -46,6 +46,8 @@ std::size_t Texture2D::width() const { return m_width; }
 
 std::size_t Texture2D::height() const { return m_height; }
 
+TextureType Texture2D::type() const { return TextureType::Texture2D; }
+
 void Texture2D::bind(TextureSlot slot)
 {
     if (m_id == 0) {

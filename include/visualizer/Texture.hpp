@@ -25,6 +25,7 @@ enum class TextureSlot : std::size_t {
     Slot15 = 15
 };
 
+enum class TextureType { Texture2D };
 enum class TextureFormat { R, RG, RGB, RGBA, Depth, DepthStencil };
 enum class TextureInternalFormat { Byte, Short, Int8, Int16, Int32, UInt8, UInt16, UInt32, Float16, Float32 };
 enum class TextureMinificationFilter {
@@ -40,9 +41,12 @@ enum class TextureMagnificationFilter { Nearest, Linear };
 class Texture {
 public:
     Texture(const Texture& other) = delete;
-    virtual ~Texture() = 0;
+    virtual ~Texture() = default;
 
     Texture& operator=(const Texture& other) = delete;
+
+    virtual GLuint id() const = 0;
+    virtual TextureType type() const = 0;
 
     virtual void bind(TextureSlot slot) = 0;
     virtual void unbind(TextureSlot slot) = 0;
@@ -67,9 +71,10 @@ public:
     Texture2D& operator=(const Texture2D& other) = delete;
     Texture2D& operator=(Texture2D&& other) noexcept;
 
-    GLuint id() const;
+    GLuint id() const final;
     std::size_t width() const;
     std::size_t height() const;
+    TextureType type() const final;
 
     void bind(TextureSlot slot) final;
     void unbind(TextureSlot slot) final;
