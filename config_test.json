@@ -36,5 +36,17 @@
         "traversal_order": 102
       }
     }
+  ],
+  "views": [
+    {
+      "size": [
+        1.0,
+        1.0
+      ],
+      "position": [
+        0.0,
+        0.0
+      ]
+    }
   ]
 }

@@ -42,6 +42,11 @@ using TilingInfo = VectorN<std::uint32_t, 3>;
 using Resolution = VectorN<std::uint32_t, 2>;
 
 /**
+ * NormalizedInterval
+ */
+using NormalizedInterval = VectorN<float, 2>;
+
+/**
  * Order in which the dimensions are traversed.
  */
 enum class TraversalOrder : std::uint8_t { XYZ = 12, XZY = 21, YXZ = 102, YZX = 201, ZXY = 120, ZYX = 210 };
@@ -77,6 +82,17 @@ struct OuterCube : public InnerCube {
         std::shared_ptr<InnerCube> innerCube);
 };
 
+struct View {
+    NormalizedInterval size;
+    NormalizedInterval position;
+
+    static constexpr auto sizeJSONKey{ "size" };
+    static constexpr auto positionJSONKey{ "position" };
+
+    View() = default;
+    View(NormalizedInterval size, NormalizedInterval position);
+};
+
 /**
  * The configuration of the visualizer.
  */
@@ -84,10 +100,12 @@ struct VisualizerConfiguration {
     Resolution resolution;
     bool fullscreen;
     std::vector<OuterCube> cubes;
+    std::vector<View> views;
 
     static constexpr auto resolutionJSONKey{ "resolution" };
     static constexpr auto fullscreenJSONKey{ "fullscreen" };
     static constexpr auto cubesJSONKey{ "cubes" };
+    static constexpr auto viewsJSONKey{ "views" };
 };
 
 /**
@@ -194,6 +212,28 @@ bool operator==(const OuterCube& lhs, const OuterCube& rhs);
 bool operator!=(const OuterCube& lhs, const OuterCube& rhs);
 
 /**
+ * @brief Compares two View instances for equality.
+ *
+ * @param lhs Left-hand side.
+ * @param rhs Right-hand side.
+ *
+ * @return <code>true<code> if equal.
+ * @return <code>false<code> otherwise.
+ */
+bool operator==(const View& lhs, const View& rhs);
+
+/**
+ * @brief Compares two View instances for inequality.
+ *
+ * @param lhs Left-hand side.
+ * @param rhs Right-hand side.
+ *
+ * @return <code>true<code> if equal.
+ * @return <code>false<code> otherwise.
+ */
+bool operator!=(const View& lhs, const View& rhs);
+
+/**
  * @brief Compares two VisualizerConfiguration instances for equality.
  *
  * @param lhs Left-hand side.
@@ -255,6 +295,14 @@ void to_json(nlohmann::json& json, const InnerCube& cube);
 void to_json(nlohmann::json& json, const OuterCube& cube);
 
 /**
+ * @brief Serializes a view.
+ *
+ * @param json Output.
+ * @param view View.
+ */
+void to_json(nlohmann::json& json, const View& view);
+
+/**
  * @brief Serializes an configuration instance.
  *
  * @param json Output.
@@ -277,6 +325,14 @@ void from_json(const nlohmann::json& json, InnerCube& cube);
  * @param cube Cube.
  */
 void from_json(const nlohmann::json& json, OuterCube& cube);
+
+/**
+ * @brief Deserializes a view.
+ *
+ * @param json Input.
+ * @param view View.
+ */
+void from_json(const nlohmann::json& json, View& view);
 
 /**
  * @brief Deserializes a configuration instance.

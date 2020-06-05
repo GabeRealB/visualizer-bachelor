@@ -22,6 +22,12 @@ OuterCube::OuterCube(
 {
 }
 
+View::View(NormalizedInterval size, NormalizedInterval position)
+    : size{ size }
+    , position{ position }
+{
+}
+
 std::optional<VisualizerConfiguration> loadConfig(const std::filesystem::path& filePath)
 {
     if (!std::filesystem::is_regular_file(filePath)) {
@@ -78,6 +84,10 @@ bool operator==(const OuterCube& lhs, const OuterCube& rhs)
 
 bool operator!=(const OuterCube& lhs, const OuterCube& rhs) { return !(lhs == rhs); }
 
+bool operator==(const View& lhs, const View& rhs) { return (lhs.size == rhs.size) && (lhs.position == rhs.position); }
+
+bool operator!=(const View& lhs, const View& rhs) { return !(lhs == rhs); }
+
 bool operator==(const VisualizerConfiguration& lhs, const VisualizerConfiguration& rhs)
 {
     return (lhs.resolution == rhs.resolution) && (lhs.fullscreen == rhs.fullscreen) && (lhs.cubes == rhs.cubes);
@@ -101,11 +111,18 @@ void to_json(nlohmann::json& json, const OuterCube& cube)
     json[OuterCube::positionJSONKey] = cube.position;
 }
 
+void to_json(nlohmann::json& json, const View& view)
+{
+    json[View::sizeJSONKey] = view.size;
+    json[View::positionJSONKey] = view.position;
+}
+
 void to_json(nlohmann::json& json, const VisualizerConfiguration& config)
 {
     json[VisualizerConfiguration::resolutionJSONKey] = config.resolution;
     json[VisualizerConfiguration::fullscreenJSONKey] = config.fullscreen;
     json[VisualizerConfiguration::cubesJSONKey] = config.cubes;
+    json[VisualizerConfiguration::viewsJSONKey] = config.views;
 }
 
 void from_json(const nlohmann::json& json, InnerCube& cube)
@@ -130,10 +147,18 @@ void from_json(const nlohmann::json& json, OuterCube& cube)
     json.at(OuterCube::positionJSONKey).get_to(cube.position);
 }
 
+void from_json(const nlohmann::json& json, View& view)
+{
+    json.at(View::sizeJSONKey).get_to(view.size);
+    json.at(View::positionJSONKey).get_to(view.position);
+}
+
 void from_json(const nlohmann::json& json, VisualizerConfiguration& config)
 {
     json.at(VisualizerConfiguration::resolutionJSONKey).get_to(config.resolution);
     json.at(VisualizerConfiguration::fullscreenJSONKey).get_to(config.fullscreen);
     json.at(VisualizerConfiguration::cubesJSONKey).get_to(config.cubes);
+    json.at(VisualizerConfiguration::viewsJSONKey).get_to(config.views);
 }
+
 }

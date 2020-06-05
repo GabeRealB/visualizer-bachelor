@@ -73,6 +73,15 @@ TEST_SUITE("VisualizerConfiguration")
             std::move(innerCube.innerCube) };
     }
 
+    Visualizer::View generateRandomView()
+    {
+        std::random_device rd{};
+        std::mt19937 gen{ rd() };
+
+        std::uniform_real_distribution<float> distribution{ 0.0f, 1.0f };
+        return Visualizer::View{ { distribution(gen), distribution(gen) }, { distribution(gen), distribution(gen) } };
+    }
+
     Visualizer::VisualizerConfiguration generateRandomConfig()
     {
         std::random_device rd{};
@@ -86,14 +95,20 @@ TEST_SUITE("VisualizerConfiguration")
         std::uniform_int_distribution<std::uint32_t> fullscreenDistribution{ 0, 1 };
         std::uniform_int_distribution<std::size_t> numOuterCubesDistribution{ 0, 3 };
         std::uniform_int_distribution<std::size_t> numChildrenDistribution{ 0, 8 };
+        std::uniform_int_distribution<std::size_t> numViewsDistribution{ 0, 3 };
 
         Visualizer::VisualizerConfiguration config{};
 
         config.resolution = { resolutionWidthDistribution(gen), resolutionHeightDistribution(gen) };
         config.fullscreen = fullscreenDistribution(gen) == 1;
         config.cubes.reserve(numOuterCubesDistribution(gen));
+        config.views.reserve(numViewsDistribution(gen));
+
         for (std::size_t i = 0; i < config.cubes.size(); ++i) {
             config.cubes.push_back(generateRandomOuterCube(numChildrenDistribution(gen)));
+        }
+        for (std::size_t i = 0; i < config.views.size(); ++i) {
+            config.views.push_back(generateRandomView());
         }
 
         return config;
@@ -119,6 +134,8 @@ TEST_SUITE("VisualizerConfiguration")
             innerCubeColor, innerCubeTilingInfo, innerCubeTraversalOrder, nullptr) };
 
         config.cubes.emplace_back(position, color, tilingInfo, traversalOrder, std::move(child));
+        config.views.emplace_back(
+            Visualizer::NormalizedInterval{ 1.0f, 1.0f }, Visualizer::NormalizedInterval{ 0.0f, 0.0f });
 
         return config;
     }

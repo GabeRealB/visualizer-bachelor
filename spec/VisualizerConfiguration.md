@@ -17,6 +17,10 @@ boolean_type
     | 'false'
     ;
 
+normalized_type
+    : [0, 1]
+    ;
+
 color_type
     : '[' uint8_type ',' uint8_type ','uint8_type ']'
     ;
@@ -27,6 +31,10 @@ position_type
 
 tiling_info_type
     : '[' uint32_type ',' uint32_type ','uint32_type ']'
+    ;
+
+normalited_interval_type
+    : '[' normalized_type ','normalized_type ']'
     ;
 
 traversal_order_type
@@ -57,11 +65,19 @@ outer_cube_type
         '}'
     ;
 
+view_type
+    :   '{'
+             '"size":' normalited_interval_type ','
+             '"position":' normalited_interval_type 
+        '}'
+    ;
+
 visualizer_configuration_type
     :   '{'
             '"resolution": [' uint32_type ',' uint32_type '],'
             '"fullscreen": ' boolean_type ','
-            '"cubes": [' (outer_cube_type ',')* ']'
+            '"cubes": [' (outer_cube_type ',')* ']' ','
+            '"views": [' (view_type ',')* ']'
         '}'
     ;
 ```
@@ -83,6 +99,12 @@ visualizer_configuration_type
                 "color": [255,255,255],
                 "traversal_order": 102
             }
+        }
+    ],
+    "views" : [
+        {
+            "size": [1,1],
+            "position": [0,0]
         }
     ]
 }
