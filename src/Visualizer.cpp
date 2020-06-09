@@ -9,12 +9,8 @@
 
 #include <visualizer/Scene.hpp>
 #include <visualizer/Shader.hpp>
-#include <visualizer/VisualizerConfiguration.hpp>
 
 GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config);
-void framebufferSizeCallback(GLFWwindow* window, int width, int height);
-std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
-    const std::filesystem::path& vs, const std::filesystem::path& fs);
 
 namespace Visualizer {
 
@@ -40,8 +36,8 @@ int run(const std::filesystem::path& configurationPath)
         glfwTerminate();
         return 1;
     }
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowAspectRatio(window, config->resolution[0], config->resolution[1]);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     glfwMakeContextCurrent(window);
@@ -60,9 +56,6 @@ int run(const std::filesystem::path& configurationPath)
     }
 
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
         tick(*scene);
         draw(*scene);
 
@@ -103,8 +96,6 @@ GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config)
         return glfwCreateWindow(screenWidth, screenHeight, windowName, nullptr, nullptr);
     }
 }
-
-void framebufferSizeCallback(GLFWwindow*, int width, int height) { glViewport(0, 0, width, height); }
 
 std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
     const std::filesystem::path& vs, const std::filesystem::path& fs)

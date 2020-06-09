@@ -6,44 +6,15 @@
 #include <string_view>
 #include <vector>
 
+#include <visualizer/CameraInitializationSystem.hpp>
 #include <visualizer/CameraMovementSystem.hpp>
+#include <visualizer/CompositingSystem.hpp>
 #include <visualizer/CubeInitializationSystem.hpp>
 #include <visualizer/CubeMovementSystem.hpp>
 #include <visualizer/MeshDrawingSystem.hpp>
 #include <visualizer/SystemManager.hpp>
-#include <visualizer/Texture.hpp>
 
 namespace Visualizer {
-
-std::shared_ptr<Mesh> generateCubeMesh()
-{
-    auto mesh{ std::make_shared<Mesh>() };
-
-    glm::vec4 vertices[]{
-        { -0.5f, -0.5f, 0.5f, 1.0f }, // lower-left-front
-        { 0.5f, -0.5f, 0.5f, 1.0f }, // lower-right-front
-        { 0.5f, 0.5f, 0.5f, 1.0f }, // top-right-front
-        { -0.5f, 0.5f, 0.5f, 1.0f }, // top-left-front
-
-        { -0.5f, -0.5f, -0.5f, 1.0f }, // lower-left-back
-        { 0.5f, -0.5f, -0.5f, 1.0f }, // lower-right-back
-        { 0.5f, 0.5f, -0.5f, 1.0f }, // top-right-back
-        { -0.5f, 0.5f, -0.5f, 1.0f }, // top-left-back
-    };
-
-    GLuint indices[]{
-        0, 1, 2, 0, 2, 3, // front
-        3, 2, 6, 3, 6, 7, // top
-        1, 5, 6, 1, 6, 2, // right
-        4, 0, 3, 4, 3, 7, // left
-        4, 5, 1, 4, 1, 0, // bottom
-        5, 4, 7, 5, 7, 6 // back
-    };
-
-    mesh->setVertices(vertices, 8);
-    mesh->setIndices(indices, 48, GL_TRIANGLES);
-    return mesh;
-}
 
 std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
     const std::filesystem::path& vs, const std::filesystem::path& fs)
@@ -65,8 +36,25 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
 {
     using namespace std::literals;
 
+    if (conf.cubes.size() == 0 || conf.cubes.size() != conf.views.size()) {
+        return std::nullopt;
+    }
+
     Scene scene{};
-    auto cubeMesh{ generateCubeMesh() };
+    scene.activeWorld = 0;
+    scene.worlds.reserve(conf.cubes.size());
+
+    std::vector<std::shared_ptr<Texture2D>> renderTargets;
+    renderTargets.reserve(conf.cubes.size());
+
+    for (std::size_t i = 0; i < renderTargets.capacity(); ++i) {
+        auto texture{ std::make_shared<Texture2D>() };
+        texture->addAttribute(TextureMinificationFilter::Linear);
+        texture->addAttribute(TextureMagnificationFilter::Linear);
+        texture->copyData(TextureFormat::RGBA, TextureInternalFormat::Short, 0,
+            static_cast<GLsizei>(conf.resolution[0]), static_cast<GLsizei>(conf.resolution[1]), 0, nullptr);
+        renderTargets.push_back(texture);
+    }
 
     auto cubeShaderProgram{ createShaderProgram("shader/cube.vs.glsl", "shader/cube.fs.glsl") };
     if (cubeShaderProgram == nullptr) {
@@ -74,35 +62,27 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
         return std::nullopt;
     }
 
-    std::vector<std::shared_ptr<Texture2D>> renderTargets;
-    renderTargets.reserve(conf.cubes.size());
+    scene.worlds.emplace_back();
+    auto& world{ scene.worlds.back() };
+    world.addManager<ComponentManager>();
+    world.addManager<EntityManager>();
+    auto systemManager{ world.addManager<SystemManager>() };
 
-    for (auto& outerCube : conf.cubes) {
-        scene.worlds.emplace_back();
-        auto& world{ scene.worlds.back() };
-        auto componentManager{ world.addManager<ComponentManager>() };
-        auto entityManager{ world.addManager<EntityManager>() };
-        auto systemManager{ world.addManager<SystemManager>() };
+    systemManager->addSystem<CubeInitializationSystem>("initialization"sv);
+    systemManager->addSystem<CameraInitializationSystem>("initialization"sv);
 
-        systemManager->addSystem<CubeInitializationSystem>("initialization"sv, conf.resolution, outerCube, cubeMesh);
+    systemManager->addSystem<CubeMovementSystem>("tick"sv);
+    systemManager->addSystem<CameraMovementSystem>("tick"sv);
 
-        systemManager->addSystem<CubeMovementSystem>("tick"sv);
-        systemManager->addSystem<CameraMovementSystem>("tick"sv);
+    systemManager->addSystem<MeshDrawingSystem>("draw"sv);
+    systemManager->addSystem<CompositingSystem>("composite"sv, conf, renderTargets);
 
-        auto texture{ std::make_shared<Texture2D>() };
-        texture->addAttribute(TextureMinificationFilter::Linear);
-        texture->addAttribute(TextureMagnificationFilter::Linear);
-        texture->copyData(TextureFormat::RGBA, TextureInternalFormat::Short, 0,
-            static_cast<GLsizei>(conf.resolution[0]), static_cast<GLsizei>(conf.resolution[1]), 0, nullptr);
-        renderTargets.push_back(texture);
-
-        systemManager->addSystem<MeshDrawingSystem>("draw"sv, texture);
-    }
-
-    auto initializationData{ CubeInitializationSystem::Data{ std::move(cubeShaderProgram) } };
-    for (auto& world : scene.worlds) {
-        world.getManager<SystemManager>()->run("initialization"sv, &initializationData);
-    }
+    SystemParameterMap initParameters{};
+    CubeInitializationSystem::Data cubeInitData{ conf, cubeShaderProgram };
+    CameraInitializationSystem::Data cameraInitData{ renderTargets };
+    initParameters.insert<CubeInitializationSystem>(&cubeInitData);
+    initParameters.insert<CameraInitializationSystem>(&cameraInitData);
+    systemManager->run("initialization"sv, initParameters);
 
     return scene;
 }
