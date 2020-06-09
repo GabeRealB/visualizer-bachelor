@@ -119,7 +119,7 @@ EntityQueryResult::filter(Pred&& fn, std::index_sequence<Is...>)
     for (std::size_t i = 0; i < count(); ++i) {
         auto entityTuple{ *at<Ts...>(i) };
         if (!std::invoke<Pred, const Ts*...>(
-                std::forward<Pred>(fn), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...)) {
+                std::forward<Pred>(fn), std::forward<const Ts*>(static_cast<const Ts*>(std::get<Is + 1>(entityTuple)))...)) {
 
             auto entityLocation{ m_entities.begin() + i };
             auto componentsRangeBegin{ m_components.begin() + (i * numComponents) };
