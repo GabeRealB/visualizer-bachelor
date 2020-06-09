@@ -20,6 +20,10 @@ CameraMovementSystem::CameraMovementSystem()
     glfwGetCursorPos(glfwGetCurrentContext(), &m_mouseX, &m_mouseY);
 }
 
+void CameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+
+void CameraMovementSystem::terminate() { m_componentManager = nullptr; }
+
 void CameraMovementSystem::run(void*)
 {
     auto window{ glfwGetCurrentContext() };
@@ -54,39 +58,37 @@ void CameraMovementSystem::run(void*)
 
     glm::vec3 mouseRotation{ m_rotationSpeed * mouseYOffset, m_rotationSpeed * mouseXOffset, 0.0 };
 
-    m_cameraQuery.query(*m_componentManager).forEach<Transform>([&](Transform* transform) {
-        auto rotation{ glm::quat{ glm::eulerAngles(transform->rotation) + mouseRotation } };
-        transform->rotation = rotation;
+    m_cameraQuery.query(*m_componentManager)
+        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active; })
+        .forEach<Transform>([&](Transform* transform) {
+            auto rotation{ glm::quat{ glm::eulerAngles(transform->rotation) + mouseRotation } };
+            transform->rotation = rotation;
 
-        auto rotatedForwards{ rotation * forward };
-        auto rotatedRight{ rotation * right };
-        auto rotatedUp{ rotation * up };
+            auto rotatedForwards{ rotation * forward };
+            auto rotatedRight{ rotation * right };
+            auto rotatedUp{ rotation * up };
 
-        if (wKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedForwards;
-        }
-        if (sKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedForwards;
-        }
+            if (wKey == GLFW_PRESS) {
+                transform->position -= movementSpeed * rotatedForwards;
+            }
+            if (sKey == GLFW_PRESS) {
+                transform->position += movementSpeed * rotatedForwards;
+            }
 
-        if (aKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedRight;
-        }
-        if (dKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedRight;
-        }
+            if (aKey == GLFW_PRESS) {
+                transform->position -= movementSpeed * rotatedRight;
+            }
+            if (dKey == GLFW_PRESS) {
+                transform->position += movementSpeed * rotatedRight;
+            }
 
-        if (qKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedUp;
-        }
-        if (eKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedUp;
-        }
-    });
+            if (qKey == GLFW_PRESS) {
+                transform->position -= movementSpeed * rotatedUp;
+            }
+            if (eKey == GLFW_PRESS) {
+                transform->position += movementSpeed * rotatedUp;
+            }
+        });
 }
-
-void CameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
-
-void CameraMovementSystem::terminate() { m_componentManager = nullptr; }
 
 }

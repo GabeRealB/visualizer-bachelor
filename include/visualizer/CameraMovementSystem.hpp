@@ -6,6 +6,7 @@
 
 #include <visualizer/ComponentManager.hpp>
 #include <visualizer/EntityQuery.hpp>
+#include <visualizer/Scene.hpp>
 #include <visualizer/System.hpp>
 
 namespace Visualizer {
