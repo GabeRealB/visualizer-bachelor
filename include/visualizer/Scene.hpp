@@ -10,6 +10,7 @@
 namespace Visualizer {
 
 struct Scene {
+    std::size_t activeWorld;
     std::vector<World> worlds;
 };
 
@@ -17,6 +18,5 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& config);
 
 void tick(Scene& scene);
 void draw(const Scene& scene);
-void draw(const Scene& scene, GLuint cubeProgram, GLint cubeVPMatLoc, GLint cubeModMatLoc);
 
 }

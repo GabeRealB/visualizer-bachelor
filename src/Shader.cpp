@@ -42,7 +42,7 @@ constexpr std::array<std::string_view, 2> sParameterQualifierNames{ "@program"sv
 constexpr std::array<ParameterQualifier, 2> sParameterQualifierMap{ ParameterQualifier::Program,
     ParameterQualifier::Material };
 
-constexpr std::array<std::string_view, 25> sParameterTypeNames{
+constexpr std::array<std::string_view, 26> sParameterTypeNames{
     "bool"sv,
     "int"sv,
     "uint"sv,
@@ -68,6 +68,7 @@ constexpr std::array<std::string_view, 25> sParameterTypeNames{
     "mat4x2"sv,
     "mat4x3"sv,
     "mat4x4"sv,
+    "sampler2D"sv,
 };
 
 Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
@@ -187,7 +188,7 @@ std::optional<Shader> Shader::create(const std::filesystem::path& shaderPath, Sh
  *************************************** ShaderEnvironment ***************************************
  **************************************************************************************************/
 
-constexpr std::array<std::tuple<std::size_t, std::size_t>, 25> sTypeSizeAlignmentPairs{
+constexpr std::array<std::tuple<std::size_t, std::size_t>, 26> sTypeSizeAlignmentPairs{
     std::tuple<std::size_t, std::size_t>{ sizeof(GLboolean), alignof(GLboolean) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLint), alignof(GLint) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLuint), alignof(GLuint) },
@@ -213,6 +214,7 @@ constexpr std::array<std::tuple<std::size_t, std::size_t>, 25> sTypeSizeAlignmen
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x2), alignof(glm::mat4x2) },
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x3), alignof(glm::mat4x3) },
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x4), alignof(glm::mat4x4) },
+    std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
 };
 
 ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier filter)
@@ -254,6 +256,7 @@ ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier 
 
     m_parameterData
         = { AlignedDeleter<unsigned char>::allocate(m_dataAlignment, m_dataSize), AlignedDeleter<unsigned char>{} };
+    std::memset(m_parameterData.get(), 0, m_dataSize);
 }
 
 ShaderEnvironment::ShaderEnvironment(const ShaderEnvironment& other)
@@ -278,6 +281,7 @@ ShaderEnvironment& ShaderEnvironment::operator=(const ShaderEnvironment& other)
         m_dataAlignment = other.m_dataAlignment;
         m_parameterData = { AlignedDeleter<unsigned char>::allocate(other.m_dataAlignment, other.m_dataSize),
             AlignedDeleter<unsigned char>{} };
+        std::memset(m_parameterData.get(), 0, m_dataSize);
 
         m_parameterNames.clear();
         m_parameterNames.resize(other.m_parameterNames.size());
@@ -297,7 +301,7 @@ std::span<std::string_view> ShaderEnvironment::parameters() const
  ***************************************** ShaderProgram *****************************************
  **************************************************************************************************/
 
-constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 25> sTypeApplyFuncs{
+constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 26> sTypeApplyFuncs{
     /**************************************** Scalars ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
@@ -455,7 +459,14 @@ constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view
         if (val != nullptr) {
             glUniformMatrix4fv(location, size, false, glm::value_ptr(*val));
         }
-    }
+    },
+    /**************************************** SamplerN ****************************************/
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureSampler<Texture2D>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
 };
 
 ShaderProgram::ShaderProgram()

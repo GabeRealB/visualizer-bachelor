@@ -73,17 +73,55 @@ public:
     template <typename... Ts>
     requires UniqueTypes<Ts...> std::optional<std::tuple<const Entity, Ts*...>> at(std::size_t idx) const;
 
+    template <typename... Ts, typename Pred>
+    requires NoCVRefs<Ts...>&& UniqueTypes<Ts...>&& std::predicate<Pred, const Ts*...> EntityQueryResult& filter(
+        Pred&& fn);
+
     template <typename... Ts, typename Fn>
     requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void forEach(Fn&& fn) const;
     template <typename... Ts, typename Fn>
-    requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void forEachWithEntity(Fn&& fn) const;
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...> void forEachWithEntity(Fn&& fn) const;
+
+    template <typename... Ts, typename Fn>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Ts*...> void iterate(Fn&& fn) const;
+    template <typename... Ts, typename Fn>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Entity, Ts*...> void iterateWithEntity(Fn&& fn) const;
+
+    template <typename... Ts, typename Fn, typename Pred>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...>&&
+        std::predicate<Pred, const typename std::remove_cvref_t<Ts*>...> void
+        forEach(Fn&& fn, Pred&& pred) const;
+    template <typename... Ts, typename Fn, typename Pred>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...>&&
+        std::predicate<Pred, Entity, const typename std::remove_cvref_t<Ts*>...> void
+        forEachWithEntity(Fn&& fn, Pred&& pred) const;
 
 private:
+    template <typename... Ts, typename Pred, std::size_t... Is>
+    requires NoCVRefs<Ts...>&& UniqueTypes<Ts...>&& std::predicate<Pred, const Ts*...> EntityQueryResult& filter(
+        Pred&& fn, std::index_sequence<Is...>);
+
     template <typename... Ts, typename Fn, std::size_t... Is>
     requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void forEach(Fn&& fn, std::index_sequence<Is...>) const;
     template <typename... Ts, typename Fn, std::size_t... Is>
-    requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void forEachWithEntity(
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...> void forEachWithEntity(
         Fn&& fn, std::index_sequence<Is...>) const;
+
+    template <typename... Ts, typename Fn, std::size_t... Is>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Ts*...> void iterate(
+        Fn&& fn, std::index_sequence<Is...>) const;
+    template <typename... Ts, typename Fn, std::size_t... Is>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Entity, Ts*...> void iterateWithEntity(
+        Fn&& fn, std::index_sequence<Is...>) const;
+
+    template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...>&&
+        std::predicate<Pred, const typename std::remove_cvref_t<Ts*>...> void
+        forEach(Fn&& fn, Pred&& pred, std::index_sequence<Is...>) const;
+    template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+    requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...>&&
+        std::predicate<Pred, Entity, const typename std::remove_cvref_t<Ts*>...> void
+        forEachWithEntity(Fn&& fn, Pred&& pred, std::index_sequence<Is...>) const;
 
     std::vector<Entity> m_entities;
     std::vector<void*> m_components;

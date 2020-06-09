@@ -13,7 +13,14 @@ namespace Visualizer {
  */
 enum class MeshAttributes : int {
     Vertices = 0,
-    Indices = 1,
+    Normals = 1,
+    Tangents = 2,
+    Color = 3,
+    TextureCoordinate0 = 4,
+    TextureCoordinate1 = 5,
+    TextureCoordinate2 = 6,
+    TextureCoordinate3 = 7,
+    Indices = 8,
 };
 
 /**
@@ -65,6 +72,14 @@ public:
      * @param count Number of vertices.
      */
     void setVertices(const glm::vec4* vertices, GLsizeiptr count);
+
+    /**
+     * @brief Creates a new VertexAttributeBuffer to store the first TextureCoordinates.
+     *
+     * @param coordinates First TextureCoordinates.
+     * @param count Number of TextureCoordinates
+     */
+    void setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count);
 
     /**
      * @brief Creates a new GenericBuffer to store the indices.

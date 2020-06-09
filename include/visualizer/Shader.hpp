@@ -19,6 +19,7 @@
 #include <vector>
 
 #include <visualizer/AlignedMemory.hpp>
+#include <visualizer/Texture.hpp>
 #include <visualizer/UniqueTypes.hpp>
 
 namespace Visualizer {
@@ -53,7 +54,8 @@ enum class ParameterType : std::size_t {
     Mat4x2 = 22,
     Mat4x3 = 23,
     Mat4x4 = 24,
-    MaxIndex = Mat4x4
+    Sampler2D = 25,
+    MaxIndex = Sampler2D
 };
 
 template <typename T> struct ShaderTypeMapping {
@@ -183,6 +185,11 @@ template <> struct ShaderTypeMapping<glm::mat4x3> {
 template <> struct ShaderTypeMapping<glm::mat4x4> {
     static constexpr bool hasMapping{ true };
     static constexpr ParameterType mappedType{ ParameterType::Mat4x4 };
+};
+
+template <> struct ShaderTypeMapping<TextureSampler<Texture2D>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::Sampler2D };
 };
 
 using ParameterDeclaration = std::tuple<ParameterQualifier, ParameterType, std::size_t, std::string>;

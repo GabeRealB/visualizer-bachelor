@@ -11,7 +11,6 @@ struct CubeTickInfo {
     glm::vec3 startPos;
     int tickRate;
     int currentTick;
-    bool canTick;
 };
 
 }

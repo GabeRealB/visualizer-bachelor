@@ -123,6 +123,35 @@ void Mesh::setVertices(const glm::vec4* vertices, GLsizeiptr count)
     m_buffers[key] = std::const_pointer_cast<const VertexAttributeBuffer>(ptr);
 }
 
+void Mesh::setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count)
+{
+    bind();
+
+    auto bufferLocation{ m_attributesMap.find(MeshAttributes::TextureCoordinate0) };
+    if (bufferLocation != m_attributesMap.end()) {
+        auto bufferKeyValue{ m_buffers.find(bufferLocation->second) };
+        auto& buffer{ bufferKeyValue->second };
+        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        m_buffers.erase(bufferKeyValue);
+    }
+
+    const void* dataPtr{ nullptr };
+    if (coordinates != nullptr) {
+        dataPtr = glm::value_ptr(*coordinates);
+    }
+
+    auto ptr{ std::make_shared<VertexAttributeBuffer>(
+        1, 4, GL_FLOAT, false, 0, nullptr, count * sizeof(float) * 4, GL_STATIC_DRAW, dataPtr) };
+    ptr->bind();
+
+    unbind();
+    ptr->unbind();
+
+    auto key{ m_key++ };
+    m_attributesMap[MeshAttributes::TextureCoordinate0] = key;
+    m_buffers[key] = std::const_pointer_cast<const VertexAttributeBuffer>(ptr);
+}
+
 void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveType)
 {
     bind();

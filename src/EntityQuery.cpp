@@ -85,7 +85,7 @@ EntityQueryResult::EntityQueryResult(
 
 std::size_t EntityQueryResult::count() const { return m_entities.size(); }
 
-std::size_t EntityQueryResult::componentCount() const { return m_components.size() / count(); }
+std::size_t EntityQueryResult::componentCount() const { return m_typeIndexMap.size(); }
 
 std::span<const Entity> EntityQueryResult::entities() const { return { m_entities.data(), m_entities.size() }; }
 

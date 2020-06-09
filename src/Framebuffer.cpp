@@ -1,5 +1,6 @@
 #include <visualizer/Framebuffer.hpp>
 
+#include <GLFW/glfw3.h>
 #include <utility>
 
 namespace Visualizer {
@@ -9,6 +10,12 @@ Framebuffer::Framebuffer()
     , m_buffers{}
 {
     glGenFramebuffers(1, &m_id);
+}
+
+Framebuffer::Framebuffer(std::nullptr_t)
+    : m_id{ 0 }
+    , m_buffers{}
+{
 }
 
 Framebuffer::Framebuffer(Framebuffer&& other) noexcept
@@ -37,7 +44,25 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept
     return *this;
 }
 
+const Framebuffer& Framebuffer::defaultFramebuffer()
+{
+    static Framebuffer framebuffer{ nullptr };
+    return framebuffer;
+}
+
 GLuint Framebuffer::id() const { return m_id; }
+
+Rect Framebuffer::viewport() const
+{
+    if (m_viewport) {
+        return *m_viewport;
+    } else {
+        GLint width;
+        GLint height;
+        glfwGetWindowSize(glfwGetCurrentContext(), &width, &height);
+        return { .x = 0, .y = 0, .width = width, .height = height };
+    }
+}
 
 bool Framebuffer::isComplete() const
 {
@@ -45,6 +70,47 @@ bool Framebuffer::isComplete() const
     auto status{ glCheckFramebufferStatus(GL_READ_FRAMEBUFFER) };
     unbind(FramebufferBinding::Read);
     return status == GL_FRAMEBUFFER_COMPLETE;
+}
+
+const std::shared_ptr<Texture> Framebuffer::texture(FramebufferAttachment attachment) const
+{
+    if (auto pos{ m_buffers.find(attachment) }; pos != m_buffers.end()) {
+        if (std::holds_alternative<std::shared_ptr<Texture>>(pos->second)) {
+            return std::get<std::shared_ptr<Texture>>(pos->second);
+        } else {
+            return nullptr;
+        }
+    } else {
+        return nullptr;
+    }
+}
+
+const std::shared_ptr<Renderbuffer> Framebuffer::renderbuffer(FramebufferAttachment attachment) const
+{
+    if (auto pos{ m_buffers.find(attachment) }; pos != m_buffers.end()) {
+        if (std::holds_alternative<std::shared_ptr<Renderbuffer>>(pos->second)) {
+            return std::get<std::shared_ptr<Renderbuffer>>(pos->second);
+        } else {
+            return nullptr;
+        }
+    } else {
+        return nullptr;
+    }
+}
+
+std::optional<FramebufferBufferType> Framebuffer::bufferType(FramebufferAttachment attachment) const
+{
+    if (auto pos{ m_buffers.find(attachment) }; pos != m_buffers.end()) {
+        if (std::holds_alternative<std::shared_ptr<Texture>>(pos->second)) {
+            return FramebufferBufferType::Texture;
+        } else if (std::holds_alternative<std::shared_ptr<Renderbuffer>>(pos->second)) {
+            return FramebufferBufferType::Renderbuffer;
+        } else {
+            return std::nullopt;
+        }
+    } else {
+        return std::nullopt;
+    }
 }
 
 void Framebuffer::bind(FramebufferBinding binding) const
@@ -62,6 +128,9 @@ void Framebuffer::bind(FramebufferBinding binding) const
     default:
         return;
     }
+
+    auto view{ viewport() };
+    glViewport(view.x, view.y, view.width, view.height);
 }
 
 void Framebuffer::unbind(FramebufferBinding binding) const
@@ -78,6 +147,15 @@ void Framebuffer::unbind(FramebufferBinding binding) const
         break;
     default:
         return;
+    }
+}
+
+void Framebuffer::setViewport(GLint xCoord, GLint yCoord, GLsizei width, GLsizei height)
+{
+    if (width == 0 || height == 0) {
+        m_viewport = std::nullopt;
+    } else {
+        m_viewport = { .x = xCoord, .y = yCoord, .width = width, .height = height };
     }
 }
 
@@ -115,6 +193,8 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
     }
 
     bind(FramebufferBinding::ReadWrite);
+    texture->bind(TextureSlot::TmpSlot);
+    texture->unbind(TextureSlot::TmpSlot);
 
     switch (texture->type()) {
     case TextureType::Texture2D:

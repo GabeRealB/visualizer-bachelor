@@ -174,7 +174,7 @@ void Texture2D::unbind(TextureSlot slot)
 
 void Texture2D::addAttribute(TextureMinificationFilter filter)
 {
-    bind(TextureSlot::Slot0);
+    bind(TextureSlot::TmpSlot);
     switch (filter) {
     case TextureMinificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -197,12 +197,12 @@ void Texture2D::addAttribute(TextureMinificationFilter filter)
     default:
         break;
     }
-    unbind(TextureSlot::Slot0);
+    unbind(TextureSlot::TmpSlot);
 }
 
 void Texture2D::addAttribute(TextureMagnificationFilter filter)
 {
-    bind(TextureSlot::Slot0);
+    bind(TextureSlot::TmpSlot);
     switch (filter) {
     case TextureMagnificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -213,7 +213,7 @@ void Texture2D::addAttribute(TextureMagnificationFilter filter)
     default:
         break;
     }
-    unbind(TextureSlot::Slot0);
+    unbind(TextureSlot::TmpSlot);
 }
 
 void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFormat, GLint mipmapLevel, GLsizei width,
@@ -437,35 +437,12 @@ void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFor
         return;
     }
 
-    bind(TextureSlot::Slot0);
+    m_width = width;
+    m_height = height;
+
+    bind(TextureSlot::TmpSlot);
     glTexImage2D(GL_TEXTURE_2D, mipmapLevel, internalFormatGl, width, height, border, formatGl, GL_UNSIGNED_BYTE, data);
-    unbind(TextureSlot::Slot0);
-}
-
-TextureSampler::TextureSampler(const std::shared_ptr<Texture>& texture, TextureSlot slot)
-    : m_slot{ slot }
-    , m_texture{ texture }
-{
-}
-
-TextureSlot TextureSampler::slot() const { return m_slot; }
-
-std::weak_ptr<Texture> TextureSampler::texture() { return m_texture; }
-
-std::weak_ptr<const Texture> TextureSampler::texture() const { return m_texture; }
-
-void TextureSampler::bind() const
-{
-    if (auto tex{ m_texture.lock() }) {
-        tex->bind(m_slot);
-    }
-}
-
-void TextureSampler::unbind() const
-{
-    if (auto tex{ m_texture.lock() }) {
-        tex->unbind(m_slot);
-    }
+    unbind(TextureSlot::TmpSlot);
 }
 
 }

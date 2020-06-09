@@ -1,11 +1,16 @@
 #pragma once
 
-#include <glm/mat4x4.hpp>
+#include <memory>
+
+#include <visualizer/Framebuffer.hpp>
+#include <visualizer/RenderLayer.hpp>
 
 namespace Visualizer {
 
 struct Camera {
-    glm::mat4 projectionMatrix;
+    bool m_active;
+    RenderLayer m_visibleLayers;
+    std::shared_ptr<Framebuffer> m_renderTarget;
 };
 
 }

@@ -53,6 +53,13 @@ requires UniqueTypes<Ts...> std::optional<std::tuple<const Entity, Ts*...>> Enti
     return std::make_tuple(entity, static_cast<Ts*>(components[*typeIndex(getTypeId<Ts>())])...);
 }
 
+template <typename... Ts, typename Pred>
+requires NoCVRefs<Ts...>&& UniqueTypes<Ts...>&& std::predicate<Pred, const Ts*...> EntityQueryResult&
+EntityQueryResult::filter(Pred&& fn)
+{
+    return filter<Ts...>(std::forward<Pred>(fn), std::index_sequence_for<Ts...>{});
+}
+
 template <typename... Ts, typename Fn>
 requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void EntityQueryResult::forEach(Fn&& fn) const
 {
@@ -60,30 +67,175 @@ requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void EntityQueryResult:
 }
 
 template <typename... Ts, typename Fn>
-requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void EntityQueryResult::forEachWithEntity(Fn&& fn) const
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...> void EntityQueryResult::forEachWithEntity(
+    Fn&& fn) const
 {
     forEachWithEntity<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Ts*...> void EntityQueryResult::iterate(Fn&& fn) const
+{
+    iterate<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Entity, Ts*...> void EntityQueryResult::iterateWithEntity(
+    Fn&& fn) const
+{
+    iterateWithEntity<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn, typename Pred>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...>&&
+    std::predicate<Pred, const typename std::remove_cvref_t<Ts*>...> void
+    EntityQueryResult::forEach(Fn&& fn, Pred&& pred) const
+{
+    forEach<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn, typename Pred>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...>&&
+    std::predicate<Pred, Entity, const typename std::remove_cvref_t<Ts*>...> void
+    EntityQueryResult::forEachWithEntity(Fn&& fn, Pred&& pred) const
+{
+    forEachWithEntity<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
+}
+
+/**************************************************************************************************
+ ******************************** EntityQueryResult Implementation ********************************
+ **************************************************************************************************/
+
+template <typename... Ts, typename Pred, std::size_t... Is>
+requires NoCVRefs<Ts...>&& UniqueTypes<Ts...>&& std::predicate<Pred, const Ts*...> EntityQueryResult&
+EntityQueryResult::filter(Pred&& fn, std::index_sequence<Is...>)
+{
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return *this;
+    }
+
+    auto numComponents{ componentCount() };
+
+    for (std::size_t i = 0; i < count(); ++i) {
+        auto entityTuple{ *at<Ts...>(i) };
+        if (!std::invoke<Pred, const Ts*...>(
+                std::forward<Pred>(fn), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...)) {
+
+            auto entityLocation{ m_entities.begin() + i };
+            auto componentsRangeBegin{ m_components.begin() + (i * numComponents) };
+            auto componentsRangeEnd{ componentsRangeBegin + numComponents };
+
+            --i;
+            m_entities.erase(entityLocation);
+            m_components.erase(componentsRangeBegin, componentsRangeEnd);
+        }
+    }
+    return *this;
 }
 
 template <typename... Ts, typename Fn, std::size_t... Is>
 requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void EntityQueryResult::forEach(
     Fn&& fn, std::index_sequence<Is...>) const
 {
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
     for (std::size_t i = 0; i < count(); ++i) {
-        auto entityTuple{ at<typename std::remove_cvref_t<Ts>...>(i) };
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
         std::invoke<Fn, Ts*...>(
-            std::forward<Fn>(fn), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(*entityTuple)))...);
+            std::forward<Fn>(fn), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
     }
 }
 
 template <typename... Ts, typename Fn, std::size_t... Is>
-requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...> void EntityQueryResult::forEachWithEntity(
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...> void EntityQueryResult::forEachWithEntity(
     Fn&& fn, std::index_sequence<Is...>) const
 {
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
     for (std::size_t i = 0; i < count(); ++i) {
-        auto entityTuple{ at<typename std::remove_cvref_t<Ts>...>(i) };
-        std::invoke<Fn, Entity, Ts*...>(std::forward<Fn>(fn), std::forward<Entity>(std::get<0>(*entityTuple)),
-            std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(*entityTuple)))...);
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
+        auto entity{ std::get<0>(entityTuple) };
+        std::invoke<Fn, Entity, Ts*...>(std::forward<Fn>(fn), std::forward<Entity>(entity),
+            std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
+    }
+}
+
+template <typename... Ts, typename Fn, std::size_t... Is>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Ts*...> void EntityQueryResult::iterate(
+    Fn&& fn, std::index_sequence<Is...>) const
+{
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
+    for (std::size_t i = 0; i < count(); ++i) {
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
+        std::invoke<Fn, std::size_t, Ts*...>(std::forward<Fn>(fn), std::forward<std::size_t>(i),
+            std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
+    }
+}
+
+template <typename... Ts, typename Fn, std::size_t... Is>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, std::size_t, Entity, Ts*...> void EntityQueryResult::iterateWithEntity(
+    Fn&& fn, std::index_sequence<Is...>) const
+{
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
+    for (std::size_t i = 0; i < count(); ++i) {
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
+        auto entity{ std::get<0>(entityTuple) };
+        std::invoke<Fn, std::size_t, Entity, Ts*...>(std::forward<Fn>(fn), std::forward<std::size_t>(i),
+            std::forward<Entity>(entity), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
+    }
+}
+
+template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Ts*...>&&
+    std::predicate<Pred, const typename std::remove_cvref_t<Ts*>...> void
+    EntityQueryResult::forEach(Fn&& fn, Pred&& pred, std::index_sequence<Is...>) const
+{
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
+    for (std::size_t i = 0; i < count(); ++i) {
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
+
+        if (std::invoke<Pred, const typename std::remove_cvref_t<Ts*>...>(std::forward<Pred>(pred),
+                std::forward<const typename std::remove_cvref_t<Ts*>>(
+                    static_cast<const typename std::remove_cvref_t<Ts*>>(std::get<Is + 1>(entityTuple)))...)) {
+            std::invoke<Fn, Ts*...>(
+                std::forward<Fn>(fn), std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
+        }
+    }
+}
+
+template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+requires UniqueTypes<Ts...>&& std::invocable<Fn, Entity, Ts*...>&&
+    std::predicate<Pred, Entity, const typename std::remove_cvref_t<Ts*>...> void
+    EntityQueryResult::forEachWithEntity(Fn&& fn, Pred&& pred, std::index_sequence<Is...>) const
+{
+    if (!contains<typename std::remove_cvref_t<Ts>...>()) {
+        return;
+    }
+
+    for (std::size_t i = 0; i < count(); ++i) {
+        auto entityTuple{ *at<typename std::remove_cvref_t<Ts>...>(i) };
+        auto entity{ std::get<0>(entityTuple) };
+
+        if (std::invoke<Pred, Entity, const typename std::remove_cvref_t<Ts*>...>(std::forward<Pred>(pred),
+                std::forward<Entity>(entity),
+                std::forward<const typename std::remove_cvref_t<Ts*>>(
+                    static_cast<const typename std::remove_cvref_t<Ts*>>(std::get<Is + 1>(entityTuple)))...)) {
+            std::invoke<Fn, Entity, Ts*...>(std::forward<Fn>(fn), std::forward<Entity>(entity),
+                std::forward<Ts*>(static_cast<Ts*>(std::get<Is + 1>(entityTuple)))...);
+        }
     }
 }
 

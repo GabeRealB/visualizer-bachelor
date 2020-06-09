@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <glad/glad.h>
 #include <memory>
@@ -22,7 +23,8 @@ enum class TextureSlot : std::size_t {
     Slot12 = 12,
     Slot13 = 13,
     Slot14 = 14,
-    Slot15 = 15
+    Slot15 = 15,
+    TmpSlot = 15
 };
 
 enum class TextureType { Texture2D };
@@ -90,25 +92,41 @@ private:
     std::size_t m_height;
 };
 
-class TextureSampler {
+template <typename T> requires std::derived_from<T, Texture> class TextureSampler {
 public:
-    TextureSampler(const std::shared_ptr<Texture>& texture, TextureSlot slot);
-    TextureSampler(const TextureSampler& other) = default;
-    TextureSampler(TextureSampler&& other) = default;
+    TextureSampler(const std::shared_ptr<T>& texture, TextureSlot slot)
+        : m_slot{ slot }
+        , m_texture{ texture }
+    {
+    }
 
-    TextureSampler& operator=(const TextureSampler& other) = default;
-    TextureSampler& operator=(TextureSampler&& other) noexcept = default;
+    TextureSampler(const TextureSampler<T>& other) = default;
+    TextureSampler(TextureSampler<T>&& other) noexcept = default;
 
-    TextureSlot slot() const;
-    std::weak_ptr<Texture> texture();
-    std::weak_ptr<const Texture> texture() const;
+    TextureSampler<T>& operator=(const TextureSampler<T>& other) = default;
+    TextureSampler<T>& operator=(TextureSampler<T>&& other) noexcept = default;
 
-    void bind() const;
-    void unbind() const;
+    TextureSlot slot() const { return m_slot; }
+    std::weak_ptr<T> texture() { return m_texture; }
+    std::weak_ptr<const T> texture() const { return m_texture; }
+
+    void bind() const
+    {
+        if (auto tex{ m_texture.lock() }) {
+            tex->bind(m_slot);
+        }
+    }
+
+    void unbind() const
+    {
+        if (auto tex{ m_texture.lock() }) {
+            tex->unbind(m_slot);
+        }
+    }
 
 private:
     TextureSlot m_slot;
-    std::weak_ptr<Texture> m_texture;
+    std::weak_ptr<T> m_texture;
 };
 
 }
