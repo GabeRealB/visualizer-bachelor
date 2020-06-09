@@ -12,7 +12,7 @@ namespace Visualizer {
 
 class MeshDrawingSystem : public System {
 public:
-    MeshDrawingSystem(std::shared_ptr<Texture2D> texture);
+    MeshDrawingSystem();
 
     void run(void* data) final;
     void initialize() final;
@@ -21,7 +21,6 @@ public:
 private:
     EntityQuery m_meshQuery;
     EntityQuery m_cameraQuery;
-    Framebuffer m_frameBuffer;
     std::shared_ptr<ComponentManager> m_componentManager;
 };
 
