@@ -31,8 +31,10 @@ endif ()
 set(VISUALIZER_INCLUDES
         ../include/visualizer/AlignedMemory.hpp
         ../include/visualizer/Camera.hpp
+        ../include/visualizer/CameraInitializationSystem.hpp
         ../include/visualizer/CameraMovementSystem.hpp
         ../include/visualizer/ComponentManager.hpp
+        ../include/visualizer/CompositingSystem.hpp
         ../include/visualizer/CubeInitializationSystem.hpp
         ../include/visualizer/CubeMovementSystem.hpp
         ../include/visualizer/CubeTickInfo.hpp
@@ -48,13 +50,14 @@ set(VISUALIZER_INCLUDES
         ../include/visualizer/GenericBuffer.hpp
         ../include/visualizer/Mesh.hpp
         ../include/visualizer/MeshDrawingSystem.hpp
+        ../include/visualizer/Parent.hpp
         ../include/visualizer/Renderbuffer.hpp
+        ../include/visualizer/RenderLayer.hpp
         ../include/visualizer/Scene.hpp
         ../include/visualizer/Shader.hpp
         ../include/visualizer/System.hpp
         ../include/visualizer/SystemManager.hpp
         ../include/visualizer/SystemManager.impl
-        ../include/visualizer/Systems.hpp
         ../include/visualizer/Texture.hpp
         ../include/visualizer/Transform.hpp
         ../include/visualizer/TupleUtils.hpp
@@ -67,8 +70,10 @@ set(VISUALIZER_INCLUDES
         )
 
 set(VISUALIZER_SRC
+        CameraInitializationSystem.cpp
         CameraMovementSystem.cpp
         ComponentManager.cpp
+        CompositingSystem.cpp
         CubeInitializationSystem.cpp
         CubeMovementSystem.cpp
         Entity.cpp
@@ -84,7 +89,6 @@ set(VISUALIZER_SRC
         Scene.cpp
         Shader.cpp
         SystemManager.cpp
-        Systems.cpp
         Texture.cpp
         Transform.cpp
         VertexAttributeBuffer.cpp
