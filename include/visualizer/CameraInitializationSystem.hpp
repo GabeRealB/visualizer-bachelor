@@ -6,20 +6,17 @@
 #include <visualizer/EntityArchetype.hpp>
 #include <visualizer/EntityManager.hpp>
 #include <visualizer/EntityQuery.hpp>
-#include <visualizer/Mesh.hpp>
-#include <visualizer/Shader.hpp>
 #include <visualizer/System.hpp>
-#include <visualizer/VisualizerConfiguration.hpp>
+#include <visualizer/Texture.hpp>
 
 namespace Visualizer {
 
-class CubeInitializationSystem : public System {
+class CameraInitializationSystem : public System {
 public:
-    CubeInitializationSystem();
+    CameraInitializationSystem();
 
     struct Data {
-        const VisualizerConfiguration& m_config;
-        const std::shared_ptr<ShaderProgram>& m_shader;
+        const std::vector<std::shared_ptr<Texture2D>>& m_textures;
     };
 
     void initialize() final;
@@ -28,13 +25,11 @@ public:
     void run(Data& data);
 
 private:
-    std::shared_ptr<Mesh> m_cubeMesh;
-    EntityArchetype m_cubeArchetype;
-    EntityArchetype m_childrenArchetype;
-    EntityQuery m_cubeQuery;
-    EntityQuery m_childrenQuery;
+    EntityArchetype m_cameraArchetype;
+    EntityQuery m_cameraQuery;
 
     std::shared_ptr<EntityManager> m_entityManager;
     std::shared_ptr<ComponentManager> m_componentManager;
 };
+
 }

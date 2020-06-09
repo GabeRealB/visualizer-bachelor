@@ -2,156 +2,50 @@
 
 #include <visualizer/Camera.hpp>
 #include <visualizer/CubeTickInfo.hpp>
-#include <visualizer/Mesh.hpp>
+#include <visualizer/Parent.hpp>
 #include <visualizer/Transform.hpp>
 
 namespace Visualizer {
 
-CubeInitializationSystem::CubeInitializationSystem(
-    Resolution resolution, OuterCube outerCube, std::shared_ptr<Mesh> cubeMesh)
-    : m_resolution{ resolution }
-    , m_outerCube{ std::move(outerCube) }
-    , m_cubeMesh{ std::move(cubeMesh) }
-    , m_cubeArchetype{ EntityArchetype::create<Transform, CubeTickInfo, std::shared_ptr<Mesh>, Material>() }
-    , m_cameraArchetype{ EntityArchetype::create<Camera, Transform>() }
+std::shared_ptr<Mesh> generateCubeMesh()
+{
+    auto mesh{ std::make_shared<Mesh>() };
+
+    constexpr glm::vec4 vertices[]{
+        { -0.5f, -0.5f, 0.5f, 1.0f }, // lower-left-front
+        { 0.5f, -0.5f, 0.5f, 1.0f }, // lower-right-front
+        { 0.5f, 0.5f, 0.5f, 1.0f }, // top-right-front
+        { -0.5f, 0.5f, 0.5f, 1.0f }, // top-left-front
+
+        { -0.5f, -0.5f, -0.5f, 1.0f }, // lower-left-back
+        { 0.5f, -0.5f, -0.5f, 1.0f }, // lower-right-back
+        { 0.5f, 0.5f, -0.5f, 1.0f }, // top-right-back
+        { -0.5f, 0.5f, -0.5f, 1.0f }, // top-left-back
+    };
+
+    constexpr GLuint indices[]{
+        0, 1, 2, 0, 2, 3, // front
+        3, 2, 6, 3, 6, 7, // top
+        1, 5, 6, 1, 6, 2, // right
+        4, 0, 3, 4, 3, 7, // left
+        4, 5, 1, 4, 1, 0, // bottom
+        5, 4, 7, 5, 7, 6 // back
+    };
+
+    mesh->setVertices(vertices, sizeof(vertices) / sizeof(glm::vec4));
+    mesh->setIndices(indices, sizeof(indices) / sizeof(GLuint), GL_TRIANGLES);
+    return mesh;
+}
+
+CubeInitializationSystem::CubeInitializationSystem()
+    : m_cubeMesh{ generateCubeMesh() }
+    , m_cubeArchetype{ EntityArchetype::create<Transform, std::shared_ptr<Mesh>, Material, RenderLayer>() }
+    , m_childrenArchetype{ EntityArchetype::with<CubeTickInfo, Parent>(m_cubeArchetype) }
     , m_cubeQuery{ m_cubeArchetype }
-    , m_cameraQuery{ m_cameraArchetype }
+    , m_childrenQuery{ m_childrenArchetype }
     , m_entityManager{}
     , m_componentManager{}
 {
-}
-
-void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
-{
-    std::vector<const InnerCube*> innerCubes{};
-    std::vector<glm::vec3> positions{};
-    std::vector<CubeTickInfo> tickInfos{};
-    std::vector<glm::vec4> colors{};
-    innerCubes.push_back(static_cast<const InnerCube*>(&m_outerCube));
-    positions.emplace_back();
-    tickInfos.emplace_back();
-    colors.emplace_back(static_cast<float>(m_outerCube.color[0]) / 255.0f,
-        static_cast<float>(m_outerCube.color[1]) / 255.0f, static_cast<float>(m_outerCube.color[2]) / 255.0f, 0.6f);
-
-    for (auto child{ m_outerCube.innerCube.get() }; child != nullptr; child = child->innerCube.get()) {
-        innerCubes.push_back(child);
-        positions.emplace_back();
-        tickInfos.emplace_back();
-        colors.emplace_back(static_cast<float>(child->color[0]) / 255.0f, static_cast<float>(child->color[1]) / 255.0f,
-            static_cast<float>(child->color[2]) / 255.0f, 0.6f);
-    }
-
-    auto entities{ m_entityManager->addEntities(innerCubes.size(), m_cubeArchetype) };
-    if (entities.size() == 0) {
-        return;
-    }
-
-    for (std::size_t i = 0; i < innerCubes.size(); ++i) {
-        if (i > 0) {
-            auto current{ innerCubes[i] };
-            auto previous{ innerCubes[i - 1] };
-            if ((current->tiling[0] > previous->tiling[0]) || (current->tiling[1] > previous->tiling[1])
-                || (current->tiling[2] > previous->tiling[2])) {
-                return;
-            }
-
-            positions[i] = positions[i - 1]
-                + glm::vec3{ -(float)m_outerCube.tiling[0] / 2, (float)m_outerCube.tiling[1] / 2,
-                      -(float)m_outerCube.tiling[2] / 2 }
-                + glm::vec3{ (float)current->tiling[0] / 2, -(float)current->tiling[1] / 2,
-                      (float)current->tiling[2] / 2 };
-        } else {
-            positions[i] = { m_outerCube.position[0], m_outerCube.position[1], m_outerCube.position[2] };
-        }
-    }
-
-    for (std::size_t i = innerCubes.size() - 1; i + 1 != 0; --i) {
-        auto current{ innerCubes[i] };
-        auto& currentTickInfo{ tickInfos[i] };
-        if (i != innerCubes.size() - 1) {
-            currentTickInfo.tickRate = tickInfos[i + 1].tickRate
-                + (tickInfos[i + 1].limits[0] * tickInfos[i + 1].limits[1] * tickInfos[i + 1].limits[2]);
-        } else {
-            currentTickInfo.tickRate = 1;
-        }
-
-        if (i > 0) {
-            auto previous{ innerCubes[i - 1] };
-            currentTickInfo.limits = { (previous->tiling[0] / current->tiling[0]) - 1,
-                (previous->tiling[1] / current->tiling[1]) - 1, (previous->tiling[2] / current->tiling[2]) - 1 };
-        } else {
-            currentTickInfo.limits = { 0, 0, 0 };
-        }
-
-        currentTickInfo.currentTick = 0;
-        currentTickInfo.currentIter = { 0, 0, 0 };
-        currentTickInfo.canTick = i != 0;
-
-        switch (current->traversalOrder) {
-        case TraversalOrder::XYZ:
-            currentTickInfo.order = { 0, 1, 2 };
-            break;
-        case TraversalOrder::XZY:
-            currentTickInfo.order = { 0, 2, 1 };
-            break;
-        case TraversalOrder::YXZ:
-            currentTickInfo.order = { 1, 0, 2 };
-            break;
-        case TraversalOrder::YZX:
-            currentTickInfo.order = { 2, 0, 1 };
-            break;
-        case TraversalOrder::ZXY:
-            currentTickInfo.order = { 1, 2, 0 };
-            break;
-        case TraversalOrder::ZYX:
-            currentTickInfo.order = { 2, 1, 0 };
-            break;
-        }
-
-        if (i == 0) {
-            break;
-        }
-    }
-
-    Material cubeMaterial{ ShaderEnvironment{ *data.shader, ParameterQualifier::Material }, std::move(data.shader) };
-    Transform startTransform{ .rotation = { 1.0, 0.0, 0.0, 0.0 }, .position = { 0, 0, 0 }, .scale = { 1, 1, 1 } };
-
-    auto cubeQueryResult{ m_cubeQuery.query(*m_componentManager) };
-    cubeQueryResult.forEach<Transform, CubeTickInfo, std::shared_ptr<Mesh>, Material>([&, &cubeMesh = m_cubeMesh](
-                                                                                          Transform* transform,
-                                                                                          CubeTickInfo* tickInfo,
-                                                                                          std::shared_ptr<Mesh>* mesh,
-                                                                                          Material* material) {
-        *transform = startTransform;
-        transform->position = positions.back();
-        transform->scale = { innerCubes.back()->tiling[0], innerCubes.back()->tiling[1], innerCubes.back()->tiling[2] };
-        *tickInfo = tickInfos.back();
-        tickInfo->startPos = transform->position;
-        *mesh = cubeMesh;
-        *material = cubeMaterial;
-        material->m_materialVariables.set("diffuseColor", colors.back());
-        innerCubes.pop_back();
-        positions.pop_back();
-        tickInfos.pop_back();
-        colors.pop_back();
-    });
-
-    auto projectionMatrix{ glm::perspective(
-        64.0f, static_cast<float>(m_resolution[0]) / static_cast<float>(m_resolution[1]), 0.1f, 1000.0f) };
-
-    m_entityManager->addEntity(m_cameraArchetype);
-    auto cameraQueryResult{ m_cameraQuery.query(*m_componentManager) };
-    cameraQueryResult.forEach<Camera, Transform>([&projectionMatrix](Camera* camera, Transform* transform) {
-        *camera = { projectionMatrix };
-        *transform = { .rotation = { 1.0, 0.0, 0.0, 0.0 }, .position = { 0, 0, 20 }, .scale = { 1, 1, 1 } };
-    });
-}
-
-void CubeInitializationSystem::run(void* data)
-{
-    if (data) {
-        run(*static_cast<Data*>(data));
-    }
 }
 
 void CubeInitializationSystem::initialize()
@@ -164,6 +58,119 @@ void CubeInitializationSystem::terminate()
 {
     m_entityManager = nullptr;
     m_componentManager = nullptr;
+}
+
+void CubeInitializationSystem::run(void* data)
+{
+    if (data) {
+        run(*static_cast<Data*>(data));
+    }
+}
+
+void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
+{
+    for (std::size_t i = 0; i < data.m_config.cubes.size(); i++) {
+        std::vector<const InnerCube*> innerCubes{};
+        std::vector<Transform> transforms{};
+        std::vector<CubeTickInfo> tickInfos{};
+        std::vector<glm::vec4> colors{};
+
+        for (auto child{ static_cast<const InnerCube*>(&data.m_config.cubes[i]) }; child != nullptr;
+             child = child->innerCube.get()) {
+            innerCubes.push_back(child);
+            colors.emplace_back(glm::vec3(child->color[0], child->color[1], child->color[2]) / 255.0f, 0.6f);
+        }
+
+        transforms.reserve(innerCubes.size());
+        tickInfos.reserve(innerCubes.size() - 1);
+        for (std::size_t j = 0; j < innerCubes.size(); ++j) {
+            if (j == 0) {
+                auto& rootCube{ data.m_config.cubes[i] };
+
+                transforms.push_back(Transform{ .rotation = glm::identity<glm::quat>(),
+                    .position = { rootCube.position[0], rootCube.position[1], rootCube.position[2] },
+                    .scale = { rootCube.tiling[0], rootCube.tiling[1], rootCube.tiling[2] } });
+            } else {
+                auto& parent{ *innerCubes[j - 1] };
+                auto& child{ *innerCubes[j] };
+
+                auto parentTiling{ glm::ivec3{ parent.tiling[0], parent.tiling[1], parent.tiling[2] } };
+                auto childTiling{ glm::ivec3{ child.tiling[0], child.tiling[1], child.tiling[2] } };
+
+                if ((childTiling.x > parentTiling.x) || (childTiling.y > parentTiling.y)
+                    || (childTiling.z > parentTiling.z)) {
+                    return;
+                }
+
+                auto scale{ glm::vec3(childTiling) / glm::vec3(parentTiling) };
+                auto halfScale{ scale / 2.0f };
+
+                transforms.push_back(Transform{ .rotation = glm::identity<glm::quat>(),
+                    .position = glm::vec3{ -0.5f + halfScale.x, 0.5f - halfScale.y, -0.5f + halfScale.z },
+                    .scale = scale });
+
+                CubeTickInfo tickInfo{};
+
+                auto maxIterations{ parentTiling / childTiling };
+                tickInfo.limits = maxIterations - 1;
+                tickInfo.currentTick = 0;
+                tickInfo.currentIter = { 0, 0, 0 };
+                tickInfo.tickRate = glm::compMul(childTiling);
+                switch (innerCubes[j]->traversalOrder) {
+                case TraversalOrder::XYZ:
+                    tickInfo.order = { 0, 1, 2 };
+                    break;
+                case TraversalOrder::XZY:
+                    tickInfo.order = { 0, 2, 1 };
+                    break;
+                case TraversalOrder::YXZ:
+                    tickInfo.order = { 1, 0, 2 };
+                    break;
+                case TraversalOrder::YZX:
+                    tickInfo.order = { 2, 0, 1 };
+                    break;
+                case TraversalOrder::ZXY:
+                    tickInfo.order = { 1, 2, 0 };
+                    break;
+                case TraversalOrder::ZYX:
+                    tickInfo.order = { 2, 1, 0 };
+                    break;
+                }
+
+                tickInfos.push_back(tickInfo);
+            }
+        }
+
+        auto rootEntity{ m_entityManager->addEntity(m_cubeArchetype) };
+        auto childrenEntities{ m_entityManager->addEntities(innerCubes.size() - 1, m_childrenArchetype) };
+        Material cubeMaterial{ ShaderEnvironment{ *data.m_shader, ParameterQualifier::Material }, data.m_shader };
+
+        m_cubeQuery.query(*m_componentManager)
+            .filter<RenderLayer>([](const RenderLayer* layer) -> bool { return layer->m_layerMask == 0; })
+            .iterate<Transform, std::shared_ptr<Mesh>, Material, RenderLayer>(
+                [&, &cubeMesh = m_cubeMesh](std::size_t j, Transform* transform, std::shared_ptr<Mesh>* mesh,
+                    Material* material, RenderLayer* layer) {
+                    *transform = transforms[j];
+                    *mesh = cubeMesh;
+                    *material = cubeMaterial;
+                    material->m_materialVariables.set("diffuseColor", colors[j]);
+
+                    *layer = RenderLayer::layer(i);
+                });
+
+        m_childrenQuery.query(*m_componentManager)
+            .filter<Parent>([](const Parent* parent) -> bool { return parent->m_parent.id == 0; })
+            .iterate<CubeTickInfo, Parent>([&](std::size_t j, CubeTickInfo* tickInfo, Parent* parent) {
+                *tickInfo = tickInfos[j];
+                tickInfo->startPos = transforms[j + 1].position;
+
+                if (j == 0) {
+                    parent->m_parent = rootEntity;
+                } else {
+                    parent->m_parent = childrenEntities[j - 1];
+                }
+            });
+    }
 }
 
 }
