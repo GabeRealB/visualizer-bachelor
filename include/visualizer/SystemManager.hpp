@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -13,6 +14,20 @@
 #include <visualizer/UniqueTypes.hpp>
 
 namespace Visualizer {
+
+class SystemParameterMap {
+public:
+    SystemParameterMap() = default;
+
+    void* retrieve(TypeId typeId) const;
+    void insert(TypeId typeId, void* parameter);
+
+    template <typename T> requires NoCVRefs<T>&& std::derived_from<T, System> void* retrieve() const;
+    template <typename T> requires NoCVRefs<T>&& std::derived_from<T, System> void insert(void* parameter);
+
+private:
+    std::unordered_map<TypeId, void*> m_parameters;
+};
 
 class SystemManager : public GenericManager {
 public:
@@ -28,7 +43,7 @@ public:
     std::shared_ptr<System> getSystem(std::string_view pass, TypeId typeId) const;
     void setSystem(std::string_view pass, TypeId typeId, std::shared_ptr<System> system);
 
-    void run(std::string_view pass, void* data = nullptr);
+    void run(std::string_view pass, const SystemParameterMap& parameters = {});
 
     template <typename T>
     requires NoCVRefs<T>&& std::derived_from<T, System> bool hasSystem(std::string_view pass) const;
@@ -43,8 +58,8 @@ public:
 
 private:
     struct SystemPass {
-        std::vector<std::shared_ptr<System>> m_systems;
         std::unordered_map<TypeId, std::size_t> m_systemMap;
+        std::vector<std::tuple<std::shared_ptr<System>, TypeId>> m_systems;
     };
 
     struct StringCmp {

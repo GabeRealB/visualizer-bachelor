@@ -2,12 +2,23 @@
 
 namespace Visualizer {
 
+void* SystemParameterMap::retrieve(TypeId typeId) const
+{
+    if (auto pos{ m_parameters.find(typeId) }; pos != m_parameters.end()) {
+        return pos->second;
+    } else {
+        return nullptr;
+    }
+}
+
+void SystemParameterMap::insert(TypeId typeId, void* parameter) { m_parameters.insert_or_assign(typeId, parameter); }
+
 SystemManager::~SystemManager()
 {
     for (auto& pass : m_passes) {
         for (auto& system : pass.m_systems) {
-            if (system) {
-                system->terminate();
+            if (std::get<0>(system)) {
+                std::get<0>(system)->terminate();
             }
         }
     }
@@ -27,7 +38,7 @@ std::shared_ptr<System> SystemManager::getSystem(std::string_view pass, TypeId t
     if (auto pos{ m_passesMap.find(pass) }; pos != m_passesMap.end()) {
         auto& systemPass{ m_passes[pos->second] };
         if (auto systemPos{ systemPass.m_systemMap.find(typeId) }; systemPos != systemPass.m_systemMap.end()) {
-            return systemPass.m_systems[systemPos->second];
+            return std::get<0>(systemPass.m_systems[systemPos->second]);
         } else {
             return nullptr;
         }
@@ -48,24 +59,24 @@ void SystemManager::setSystem(std::string_view pass, TypeId typeId, std::shared_
 
     if (auto pos{ m_passesMap.find(pass) }; pos != m_passesMap.end()) {
         auto& systemPass{ m_passes[pos->second] };
-        systemPass.m_systems.push_back(std::move(system));
+        systemPass.m_systems.emplace_back(std::move(system), typeId);
         systemPass.m_systemMap.insert_or_assign(typeId, systemPass.m_systems.size() - 1);
     } else {
         auto systemPass{ SystemPass{} };
-        systemPass.m_systems.push_back(std::move(system));
+        systemPass.m_systems.emplace_back(std::move(system), typeId);
         systemPass.m_systemMap.insert({ typeId, 0 });
         m_passes.push_back(std::move(systemPass));
         m_passesMap.insert({ std::string{ pass.data(), pass.size() }, m_passes.size() - 1 });
     }
 }
 
-void SystemManager::run(std::string_view pass, void* data)
+void SystemManager::run(std::string_view pass, const SystemParameterMap& parameters)
 {
     if (auto pos{ m_passesMap.find(pass) }; pos != m_passesMap.end()) {
         auto& systemPass{ m_passes[pos->second] };
 
         for (auto& system : systemPass.m_systems) {
-            system->run(data);
+            std::get<0>(system)->run(parameters.retrieve(std::get<1>(system)));
         }
     }
 }

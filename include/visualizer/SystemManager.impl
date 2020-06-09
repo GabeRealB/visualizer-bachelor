@@ -2,6 +2,17 @@
 
 namespace Visualizer {
 
+template <typename T> requires NoCVRefs<T>&& std::derived_from<T, System> void* SystemParameterMap::retrieve() const
+{
+    return retrieve(getTypeId<T>());
+}
+
+template <typename T>
+requires NoCVRefs<T>&& std::derived_from<T, System> void SystemParameterMap::insert(void* parameter)
+{
+    insert(getTypeId<T>(), parameter);
+}
+
 template <typename T>
 requires NoCVRefs<T>&& std::derived_from<T, System> bool SystemManager::hasSystem(std::string_view pass) const
 {
