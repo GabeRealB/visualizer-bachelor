@@ -17,7 +17,8 @@ set(SUBMODULES doctest
         glad
         glfw
         glm
-        json)
+        json
+        stb)
 
 # Disable unneeded Doctest targets
 set(DOCTEST_WITH_TESTS OFF CACHE BOOL "" FORCE)

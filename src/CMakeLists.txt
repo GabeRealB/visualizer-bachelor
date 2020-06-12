@@ -99,7 +99,7 @@ set(VISUALIZER_SRC
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
-target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm glfw glad)
+target_link_libraries(visualizer PUBLIC nlohmann_json::nlohmann_json glm::glm glfw glad stb)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
 foreach (FLAG IN LISTS COMPILER_FLAGS)
     target_compile_options(visualizer PUBLIC ${FLAG})
