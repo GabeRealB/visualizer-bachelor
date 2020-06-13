@@ -52,16 +52,20 @@ void CameraMovementSystem::run(void*)
     m_mouseX = mouseX;
     m_mouseY = mouseY;
 
-    glm::vec3 forward{ 0.0f, 0.0f, 1.0f };
-    glm::vec3 right{ 1.0f, 0.0f, 0.0f };
-    glm::vec3 up{ 0.0f, 1.0f, 0.0f };
+    constexpr glm::vec3 forward{ 0.0f, 0.0f, 1.0f };
+    constexpr glm::vec3 right{ 1.0f, 0.0f, 0.0f };
+    constexpr glm::vec3 up{ 0.0f, 1.0f, 0.0f };
 
     glm::vec3 mouseRotation{ m_rotationSpeed * mouseYOffset, m_rotationSpeed * mouseXOffset, 0.0 };
 
     m_cameraQuery.query(*m_componentManager)
         .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active; })
         .forEach<Transform>([&](Transform* transform) {
-            auto rotation{ glm::quat{ glm::eulerAngles(transform->rotation) + mouseRotation } };
+            auto localRight{ transform->rotation * right };
+            auto upRotation{ glm::angleAxis(mouseRotation.y, up) };
+            auto rightRotation{ glm::angleAxis(mouseRotation.x, localRight) };
+
+            auto rotation{ upRotation * rightRotation * transform->rotation };
             transform->rotation = rotation;
 
             auto rotatedForwards{ rotation * forward };

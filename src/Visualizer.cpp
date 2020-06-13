@@ -37,7 +37,7 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
     glfwSetWindowAspectRatio(window, config->resolution[0], config->resolution[1]);
-    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
     glfwMakeContextCurrent(window);
