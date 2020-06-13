@@ -312,7 +312,7 @@ public:
     }
 
     template <typename T>
-    requires ShaderTypeMapping<T>::hasMapping bool set(std::string_view name, std::span<const T> values)
+    requires ShaderTypeMapping<T>::hasMapping bool setArray(std::string_view name, std::span<const T> values)
     {
         auto dataPtr{ getPtr<T>(name, values.size()) };
 
@@ -382,7 +382,7 @@ public:
             glLinkProgram(program->m_program);
 
             GLint testVal;
-            glGetShaderiv(program->m_program, GL_LINK_STATUS, &testVal);
+            glGetProgramiv(program->m_program, GL_LINK_STATUS, &testVal);
             if (testVal == GL_FALSE) {
                 char infoLog[1024];
                 glGetProgramInfoLog(program->m_program, 1024, NULL, infoLog);

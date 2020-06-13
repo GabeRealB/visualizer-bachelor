@@ -1,5 +1,8 @@
 #include <visualizer/Texture.hpp>
 
+#define STBI_WINDOWS_UTF8
+
+#include <stb/stb_image.h>
 #include <utility>
 
 namespace Visualizer {
@@ -23,6 +26,55 @@ Texture2D::~Texture2D()
 {
     if (m_id != 0) {
         glDeleteTextures(1, &m_id);
+    }
+}
+
+std::shared_ptr<Texture2D> Texture2D::fromFile(const std::filesystem::path& filePath)
+{
+    if (!std::filesystem::exists(filePath)) {
+        return nullptr;
+    } else {
+        int width;
+        int height;
+        int channels;
+        // stbi_uc* data{ nullptr };
+
+        auto deleter = [](stbi_uc* ptr) { stbi_image_free(ptr); };
+        std::unique_ptr<stbi_uc, decltype(deleter)> data{ nullptr };
+
+#ifdef _WIN32
+        auto utf8_path{ filePath.string() };
+        data = std::unique_ptr<stbi_uc, decltype(deleter)>{ stbi_load(utf8_path.c_str(), &width, &height, &channels, 0),
+            deleter };
+#else
+        data = std::unique_ptr<stbi_uc, decltype(deleter)>{ stbi_load(filePath.c_str(), &width, &height, &channels, 0),
+            deleter };
+#endif
+
+        if (data == nullptr) {
+            return nullptr;
+        }
+
+        auto texture{ std::make_shared<Texture2D>() };
+
+        switch (channels) {
+        case 1:
+            texture->copyData(TextureFormat::R, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            break;
+        case 2:
+            texture->copyData(TextureFormat::RG, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            break;
+        case 3:
+            texture->copyData(TextureFormat::RGB, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            break;
+        case 4:
+            texture->copyData(TextureFormat::RGBA, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            break;
+        default:
+            return nullptr;
+        }
+
+        return texture;
     }
 }
 
@@ -441,6 +493,8 @@ void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFor
     m_height = height;
 
     bind(TextureSlot::TmpSlot);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexImage2D(GL_TEXTURE_2D, mipmapLevel, internalFormatGl, width, height, border, formatGl, GL_UNSIGNED_BYTE, data);
     unbind(TextureSlot::TmpSlot);
 }

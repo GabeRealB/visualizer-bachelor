@@ -2,6 +2,7 @@
 
 #include <concepts>
 #include <cstddef>
+#include <filesystem>
 #include <glad/glad.h>
 #include <memory>
 
@@ -69,6 +70,8 @@ public:
     Texture2D(const Texture2D& other) = delete;
     Texture2D(Texture2D&& other) noexcept;
     ~Texture2D();
+
+    static std::shared_ptr<Texture2D> fromFile(const std::filesystem::path& filePath);
 
     Texture2D& operator=(const Texture2D& other) = delete;
     Texture2D& operator=(Texture2D&& other) noexcept;

@@ -9,6 +9,7 @@
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Shader.hpp>
 #include <visualizer/System.hpp>
+#include <visualizer/Texture.hpp>
 #include <visualizer/VisualizerConfiguration.hpp>
 
 namespace Visualizer {
@@ -33,6 +34,7 @@ private:
     EntityArchetype m_childrenArchetype;
     EntityQuery m_cubeQuery;
     EntityQuery m_childrenQuery;
+    std::shared_ptr<Texture2D> m_cubeTexture;
 
     std::shared_ptr<EntityManager> m_entityManager;
     std::shared_ptr<ComponentManager> m_componentManager;

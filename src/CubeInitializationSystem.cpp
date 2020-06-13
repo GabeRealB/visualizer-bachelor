@@ -23,16 +23,118 @@ std::shared_ptr<Mesh> generateCubeMesh()
         { -0.5f, 0.5f, -0.5f, 1.0f }, // top-left-back
     };
 
-    constexpr GLuint indices[]{
-        0, 1, 2, 0, 2, 3, // front
-        3, 2, 6, 3, 6, 7, // top
-        1, 5, 6, 1, 6, 2, // right
-        4, 0, 3, 4, 3, 7, // left
-        4, 5, 1, 4, 1, 0, // bottom
-        5, 4, 7, 5, 7, 6 // back
+    constexpr glm::vec4 flattenedVertices[]{
+        // front
+        vertices[0],
+        vertices[1],
+        vertices[2],
+        vertices[0],
+        vertices[2],
+        vertices[3],
+
+        // top
+        vertices[3],
+        vertices[2],
+        vertices[6],
+        vertices[3],
+        vertices[6],
+        vertices[7],
+
+        // right
+        vertices[1],
+        vertices[5],
+        vertices[6],
+        vertices[1],
+        vertices[6],
+        vertices[2],
+
+        // left
+        vertices[4],
+        vertices[0],
+        vertices[3],
+        vertices[4],
+        vertices[3],
+        vertices[7],
+
+        // bottom
+        vertices[4],
+        vertices[5],
+        vertices[1],
+        vertices[4],
+        vertices[1],
+        vertices[0],
+
+        // back
+        vertices[5],
+        vertices[4],
+        vertices[7],
+        vertices[5],
+        vertices[7],
+        vertices[6],
     };
 
-    mesh->setVertices(vertices, sizeof(vertices) / sizeof(glm::vec4));
+    constexpr glm::vec3 texCoords[]{
+        { 0.0f, 0.0f, 0.0f }, // lower-left
+        { 1.0f, 0.0f, 0.0f }, // lower-right
+        { 1.0f, 1.0f, 0.0f }, // top-right
+        { 1.0f, 0.0f, 0.0f }, // top-left
+    };
+
+    constexpr glm::vec4 flattenedTexCoords[]{
+        // front
+        { texCoords[0], 0.0f },
+        { texCoords[1], 0.0f },
+        { texCoords[2], 0.0f },
+        { texCoords[0], 0.0f },
+        { texCoords[2], 0.0f },
+        { texCoords[3], 0.0f },
+
+        // top
+        { texCoords[0], 1.0f },
+        { texCoords[1], 1.0f },
+        { texCoords[2], 1.0f },
+        { texCoords[0], 1.0f },
+        { texCoords[2], 1.0f },
+        { texCoords[3], 1.0f },
+
+        // right
+        { texCoords[0], 2.0f },
+        { texCoords[1], 2.0f },
+        { texCoords[2], 2.0f },
+        { texCoords[0], 2.0f },
+        { texCoords[2], 2.0f },
+        { texCoords[3], 2.0f },
+
+        // left
+        { texCoords[0], 2.0f },
+        { texCoords[1], 2.0f },
+        { texCoords[2], 2.0f },
+        { texCoords[0], 2.0f },
+        { texCoords[2], 2.0f },
+        { texCoords[3], 2.0f },
+
+        // bottom
+        { texCoords[0], 1.0f },
+        { texCoords[1], 1.0f },
+        { texCoords[2], 1.0f },
+        { texCoords[0], 1.0f },
+        { texCoords[2], 1.0f },
+        { texCoords[3], 1.0f },
+
+        // back
+        { texCoords[0], 0.0f },
+        { texCoords[1], 0.0f },
+        { texCoords[2], 0.0f },
+        { texCoords[0], 0.0f },
+        { texCoords[2], 0.0f },
+        { texCoords[3], 0.0f },
+    };
+
+    constexpr GLuint indices[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+        24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35 };
+
+    mesh->setVertices(flattenedVertices, sizeof(flattenedVertices) / sizeof(glm::vec4));
+    mesh->setTextureCoordinates0(flattenedTexCoords, sizeof(flattenedTexCoords) / sizeof(glm::vec4));
     mesh->setIndices(indices, sizeof(indices) / sizeof(GLuint), GL_TRIANGLES);
     return mesh;
 }
@@ -43,9 +145,12 @@ CubeInitializationSystem::CubeInitializationSystem()
     , m_childrenArchetype{ EntityArchetype::with<CubeTickInfo, Parent>(m_cubeArchetype) }
     , m_cubeQuery{ m_cubeArchetype }
     , m_childrenQuery{ m_childrenArchetype }
+    , m_cubeTexture{ Texture2D::fromFile("textures/square.png") }
     , m_entityManager{}
     , m_componentManager{}
 {
+    m_cubeTexture->addAttribute(TextureMinificationFilter::Linear);
+    m_cubeTexture->addAttribute(TextureMagnificationFilter::Linear);
 }
 
 void CubeInitializationSystem::initialize()
@@ -74,6 +179,7 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
         std::vector<Transform> transforms{};
         std::vector<CubeTickInfo> tickInfos{};
         std::vector<glm::vec4> colors{};
+        std::vector<glm::vec3> scales{};
 
         for (auto child{ static_cast<const InnerCube*>(&data.m_config.cubes[i]) }; child != nullptr;
              child = child->innerCube.get()) {
@@ -83,6 +189,7 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
 
         transforms.reserve(innerCubes.size());
         tickInfos.reserve(innerCubes.size() - 1);
+        scales.reserve(innerCubes.size());
         for (std::size_t j = 0; j < innerCubes.size(); ++j) {
             if (j == 0) {
                 auto& rootCube{ data.m_config.cubes[i] };
@@ -90,6 +197,7 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
                 transforms.push_back(Transform{ .rotation = glm::identity<glm::quat>(),
                     .position = { rootCube.position[0], rootCube.position[1], rootCube.position[2] },
                     .scale = { rootCube.tiling[0], rootCube.tiling[1], rootCube.tiling[2] } });
+                scales.push_back(transforms.front().scale);
             } else {
                 auto& parent{ *innerCubes[j - 1] };
                 auto& child{ *innerCubes[j] };
@@ -138,12 +246,13 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
                 }
 
                 tickInfos.push_back(tickInfo);
+                scales.push_back(scales.back() * transforms.back().scale);
             }
         }
 
         auto rootEntity{ m_entityManager->addEntity(m_cubeArchetype) };
         auto childrenEntities{ m_entityManager->addEntities(innerCubes.size() - 1, m_childrenArchetype) };
-        Material cubeMaterial{ ShaderEnvironment{ *data.m_shader, ParameterQualifier::Material }, data.m_shader };
+        TextureSampler<Texture2D> gridTexture{ m_cubeTexture, TextureSlot::Slot0 };
 
         m_cubeQuery.query(*m_componentManager)
             .filter<RenderLayer>([](const RenderLayer* layer) -> bool { return layer->m_layerMask == 0; })
@@ -152,8 +261,19 @@ void CubeInitializationSystem::run(CubeInitializationSystem::Data& data)
                     Material* material, RenderLayer* layer) {
                     *transform = transforms[j];
                     *mesh = cubeMesh;
-                    *material = cubeMaterial;
+                    *material = { ShaderEnvironment{ *data.m_shader, ParameterQualifier::Material }, data.m_shader };
                     material->m_materialVariables.set("diffuseColor", colors[j]);
+                    material->m_materialVariables.set("gridTexture", gridTexture);
+
+                    auto absoluteScale{ scales[j] };
+                    std::array<glm::vec2, 3> textureScaling{
+                        glm::vec2{ absoluteScale.x, absoluteScale.y },
+                        glm::vec2{ absoluteScale.x, absoluteScale.z },
+                        glm::vec2{ absoluteScale.y, absoluteScale.z },
+                    };
+
+                    material->m_materialVariables.setArray(
+                        "gridScale", std::span<const glm::vec2>{ textureScaling.data(), 3 });
 
                     *layer = RenderLayer::layer(i);
                 });

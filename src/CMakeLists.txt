@@ -116,5 +116,10 @@ add_custom_command(TARGET visualizer POST_BUILD
         "${PROJECT_SOURCE_DIR}/shader"
         "$<TARGET_FILE_DIR:visualizer>/shader")
 
+add_custom_command(TARGET visualizer POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/textures"
+        "$<TARGET_FILE_DIR:visualizer>/textures")
+
 add_executable(visualizer_main main.cpp)
 target_link_libraries(visualizer_main PRIVATE visualizer)
