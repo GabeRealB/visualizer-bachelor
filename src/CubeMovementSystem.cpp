@@ -67,6 +67,8 @@ void CubeMovementSystem::run(void*)
         m_tickInterval = 0.1f;
     } else if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
         m_tickInterval = 0.01f;
+    } else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
+        m_tickInterval = std::numeric_limits<double>::max();
     }
 
     m_accumulator += deltaTime;
