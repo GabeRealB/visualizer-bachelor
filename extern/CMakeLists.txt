@@ -14,6 +14,7 @@ if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 endif ()
 
 set(SUBMODULES doctest
+        freetype2
         glad
         glfw
         glm
