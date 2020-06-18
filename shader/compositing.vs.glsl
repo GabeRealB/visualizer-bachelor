@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 @program mat4x4 1 transMatrix
 

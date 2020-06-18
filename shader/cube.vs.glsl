@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 @material vec2 3 gridScale
 @program mat4x4 1 modelMatrix

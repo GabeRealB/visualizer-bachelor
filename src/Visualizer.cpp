@@ -28,8 +28,8 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
     auto window{ createWindow(*config) };
     if (!window) {
         std::cerr << "ERROR: Could not create a window!" << std::endl;

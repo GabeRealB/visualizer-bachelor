@@ -1,4 +1,4 @@
-#version 330 core
+#version 410 core
 
 @material vec4 1 diffuseColor
 @material sampler2D 1 gridTexture

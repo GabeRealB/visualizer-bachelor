@@ -119,7 +119,7 @@
  * This follows the return type of the function  and precedes the function
  * name in the function prototype.
  */
-#if defined(_WIN32) && !defined(_WIN32_WCE) && !defined(KHRONOS_STATIC)
+#if defined(_WIN32) && !defined(_WIN32_WCE) && !defined(__SCITECH_SNAP__)
 /* Win32 but not WinCE */
 #define KHRONOS_APIENTRY __stdcall
 #else
@@ -140,8 +140,8 @@
 /*-------------------------------------------------------------------------
  * basic type definitions
  *-----------------------------------------------------------------------*/
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__GNUC__)                \
-    || defined(__SCO__) || defined(__USLC__)
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__GNUC__) || defined(__SCO__)                \
+    || defined(__USLC__)
 
 /*
  * Using <stdint.h>
