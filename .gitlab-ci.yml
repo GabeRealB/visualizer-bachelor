@@ -18,6 +18,7 @@ build:gcc:
     - cmake --build . --target visualizer
     - cmake --build . --target visualizer_main
     - cmake --build . --target visualizer_tests
+    - cmake --build . --target mdh2vis
   artifacts:
     paths:
       - build_gcc

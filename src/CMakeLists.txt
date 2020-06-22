@@ -1,33 +1,3 @@
-if (DEFINED CMAKE_BUILD_TYPE)
-    set(BUILD_TYPE "")
-    string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE)
-    if (${BUILD_TYPE} STREQUAL "DEBUG")
-        set(DISABLE_OPTIMIZATIONS ON)
-    endif ()
-endif ()
-
-if (WIN32)
-    set(COMPILER_FLAGS /W4 /WX /EHca -Wno-deprecated-volatile)
-else ()
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions -Wno-deprecated-volatile)
-    else ()
-        set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions -Wno-volatile)
-    endif ()
-endif ()
-
-if (NOT DISABLE_OPTIMIZATIONS)
-    if (MSVC)
-        list(APPEND COMPILER_FLAGS /O2)
-    else ()
-        list(APPEND COMPILER_FLAGS -O2)
-    endif ()
-endif ()
-
-if (ENABLE_NATIVE_ARCH AND NOT MSVC)
-    list(APPEND COMPILER_FLAGS -march=native)
-endif ()
-
 set(VISUALIZER_INCLUDES
         ../include/visualizer/AlignedMemory.hpp
         ../include/visualizer/Camera.hpp
@@ -99,12 +69,8 @@ set(VISUALIZER_SRC
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
-target_link_libraries(visualizer PUBLIC freetype nlohmann_json::nlohmann_json glm::glm glfw glad stb)
+target_link_libraries(visualizer PUBLIC common_options freetype nlohmann_json::nlohmann_json glm::glm glfw glad stb)
 target_include_directories(visualizer PUBLIC "${CMAKE_SOURCE_DIR}/include")
-foreach (FLAG IN LISTS COMPILER_FLAGS)
-    target_compile_options(visualizer PUBLIC ${FLAG})
-    message(STATUS "Added ${FLAG} to the compilation flags")
-endforeach ()
 
 add_custom_command(TARGET visualizer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
