@@ -67,7 +67,7 @@ set(VISUALIZER_INCLUDES
         ../include/visualizer/Visualizer.hpp
         ../include/visualizer/VisualizerConfiguration.hpp
         ../include/visualizer/World.hpp
-        )
+        ../include/visualizer/UIText.hpp ../include/visualizer/TextDrawingSystem.hpp)
 
 set(VISUALIZER_SRC
         CameraInitializationSystem.cpp
@@ -95,7 +95,7 @@ set(VISUALIZER_SRC
         Visualizer.cpp
         VisualizerConfiguration.cpp
         World.cpp
-        )
+        TextDrawingSystem.cpp)
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
