@@ -11,10 +11,14 @@ combine_ops = []
 views_in = {}
 views_out = {}
 
-with open(mdh_path_file_path) as mdh_path_file:
-    mdh_path = mdh_path_file.read()
+mdh_path_found = False
 
-if os.path.exists(mdh_path):
+if os.path.exists(mdh_path_file_path):
+    with open(mdh_path_file_path) as mdh_path_file:
+        mdh_path = mdh_path_file.read()
+        mdh_path_found = True
+
+if os.path.exists(mdh_path) and mdh_path_found:
     with open(mdh_path) as mdh_file:
         data = json.load(mdh_file)
     for op in data["MDH"]["combine operators"]:
