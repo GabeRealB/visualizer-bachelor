@@ -1,14 +1,12 @@
 ## Usage
 ```
-mdh2vis [-d directory | --directory directory]
+mdh2vis --model model-path --mdh mdh-path --tps tps-path [-out out-dir]
 ```
 
 ### Input
 - ``model.json``
-- ``gemm_mdh.json``
-- ``gemm_tps.json``
-- ``stencil_mdh.json``
-- ``stencil_tps.json``
+- ``mdh.json``
+- ``tps.json``
 
 ### Output
 - ``visconfig.json``
@@ -45,7 +43,7 @@ layer_t
             '"name:' ascii_t ','
             '"name_threads:' ascii_t ','
             '"name_memory:' ascii_t ','
-            '"name:' colors_t
+            '"colors:' colors_t
         '}'
     ;
 
@@ -58,11 +56,82 @@ model_t
     ;
 ```
 
-### ``gemm_mdh.json``
+### ``mdh.json``
 
-### ``gemm_tps.json``
+```antlr
+ascii_t
+    : '"' [\x20-\x7E]* '"'
+    ;
 
-````antlr
+combine_operators_t
+    :   '['
+            (ascii_t ',')*
+            ascii_t
+        ']'
+    ;
+
+constant_expr_t
+    :   [0, 2^32 - 1]
+    ;
+
+operator_expr_t
+    :   '+'
+    |   '-'
+    |   '*'
+    |   '/'
+    ;
+
+component_expr_t
+    :   '"' 'i(1|2|3)' (operator_expr_t constant_expr_t)? '"'
+    |   constant_expr_t
+    ;
+
+expr_tup_t
+    :   '['
+            component_expr_t ','
+            component_expr_t ','
+            component_expr_t
+        ']'
+    ;
+
+expr_tup_array_t
+    :   '['
+            (expr_tup_t ',')*
+            expr_tup_t
+        ']'
+    ;
+
+expr_map_t
+    :   '{'
+            (ascii_t ':' expr_tup_array_t ',')
+            ascii_t ':' expr_tup_array_t ','
+        '}'
+    ;
+
+mdh_in_t
+    :   '{'
+            '"combine operators":' combine_operators_t 
+        '}'
+    ;
+
+views_t
+    :   '{'
+            '"input":' expr_map_t ','
+            '"output":' expr_map_t
+        '}'
+    ;
+
+mdh_t
+    :   '{'
+            '"MDH":' mdh_t ','
+            '"views":' views_t
+        '}'
+    ;
+```
+
+### ``tps.json``
+
+```antlr
 boolean_t
     : 'true'
     | 'false'
@@ -121,15 +190,11 @@ layer_t
         '}'
     ;
 
-gemm_tps_t
+tps_t
     :   '{'
             '"layer 0:' layer_t ','
             '"layer 1:' layer_t ','
             '"layer 2:' layer_t
         '}'
     ;
-````
-
-### ``stencil_mdh.json``
-
-### ``stencil_tps.json``
+```
