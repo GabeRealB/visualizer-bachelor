@@ -6,7 +6,7 @@ before_script:
   - apt-get update --yes
   - apt-get upgrade --yes
   - DEBIAN_FRONTEND="noninteractive" apt-get install --yes tzdata
-  - apt-get install --yes gcc-10 g++-10 git cmake clang-tidy libglu1-mesa-dev xorg-dev python
+  - apt-get install --yes gcc-10 g++-10 git cmake clang-tidy libglu1-mesa-dev xorg-dev python curl unzip tar
 
 build:gcc:
   stage: build
