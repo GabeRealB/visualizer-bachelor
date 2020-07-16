@@ -234,7 +234,8 @@ BufferSizes computeBufferSizes(const MDH2Vis::MDHConfig& config)
         computeBounds(input.second, operationContainer, maxX, maxY, maxZ);
         viewNumber++;
 
-        std::cout << "\r\e[K" << std::flush;
+        // std::cout << "\r\e[K" << std::flush;
+        std::cout << "\33[2K\r" << std::flush;
         std::cout << "Computing buffer sizes... " << viewNumber << " of " << numViews;
     }
 
@@ -243,7 +244,8 @@ BufferSizes computeBufferSizes(const MDH2Vis::MDHConfig& config)
         computeBounds(output.second, operationContainer, maxX, maxY, maxZ);
         viewNumber++;
 
-        std::cout << "\r\e[K" << std::flush;
+        // std::cout << "\r\e[K" << std::flush;
+        std::cout << "\33[2K\r" << std::flush;
         std::cout << "Computing buffer sizes... " << viewNumber << " of " << numViews;
     }
     std::cout << std::endl << std::endl;
