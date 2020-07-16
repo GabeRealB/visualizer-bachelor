@@ -20,4 +20,3 @@ Makefile
 Testing
 
 vcpkg_installed
-visualizer/test/config.json

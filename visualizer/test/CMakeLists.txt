@@ -5,11 +5,5 @@ set_target_properties(visualizer_tests PROPERTIES CXX_CLANG_TIDY "")
 add_custom_command(
         TARGET visualizer_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
-        "config_test.json"
-        "$<TARGET_FILE_DIR:visualizer_tests>")
-
-add_custom_command(
-        TARGET visualizer_tests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "config_test.json"
-        config.json)
+        ${CMAKE_CURRENT_SOURCE_DIR}/config.json
+        $<TARGET_FILE_DIR:visualizer_tests>)
