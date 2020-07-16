@@ -14,11 +14,13 @@ build:gcc:
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
   script:
+    - export CC=gcc-10
+    - export CCX=g++-10
     - ./vcpkg/bootstrap-vcpkg.sh
     - ./vcpkg/vcpkg install --feature-flags=manifests
     - mkdir build_gcc
     - cd build_gcc
-    - cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
+    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
     - cmake --build .
   artifacts:
     paths:
