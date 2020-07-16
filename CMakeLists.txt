@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(visualizer  VERSION 1.0
+project(mdh-visualizer  VERSION 1.0
                     DESCRIPTION ""
                     LANGUAGES CXX)
 
@@ -53,10 +53,14 @@ foreach (FLAG IN LISTS COMPILER_FLAGS)
     message(STATUS "Added ${FLAG} to the compilation flags")
 endforeach ()
 
-add_subdirectory(extern)
-add_subdirectory(src)
-add_subdirectory(tools)
+find_package(nlohmann_json REQUIRED)
+find_package(glm REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(glad CONFIG REQUIRED)
+find_package(freetype CONFIG REQUIRED)
+find_path(STB_INCLUDE_DIRS "stb.h")
+find_package(doctest REQUIRED)
 
-if(BUILD_TESTS)
-    add_subdirectory(test)
-endif()
+add_subdirectory(visconfig)
+add_subdirectory(visualizer)
+add_subdirectory(mdh2vis)
