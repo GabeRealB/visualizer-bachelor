@@ -13,9 +13,9 @@ build:gcc:
   image: "ubuntu:latest"
   variables:
     GIT_SUBMODULE_STRATEGY: recursive
+    CC: "gcc-10"
+    CXX: "g++-10"
   script:
-    - export CC=gcc-10
-    - export CCX=g++-10
     - ./vcpkg/bootstrap-vcpkg.sh
     - ./vcpkg/vcpkg install --feature-flags=manifests
     - mkdir build_gcc
