@@ -1,0 +1,13 @@
+{
+  "name": "mdh-visualizer",
+  "version-string": "1.0.0-dev",
+  "dependencies": [
+    "doctest",
+    "freetype",
+    "glad",
+    "glfw3",
+    "glm",
+    "nlohmann-json",
+    "stb"
+  ]
+}

@@ -2,8 +2,8 @@
 *.a
 
 # Binaries
-src/visualizer_main
-test/visualizer_tests
+visualizer/src/visualizer_main
+visualizer/test/visualizer_tests
 
 # CMake template from: https://raw.githubusercontent.com/github/gitignore/master/CMake.gitignore
 cmake-build-*/
@@ -19,4 +19,5 @@ install_manifest.txt
 Makefile
 Testing
 
-test/config.json
+vcpkg_installed
+visualizer/test/config.json

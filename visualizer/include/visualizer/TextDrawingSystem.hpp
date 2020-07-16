@@ -3,7 +3,8 @@
 #include <array>
 #include <memory>
 
-#include <freetype/freetype.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <glm/glm.hpp>
 
 #include <visualizer/ComponentManager.hpp>

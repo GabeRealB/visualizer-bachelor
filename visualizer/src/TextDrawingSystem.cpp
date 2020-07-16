@@ -61,6 +61,7 @@ void TextDrawingSystem::run(void*)
 
         auto projectionMatrix{ glm::ortho(
             0.0f, static_cast<float>(cameraViewport.width), 0.0f, static_cast<float>(cameraViewport.height)) };
+        (void)projectionMatrix;
     });
 }
 
