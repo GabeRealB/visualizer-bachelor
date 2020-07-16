@@ -53,6 +53,7 @@ foreach (FLAG IN LISTS COMPILER_FLAGS)
     message(STATUS "Added ${FLAG} to the compilation flags")
 endforeach ()
 
+find_package(Threads REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(glm REQUIRED)
 find_package(glfw3 REQUIRED)
