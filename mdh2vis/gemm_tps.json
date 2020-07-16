@@ -1,0 +1,80 @@
+{
+  "layer 0": {
+    "SIG_array_to_OCL": [ 2, 0, 1 ],
+    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_buffer-do": {
+      "A": [ 0, 1, 2 ],
+      "B": [ 0, 1, 2 ]
+    },
+    "TILE_SIZE": [
+      1024,
+      1024,
+      1024
+    ],
+    "NUM_THREADS": [
+      1,
+      1,
+      1
+    ],
+    "MEM_REGION_INP": {
+      "A": 0,
+      "B": 0
+    },
+    "MEM_REGION_RES": {
+      "C": 0
+    },
+    "CMB_RES": false
+  },
+  "layer 1": {
+    "SIG_array_to_OCL": [ 2, 0, 1 ],
+    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_buffer-do": {
+      "A": [ 0, 1, 2 ],
+      "B": [ 0, 1, 2 ]
+    },
+    "TILE_SIZE": [
+      32,
+      1024,
+      2
+    ],
+    "NUM_THREADS": [
+      32,
+      1,
+      2
+    ],
+    "MEM_REGION_INP": {
+      "A": 0,
+      "B": 0
+    },
+    "MEM_REGION_RES": {
+      "C": 2
+    },
+    "CMB_RES": true
+  },
+  "layer 2": {
+    "SIG_array_to_OCL": [ 2, 0, 1 ],
+    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_buffer-do": {
+      "A": [ 0, 1, 2 ],
+      "B": [ 0, 1, 2 ]
+    },
+    "TILE_SIZE": [
+      2,
+      1,
+      1
+    ],
+    "NUM_THREADS": [
+      1,
+      128,
+      1
+    ],
+    "MEM_REGION_INP": {
+      "A": 0,
+      "B": 0
+    },
+    "MEM_REGION_RES": {
+      "C": 2
+    },
+    "CMB_RES": false
+  }
+}

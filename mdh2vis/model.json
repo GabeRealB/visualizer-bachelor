@@ -1,0 +1,38 @@
+{
+  "layer 0": {
+    "name": "global layer",
+    "name_threads": "DEV",
+    "name_memory":  "GM",
+    "colors": {
+      "tile":                 [  0, 255,   0, 128],
+      "memory":               [  0, 255,   0, 255],
+      "thread":               [255, 255, 255, 255],
+      "tile_out_of_border":   [255,   0,   0, 255],
+      "thread_out_of_border": [255,   0,   0, 255]
+    }
+  },
+  "layer 1": {
+    "name": "local layer",
+    "name_threads": "WG",
+    "name_memory":  "LM",
+    "colors": {
+      "tile":                 [  0,   0, 255, 128],
+      "memory":               [  0,   0, 255, 255],
+      "thread":               [255, 255, 255, 255],
+      "tile_out_of_border":   [255,   0,   0, 255],
+      "thread_out_of_border": [255,   0,   0, 255]
+    }
+  },
+  "layer 2": {
+    "name": "private layer",
+    "name_threads": "WI",
+    "name_memory":  "PM",
+    "colors": {
+      "tile":                 [255,   0,   0, 128],
+      "memory":               [255,   0,   0, 255],
+      "thread":               [255, 255, 255, 255],
+      "tile_out_of_border":   [255,   0,   0, 255],
+      "thread_out_of_border": [255,   0,   0, 255]
+    }
+  }
+}

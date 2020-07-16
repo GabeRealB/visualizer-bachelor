@@ -1,0 +1,14 @@
+{
+  "MDH": {
+    "combine operators": ["CC", "CC", "CB"]
+  },
+  "views": {
+    "input": {
+      "A": [ ["i1","i3",0] ],
+      "B": [ ["i3","i2",0] ]
+    },
+    "output": {
+      "C": [ ["i1","i2",0] ]
+    }
+  }
+}

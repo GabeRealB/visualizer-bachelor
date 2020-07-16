@@ -6,6 +6,6 @@ target_link_libraries(mdh2vis common_options nlohmann_json::nlohmann_json)
 
 add_custom_command(TARGET mdh2vis
         PRE_BUILD
-        COMMAND python ${PROJECT_SOURCE_DIR}/mdhunfold.py ${PROJECT_SOURCE_DIR}/mdh_path.txt ${PROJECT_SOURCE_DIR}/src/MDHOps.cpp.in ${PROJECT_SOURCE_DIR}/src/MDHOps.cpp
+        COMMAND python ${PROJECT_SOURCE_DIR}/mdhunfold.py ${PROJECT_SOURCE_DIR}/mdh_path.txt src/MDHOps.cpp.in src/MDHOps.cpp
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         DEPENDS ${PROJECT_SOURCE_DIR}/mdh_path.txt)
