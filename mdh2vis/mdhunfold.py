@@ -11,6 +11,7 @@ combine_ops = []
 views_in = {}
 views_out = {}
 
+mdh_path = os.getcwd()
 mdh_path_found = False
 
 if os.path.exists(mdh_path_file_path):
