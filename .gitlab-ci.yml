@@ -6,19 +6,20 @@ before_script:
   - apt-get update --yes
   - apt-get upgrade --yes
   - DEBIAN_FRONTEND="noninteractive" apt-get install --yes tzdata
-  - apt-get install --yes gcc-10 g++-10 git cmake clang-tidy libglu1-mesa-dev xorg-dev
+  - apt-get install --yes gcc-10 g++-10 git cmake clang-tidy libglu1-mesa-dev xorg-dev python
 
 build:gcc:
   stage: build
   image: "ubuntu:latest"
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
+    - ./vcpkg/bootstrap-vcpkg.sh
+    - ./vcpkg/vcpkg install --feature-flags=manifests
     - mkdir build_gcc
     - cd build_gcc
-    - cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build . --target visualizer
-    - cmake --build . --target visualizer_main
-    - cmake --build . --target visualizer_tests
-    - cmake --build . --target mdh2vis
+    - cmake -DCMAKE_C_COMPILER=gcc-10 -DCMAKE_CXX_COMPILER=g++-10 -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
+    - cmake --build .
   artifacts:
     paths:
       - build_gcc
@@ -26,6 +27,8 @@ build:gcc:
 test:gcc:
   stage: test
   image: "ubuntu:latest"
+  variables:
+    GIT_SUBMODULE_STRATEGY: recursive
   script:
-    - cd build_gcc/test
+    - cd build_gcc/visualizer/test
     - ./visualizer_tests
