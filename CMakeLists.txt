@@ -26,7 +26,11 @@ if (DEFINED CMAKE_BUILD_TYPE)
 endif ()
 
 if (WIN32)
-    set(COMPILER_FLAGS /W4 /WX /EHca -Wno-deprecated-volatile)
+    set(COMPILER_FLAGS /W4 /WX /EHca)
+
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        list(APPEND COMPILER_FLAGS -Wno-deprecated-volatile)
+    endif()
 else ()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         set(COMPILER_FLAGS -Wall -Wextra -Wpedantic -Werror -fexceptions -Wno-deprecated-volatile)
