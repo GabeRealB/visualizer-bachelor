@@ -81,8 +81,8 @@ std::vector<Entity> EntityManager::addEntities(std::size_t numEntities, const En
         for (std::size_t i = 0; i < numEntities; i++) {
             entities[i].generation--;
             m_freeEntities.push_back(entities[i]);
-            return {};
         }
+        return {};
     }
 
     return entities;

@@ -24,7 +24,7 @@ TextDrawingSystem::TextDrawingSystem()
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
     for (std::size_t i = 0; i < 128; ++i) {
-        if (FT_Load_Char(face, i, FT_LOAD_RENDER)) {
+        if (FT_Load_Char(face, static_cast<FT_ULong>(i), FT_LOAD_RENDER)) {
             continue;
         }
 

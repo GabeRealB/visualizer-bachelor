@@ -68,7 +68,8 @@ void MeshDrawingSystem::run(void*)
 
                     auto tmp{ mesh->get() };
                     tmp->bind();
-                    glDrawElements(tmp->primitiveType(), tmp->getIndexCount(), tmp->indexType(), nullptr);
+                    glDrawElements(
+                        tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(), nullptr);
                     tmp->unbind();
                 },
                 [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,

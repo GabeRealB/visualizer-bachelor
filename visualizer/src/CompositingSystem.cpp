@@ -69,7 +69,8 @@ void CompositingSystem::run(void*)
 
         m_program->apply(m_shaderEnvironment);
 
-        glDrawElements(m_quad.primitiveType(), m_quad.getIndexCount(), m_quad.indexType(), nullptr);
+        glDrawElements(
+            m_quad.primitiveType(), static_cast<GLsizei>(m_quad.getIndexCount()), m_quad.indexType(), nullptr);
     }
 
     m_program->unbind();

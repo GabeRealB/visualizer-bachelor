@@ -30,6 +30,8 @@ if (WIN32)
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         list(APPEND COMPILER_FLAGS -Wno-deprecated-volatile)
+    else()
+        list(APPEND COMPILER_FLAGS /wd4201)
     endif()
 else ()
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

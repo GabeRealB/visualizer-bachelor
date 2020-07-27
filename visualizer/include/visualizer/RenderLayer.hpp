@@ -38,7 +38,7 @@ constexpr RenderLayer RenderLayer::all() { return { std::numeric_limits<decltype
 
 constexpr RenderLayer RenderLayer::layer(std::size_t layer)
 {
-    return layer >= 64 ? RenderLayer{} : RenderLayer{ 1u << layer };
+    return layer >= 64 ? RenderLayer{} : RenderLayer{ 1ull << layer };
 }
 
 constexpr RenderLayer::operator bool() const { return m_layerMask != 0; }

@@ -306,158 +306,158 @@ constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
         if (val != nullptr) {
-            glUniform1iv(location, size, reinterpret_cast<GLint*>(val));
+            glUniform1iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLint>(name, size) };
         if (val != nullptr) {
-            glUniform1iv(location, size, val);
+            glUniform1iv(location, static_cast<GLsizei>(size), val);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLuint>(name, size) };
         if (val != nullptr) {
-            glUniform1uiv(location, size, val);
+            glUniform1uiv(location, static_cast<GLsizei>(size), val);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLfloat>(name, size) };
         if (val != nullptr) {
-            glUniform1fv(location, size, val);
+            glUniform1fv(location, static_cast<GLsizei>(size), val);
         }
     },
     /**************************************** BVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec2>(name, size) };
         if (val != nullptr) {
-            glUniform2iv(location, size, reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            glUniform2iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec3>(name, size) };
         if (val != nullptr) {
-            glUniform3iv(location, size, reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            glUniform3iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec4>(name, size) };
         if (val != nullptr) {
-            glUniform4iv(location, size, reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            glUniform4iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
         }
     },
     /**************************************** IVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec2>(name, size) };
         if (val != nullptr) {
-            glUniform2iv(location, size, glm::value_ptr(*val));
+            glUniform2iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec3>(name, size) };
         if (val != nullptr) {
-            glUniform3iv(location, size, glm::value_ptr(*val));
+            glUniform3iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec4>(name, size) };
         if (val != nullptr) {
-            glUniform4iv(location, size, glm::value_ptr(*val));
+            glUniform4iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     /**************************************** UVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec2>(name, size) };
         if (val != nullptr) {
-            glUniform2uiv(location, size, glm::value_ptr(*val));
+            glUniform2uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec3>(name, size) };
         if (val != nullptr) {
-            glUniform3uiv(location, size, glm::value_ptr(*val));
+            glUniform3uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec4>(name, size) };
         if (val != nullptr) {
-            glUniform4uiv(location, size, glm::value_ptr(*val));
+            glUniform4uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     /**************************************** VecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec2>(name, size) };
         if (val != nullptr) {
-            glUniform2fv(location, size, glm::value_ptr(*val));
+            glUniform2fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec3>(name, size) };
         if (val != nullptr) {
-            glUniform3fv(location, size, glm::value_ptr(*val));
+            glUniform3fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec4>(name, size) };
         if (val != nullptr) {
-            glUniform4fv(location, size, glm::value_ptr(*val));
+            glUniform4fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
         }
     },
     /**************************************** Mat2xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x2>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix2fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x3>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix2x3fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix2x3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x4>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix2x4fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix2x4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     /**************************************** Mat3xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x2>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix3x2fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix3x2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x3>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix3fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x4>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix3x4fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix3x4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     /**************************************** Mat4xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x2>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix4x2fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix4x2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x3>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix4x3fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix4x3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x4>(name, size) };
         if (val != nullptr) {
-            glUniformMatrix4fv(location, size, false, glm::value_ptr(*val));
+            glUniformMatrix4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
         }
     },
     /**************************************** SamplerN ****************************************/

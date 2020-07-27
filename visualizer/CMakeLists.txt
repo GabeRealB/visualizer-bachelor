@@ -75,7 +75,7 @@ set(VISUALIZER_SRC
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
-target_link_libraries(visualizer PUBLIC common_options freetype nlohmann_json::nlohmann_json glm glfw glad::glad)
+target_link_libraries(visualizer PUBLIC common_options visconfig freetype nlohmann_json::nlohmann_json glm glfw glad::glad)
 target_include_directories(visualizer PUBLIC include ${STB_INCLUDE_DIRS})
 
 add_custom_command(TARGET visualizer POST_BUILD
