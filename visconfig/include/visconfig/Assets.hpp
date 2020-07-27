@@ -20,7 +20,7 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
 struct MeshAsset : public AssetData {
     std::vector<std::array<float, 4>> vertices;
     std::vector<std::uint32_t> indices;
-    std::vector<std::array<float, 2>> texture_coords0;
+    std::vector<std::array<float, 4>> texture_coords0;
 
     static constexpr const char* verticesJson{ "vertices" };
     static constexpr const char* indicesJson{ "indices" };

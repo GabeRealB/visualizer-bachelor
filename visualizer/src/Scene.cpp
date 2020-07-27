@@ -120,7 +120,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::MeshAsset
     }
 
     for (auto& coord : asset.texture_coords0) {
-        tex_coords0.emplace_back(coord[0], coord[1], 0.0f, 0.0f);
+        tex_coords0.emplace_back(glm::make_vec4(coord.data()));
     }
 
     mesh->setVertices(vertices.data(), static_cast<GLsizeiptr>(vertices.size()));
