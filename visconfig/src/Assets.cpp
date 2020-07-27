@@ -273,7 +273,7 @@ void from_json(const nlohmann::json& j, MeshAsset& v)
 
 void to_json(nlohmann::json& j, const TextureFileAsset& v)
 {
-    j[TextureFileAsset::pathJson] = v.path;
+    j[TextureFileAsset::pathJson] = v.path.string();
     j[TextureFileAsset::attributesJson] = v.attributes;
 }
 
@@ -304,8 +304,8 @@ void from_json(const nlohmann::json& j, TextureRawAsset& v)
 
 void to_json(nlohmann::json& j, const ShaderAsset& v)
 {
-    j[ShaderAsset::vertexJson] = v.vertex;
-    j[ShaderAsset::fragmentJson] = v.fragment;
+    j[ShaderAsset::vertexJson] = v.vertex.string();
+    j[ShaderAsset::fragmentJson] = v.fragment.string();
 }
 
 void from_json(const nlohmann::json& j, ShaderAsset& v)

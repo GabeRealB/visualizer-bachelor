@@ -39,7 +39,7 @@ void to_json(nlohmann::json& j, const Config& v)
 {
     j[Config::optionsJson] = v.options;
     j[Config::assetsJson] = v.assets;
-    j[Config::worldsJson] = v.worldsJson;
+    j[Config::worldsJson] = v.worlds;
 }
 
 void from_json(const nlohmann::json& j, Config& v)
