@@ -126,133 +126,98 @@ void from_json(const nlohmann::json& j, AssetType& v)
     std::abort();
 }
 
-void to_json(nlohmann::json& j, const TextureFormat& v)
-{
-    switch (v) {
-    case TextureFormat::RGB:
-        j = "rgb";
-        break;
-    }
-}
+std::unordered_map<TextureFormat, std::string> s_textureFormatNames{
+    { TextureFormat::R, "r" },
+    { TextureFormat::RG, "rg" },
+    { TextureFormat::RGB, "rgb" },
+    { TextureFormat::RGBA, "rgba" },
+};
+
+void to_json(nlohmann::json& j, const TextureFormat& v) { j = s_textureFormatNames[v]; }
 
 void from_json(const nlohmann::json& j, TextureFormat& v)
 {
     std::string type{};
     j.get_to(type);
 
-    constexpr std::array<const char*, 1> formatNames{ "rgb" };
-    auto predicate{ [&](const char* val) -> bool { return std::strcmp(val, type.c_str()) == 0; } };
-    if (auto pos{ std::find_if(formatNames.begin(), formatNames.end(), predicate) }; pos != formatNames.end()) {
-        auto index{ std::distance(formatNames.begin(), pos) };
-        switch (index) {
-        case 0:
-            v = TextureFormat::RGB;
-            return;
-        }
+    auto predicate{ [&](const decltype(s_textureFormatNames)::value_type& pair) -> bool {
+        return pair.second == type;
+    } };
+    if (auto pos{ std::find_if(s_textureFormatNames.begin(), s_textureFormatNames.end(), predicate) };
+        pos != s_textureFormatNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
-void to_json(nlohmann::json& j, const TextureAttributes& v)
-{
-    switch (v) {
-    case TextureAttributes::MagnificationLinear:
-        j = "magnification_linear";
-        break;
-    case TextureAttributes::MinificationLinear:
-        j = "minification_linear";
-        break;
-    case TextureAttributes::GenerateMipMaps:
-        j = "generate_mipmaps";
-        break;
-    }
-}
+std::unordered_map<TextureAttributes, std::string> s_textureAttributesNames{
+    { TextureAttributes::MagnificationLinear, "magnification_linear" },
+    { TextureAttributes::MinificationLinear, "minification_linear" },
+    { TextureAttributes::GenerateMipMaps, "generate_mipmaps" },
+};
+
+void to_json(nlohmann::json& j, const TextureAttributes& v) { j = s_textureAttributesNames[v]; }
 
 void from_json(const nlohmann::json& j, TextureAttributes& v)
 {
     std::string attribute{};
     j.get_to(attribute);
 
-    constexpr std::array<const char*, 3> attributeNames{ "magnification_linear", "minification_linear",
-        "generate_mipmaps" };
-    auto predicate{ [&](const char* val) -> bool { return std::strcmp(val, attribute.c_str()) == 0; } };
-    if (auto pos{ std::find_if(attributeNames.begin(), attributeNames.end(), predicate) };
-        pos != attributeNames.end()) {
-        auto index{ std::distance(attributeNames.begin(), pos) };
-        switch (index) {
-        case 0:
-            v = TextureAttributes::MagnificationLinear;
-            return;
-        case 1:
-            v = TextureAttributes::MinificationLinear;
-            return;
-        case 2:
-            v = TextureAttributes::GenerateMipMaps;
-            return;
-        }
+    auto predicate{ [&](const decltype(s_textureAttributesNames)::value_type& pair) -> bool {
+        return pair.second == attribute;
+    } };
+    if (auto pos{ std::find_if(s_textureAttributesNames.begin(), s_textureAttributesNames.end(), predicate) };
+        pos != s_textureAttributesNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
-void to_json(nlohmann::json& j, const FramebufferType& v)
-{
-    switch (v) {
-    case FramebufferType::Texture:
-        j = "texture";
-        break;
-    case FramebufferType::Renderbuffer:
-        j = "renderbuffer";
-        break;
-    }
-}
+std::unordered_map<FramebufferType, std::string> s_framebufferTypeNames{
+    { FramebufferType::Texture, "texture" },
+    { FramebufferType::Renderbuffer, "renderbuffer" },
+};
+
+void to_json(nlohmann::json& j, const FramebufferType& v) { j = s_framebufferTypeNames[v]; }
 
 void from_json(const nlohmann::json& j, FramebufferType& v)
 {
     std::string type{};
     j.get_to(type);
 
-    constexpr std::array<const char*, 2> typeNames{ "texture", "renderbuffer" };
-    auto predicate{ [&](const char* val) -> bool { return std::strcmp(val, type.c_str()) == 0; } };
-    if (auto pos{ std::find_if(typeNames.begin(), typeNames.end(), predicate) }; pos != typeNames.end()) {
-        auto index{ std::distance(typeNames.begin(), pos) };
-        switch (index) {
-        case 0:
-            v = FramebufferType::Texture;
-            return;
-        case 1:
-            v = FramebufferType::Renderbuffer;
-            return;
-        }
+    auto predicate{ [&](const decltype(s_framebufferTypeNames)::value_type& pair) -> bool {
+        return pair.second == type;
+    } };
+    if (auto pos{ std::find_if(s_framebufferTypeNames.begin(), s_framebufferTypeNames.end(), predicate) };
+        pos != s_framebufferTypeNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
-void to_json(nlohmann::json& j, const FramebufferDestination& v)
-{
-    switch (v) {
-    case FramebufferDestination::Color0:
-        j = "color0";
-        break;
-    }
-}
+std::unordered_map<FramebufferDestination, std::string> s_framebufferDestinationNames{
+    { FramebufferDestination::Color0, "color0" },
+};
+
+void to_json(nlohmann::json& j, const FramebufferDestination& v) { j = s_framebufferDestinationNames[v]; }
 
 void from_json(const nlohmann::json& j, FramebufferDestination& v)
 {
     std::string destination{};
     j.get_to(destination);
 
-    constexpr std::array<const char*, 1> destinationNames{ "color0" };
-    auto predicate{ [&](const char* val) -> bool { return std::strcmp(val, destination.c_str()) == 0; } };
-    if (auto pos{ std::find_if(destinationNames.begin(), destinationNames.end(), predicate) };
-        pos != destinationNames.end()) {
-        auto index{ std::distance(destinationNames.begin(), pos) };
-        switch (index) {
-        case 0:
-            v = FramebufferDestination::Color0;
-            return;
-        }
+    auto predicate{ [&](const decltype(s_framebufferDestinationNames)::value_type& pair) -> bool {
+        return pair.second == destination;
+    } };
+    if (auto pos{ std::find_if(s_framebufferDestinationNames.begin(), s_framebufferDestinationNames.end(), predicate) };
+        pos != s_framebufferDestinationNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
 /*Assets*/
