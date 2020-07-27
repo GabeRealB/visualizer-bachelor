@@ -4,6 +4,8 @@
 #include <optional>
 #include <vector>
 
+#include <visconfig/Config.hpp>
+
 #include <visualizer/VisualizerConfiguration.hpp>
 #include <visualizer/World.hpp>
 
@@ -15,6 +17,8 @@ struct Scene {
 };
 
 std::optional<Scene> loadScene(const VisualizerConfiguration& config);
+
+Scene initializeScene(const Visconfig::Config& config);
 
 void tick(Scene& scene);
 void draw(const Scene& scene);

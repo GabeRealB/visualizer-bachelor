@@ -12,6 +12,8 @@ set(VISUALIZER_INCLUDES
         include/visualizer/CameraMovementSystem.hpp
         include/visualizer/ComponentManager.hpp
         include/visualizer/CompositingSystem.hpp
+        include/visualizer/Composition.hpp
+        include/visualizer/Cube.hpp
         include/visualizer/CubeInitializationSystem.hpp
         include/visualizer/CubeMovementSystem.hpp
         include/visualizer/CubeTickInfo.hpp
@@ -24,7 +26,9 @@ set(VISUALIZER_INCLUDES
         include/visualizer/EntityQuery.hpp
         include/visualizer/EntityQuery.impl
         include/visualizer/Framebuffer.hpp
+        include/visualizer/FreeFly.hpp
         include/visualizer/GenericBuffer.hpp
+        include/visualizer/Iteration.hpp
         include/visualizer/Mesh.hpp
         include/visualizer/MeshDrawingSystem.hpp
         include/visualizer/Parent.hpp
@@ -44,7 +48,8 @@ set(VISUALIZER_INCLUDES
         include/visualizer/Visualizer.hpp
         include/visualizer/VisualizerConfiguration.hpp
         include/visualizer/World.hpp
-        include/visualizer/UIText.hpp include/visualizer/TextDrawingSystem.hpp
+        include/visualizer/UIText.hpp
+        include/visualizer/TextDrawingSystem.hpp
         )
 
 set(VISUALIZER_SRC
@@ -73,7 +78,9 @@ set(VISUALIZER_SRC
         src/Visualizer.cpp
         src/VisualizerConfiguration.cpp
         src/World.cpp
-        src/TextDrawingSystem.cpp src/AssetDatabase.cpp)
+        src/TextDrawingSystem.cpp
+        src/AssetDatabase.cpp
+        )
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})

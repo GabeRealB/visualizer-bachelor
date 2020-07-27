@@ -7,20 +7,18 @@
 #include <fstream>
 #include <iostream>
 
+#include <visconfig/Config.hpp>
+
 #include <visualizer/Scene.hpp>
 #include <visualizer/Shader.hpp>
 
-GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config);
+GLFWwindow* createWindow(Visconfig::Config& config);
 
 namespace Visualizer {
 
 int run(const std::filesystem::path& configurationPath)
 {
-    auto config{ loadConfig(configurationPath) };
-    if (!config) {
-        std::cerr << "ERROR: Could not load the configuration file!" << std::endl;
-        return 1;
-    }
+    auto config{ Visconfig::from_file(configurationPath) };
 
     if (!glfwInit()) {
         std::cerr << "ERROR: Could not initialize GLFW!" << std::endl;
@@ -30,13 +28,13 @@ int run(const std::filesystem::path& configurationPath)
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    auto window{ createWindow(*config) };
+    auto window{ createWindow(config) };
     if (!window) {
         std::cerr << "ERROR: Could not create a window!" << std::endl;
         glfwTerminate();
         return 1;
     }
-    glfwSetWindowAspectRatio(window, config->resolution[0], config->resolution[1]);
+    glfwSetWindowAspectRatio(window, config.options.screenWidth, config.options.screenHeight);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 
@@ -48,16 +46,18 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
 
-    auto scene{ loadScene(*config) };
+    /*auto scene{ loadScene({}) };
     if (!scene) {
         std::cerr << "ERROR: Could not load the scene!" << std::endl;
         glfwTerminate();
         return 1;
-    }
+    }*/
+
+    auto scene{ initializeScene(config) };
 
     while (!glfwWindowShouldClose(window)) {
-        tick(*scene);
-        draw(*scene);
+        tick(scene);
+        draw(scene);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -70,21 +70,21 @@ int run(const std::filesystem::path& configurationPath)
 }
 }
 
-GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config)
+GLFWwindow* createWindow(Visconfig::Config& config)
 {
     auto windowName{ "Visualizer" };
     auto monitor{ glfwGetPrimaryMonitor() };
     auto videoMode{ glfwGetVideoMode(monitor) };
 
-    if (config.resolution[0] == 0 || config.resolution[1] == 0) {
-        config.resolution[0] = videoMode->width;
-        config.resolution[1] = videoMode->height;
+    if (config.options.screenWidth == 0 || config.options.screenHeight == 0) {
+        config.options.screenWidth = videoMode->width;
+        config.options.screenHeight = videoMode->height;
     }
 
-    auto screenWidth{ config.resolution[0] };
-    auto screenHeight{ config.resolution[1] };
+    auto screenWidth{ config.options.screenWidth };
+    auto screenHeight{ config.options.screenHeight };
 
-    if (config.fullscreen) {
+    if (config.options.screenFullscreen) {
         return glfwCreateWindow(screenWidth, screenHeight, windowName, monitor, nullptr);
     } else {
         glfwWindowHint(GLFW_RED_BITS, videoMode->redBits);
@@ -95,20 +95,4 @@ GLFWwindow* createWindow(Visualizer::VisualizerConfiguration& config)
 
         return glfwCreateWindow(screenWidth, screenHeight, windowName, nullptr, nullptr);
     }
-}
-
-std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
-    const std::filesystem::path& vs, const std::filesystem::path& fs)
-{
-    auto vertexShader{ Visualizer::Shader::create(vs, Visualizer::ShaderType::VertexShader) };
-    if (!vertexShader) {
-        return nullptr;
-    }
-
-    auto fragmentShader{ Visualizer::Shader::create(fs, Visualizer::ShaderType::FragmentShader) };
-    if (!fragmentShader) {
-        return nullptr;
-    }
-
-    return Visualizer::ShaderProgram::create(*vertexShader, *fragmentShader);
 }

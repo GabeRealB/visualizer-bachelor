@@ -9,7 +9,7 @@ namespace Visualizer {
 
 struct Asset {
     TypeId type;
-    std::shared_ptr<void> data;
+    std::shared_ptr<const void> data;
 };
 
 class AssetDatabase final {

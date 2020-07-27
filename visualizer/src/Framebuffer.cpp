@@ -50,6 +50,12 @@ const Framebuffer& Framebuffer::defaultFramebuffer()
     return framebuffer;
 }
 
+std::shared_ptr<const Framebuffer> Framebuffer::defaultFramebufferPtr()
+{
+    static auto framebuffer{ std::shared_ptr<Framebuffer>(new Framebuffer{ nullptr }) };
+    return framebuffer;
+}
+
 GLuint Framebuffer::id() const { return m_id; }
 
 Rect Framebuffer::viewport() const

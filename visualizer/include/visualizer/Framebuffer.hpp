@@ -33,6 +33,7 @@ public:
     Framebuffer& operator=(Framebuffer&& other) noexcept;
 
     static const Framebuffer& defaultFramebuffer();
+    static std::shared_ptr<const Framebuffer> defaultFramebufferPtr();
 
     GLuint id() const;
     Rect viewport() const;
