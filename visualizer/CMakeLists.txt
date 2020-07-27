@@ -6,6 +6,7 @@ project(visualizer  VERSION 1.0
 
 set(VISUALIZER_INCLUDES
         include/visualizer/AlignedMemory.hpp
+        include/visualizer/AssetDatabase.hpp
         include/visualizer/Camera.hpp
         include/visualizer/CameraInitializationSystem.hpp
         include/visualizer/CameraMovementSystem.hpp
@@ -43,7 +44,8 @@ set(VISUALIZER_INCLUDES
         include/visualizer/Visualizer.hpp
         include/visualizer/VisualizerConfiguration.hpp
         include/visualizer/World.hpp
-        include/visualizer/UIText.hpp include/visualizer/TextDrawingSystem.hpp)
+        include/visualizer/UIText.hpp include/visualizer/TextDrawingSystem.hpp
+        )
 
 set(VISUALIZER_SRC
         src/CameraInitializationSystem.cpp
@@ -71,7 +73,7 @@ set(VISUALIZER_SRC
         src/Visualizer.cpp
         src/VisualizerConfiguration.cpp
         src/World.cpp
-        src/TextDrawingSystem.cpp)
+        src/TextDrawingSystem.cpp src/AssetDatabase.cpp)
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
