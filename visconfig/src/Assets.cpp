@@ -105,22 +105,22 @@ void from_json(const nlohmann::json& j, AssetType& v)
         switch (index) {
         case 0:
             v = AssetType::Mesh;
-            break;
+            return;
         case 1:
             v = AssetType::TextureFile;
-            break;
+            return;
         case 2:
             v = AssetType::TextureRaw;
-            break;
+            return;
         case 3:
             v = AssetType::Shader;
-            break;
+            return;
         case 4:
             v = AssetType::Framebuffer;
-            break;
+            return;
         case 5:
             v = AssetType::DefaultFramebuffer;
-            break;
+            return;
         }
     }
     std::abort();
@@ -147,7 +147,7 @@ void from_json(const nlohmann::json& j, TextureFormat& v)
         switch (index) {
         case 0:
             v = TextureFormat::RGB;
-            break;
+            return;
         }
     }
     std::abort();
@@ -182,13 +182,13 @@ void from_json(const nlohmann::json& j, TextureAttributes& v)
         switch (index) {
         case 0:
             v = TextureAttributes::MagnificationLinear;
-            break;
+            return;
         case 1:
             v = TextureAttributes::MinificationLinear;
-            break;
+            return;
         case 2:
             v = TextureAttributes::GenerateMipMaps;
-            break;
+            return;
         }
     }
     std::abort();
@@ -218,10 +218,10 @@ void from_json(const nlohmann::json& j, FramebufferType& v)
         switch (index) {
         case 0:
             v = FramebufferType::Texture;
-            break;
+            return;
         case 1:
             v = FramebufferType::Renderbuffer;
-            break;
+            return;
         }
     }
     std::abort();
@@ -249,7 +249,7 @@ void from_json(const nlohmann::json& j, FramebufferDestination& v)
         switch (index) {
         case 0:
             v = FramebufferDestination::Color0;
-            break;
+            return;
         }
     }
     std::abort();
@@ -319,22 +319,29 @@ void from_json(const nlohmann::json& j, ShaderAsset& v)
     v.fragment = fragment;
 }
 
-void to_json(nlohmann::json& j, const FramebufferAsset& v)
-{
-    j[FramebufferAsset::typeJson] = v.type;
-    j[FramebufferAsset::destinationJson] = v.destination;
-    j[FramebufferAsset::assetJson] = v.asset;
-}
+void to_json(nlohmann::json& j, const FramebufferAsset& v) { j[FramebufferAsset::attachmentsJson] = v.attachments; }
 
 void from_json(const nlohmann::json& j, FramebufferAsset& v)
 {
-    j[FramebufferAsset::typeJson].get_to(v.type);
-    j[FramebufferAsset::destinationJson].get_to(v.destination);
-    j[FramebufferAsset::assetJson].get_to(v.asset);
+    j[FramebufferAsset::attachmentsJson].get_to(v.attachments);
 }
 
 void to_json(nlohmann::json&, const DefaultFramebufferAsset&) {}
 
 void from_json(const nlohmann::json&, DefaultFramebufferAsset&) {}
+
+void to_json(nlohmann::json& j, const FramebufferAttachment& v)
+{
+    j[FramebufferAttachment::typeJson] = v.type;
+    j[FramebufferAttachment::destinationJson] = v.destination;
+    j[FramebufferAttachment::assetJson] = v.asset;
+}
+
+void from_json(const nlohmann::json& j, FramebufferAttachment& v)
+{
+    j[FramebufferAttachment::typeJson].get_to(v.type);
+    j[FramebufferAttachment::destinationJson].get_to(v.destination);
+    j[FramebufferAttachment::assetJson].get_to(v.asset);
+}
 
 }

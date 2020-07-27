@@ -61,7 +61,7 @@ struct ShaderAsset : public AssetData {
 enum class FramebufferType { Texture, Renderbuffer };
 enum class FramebufferDestination { Color0 };
 
-struct FramebufferAsset : public AssetData {
+struct FramebufferAttachment {
     FramebufferType type;
     FramebufferDestination destination;
     std::string asset;
@@ -69,6 +69,12 @@ struct FramebufferAsset : public AssetData {
     static constexpr const char* typeJson{ "type" };
     static constexpr const char* destinationJson{ "destination" };
     static constexpr const char* assetJson{ "asset" };
+};
+
+struct FramebufferAsset : public AssetData {
+    std::vector<FramebufferAttachment> attachments;
+
+    static constexpr const char* attachmentsJson{ "attachments" };
 };
 
 struct DefaultFramebufferAsset : public AssetData {
@@ -110,5 +116,9 @@ void from_json(const nlohmann::json& j, FramebufferAsset& v);
 
 void to_json(nlohmann::json& j, const DefaultFramebufferAsset& v);
 void from_json(const nlohmann::json& j, DefaultFramebufferAsset& v);
+
+/*Internal Structs*/
+void to_json(nlohmann::json& j, const FramebufferAttachment& v);
+void from_json(const nlohmann::json& j, FramebufferAttachment& v);
 
 }

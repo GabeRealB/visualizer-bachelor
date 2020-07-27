@@ -131,8 +131,9 @@ void from_json(const nlohmann::json& j, ComponentType& v)
     if (auto pos{ std::find_if(sComponentTypeStringNameMap.begin(), sComponentTypeStringNameMap.end(), predicate) };
         pos != sComponentTypeStringNameMap.end()) {
         v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
 std::unordered_map<MaterialAttributeType, std::string> sMaterialAttributeTypeStringNameMap{
@@ -178,8 +179,9 @@ void from_json(const nlohmann::json& j, MaterialAttributeType& v)
             sMaterialAttributeTypeStringNameMap.begin(), sMaterialAttributeTypeStringNameMap.end(), predicate) };
         pos != sMaterialAttributeTypeStringNameMap.end()) {
         v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
 std::unordered_map<IterationOrder, std::string> sIterationOrderStringNameMap{
@@ -204,8 +206,9 @@ void from_json(const nlohmann::json& j, IterationOrder& v)
     if (auto pos{ std::find_if(sIterationOrderStringNameMap.begin(), sIterationOrderStringNameMap.end(), predicate) };
         pos != sIterationOrderStringNameMap.end()) {
         v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
 /*Components*/
@@ -795,7 +798,7 @@ void from_json(const nlohmann::json& j, MaterialAttribute& v)
     j[MaterialAttribute::typeJson].get_to(v.type);
     j[MaterialAttribute::isArrayJson].get_to(v.isArray);
 
-    from_json(j[MaterialAttribute::typeJson], v.data, v.type, v.isArray);
+    from_json(j[MaterialAttribute::dataJson], v.data, v.type, v.isArray);
 }
 
 void to_json(nlohmann::json& j, const Sampler2DMaterialAttribute& v)
