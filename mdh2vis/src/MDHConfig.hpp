@@ -59,75 +59,6 @@ namespace Model {
 
 }
 
-namespace MDH {
-
-    enum class OperatorExpr { ADD, SUB, MUL, DIV };
-    enum class ExpressionType { Constant, Component };
-
-    struct Expression {
-        Expression(ExpressionType type);
-        virtual ~Expression() = default;
-
-        virtual std::uint32_t apply(std::uint32_t i1, std::uint32_t i2, std::uint32_t i3) = 0;
-
-        ExpressionType type;
-    };
-
-    struct ConstantExpression final : public Expression {
-        ConstantExpression(std::uint32_t constant);
-        std::uint32_t apply(std::uint32_t i1, std::uint32_t i2, std::uint32_t i3) final;
-
-        std::uint32_t constant;
-    };
-
-    struct ConstantOperation {
-        ConstantOperation(OperatorExpr operator_expr, std::uint32_t constant);
-
-        std::uint32_t apply(std::uint32_t in);
-
-        OperatorExpr operator_expr;
-        std::uint32_t constant;
-    };
-
-    struct ComponentExpression final : public Expression {
-        ComponentExpression(std::uint8_t component);
-        ComponentExpression(std::uint8_t component, ConstantOperation constant_operation);
-
-        std::uint32_t apply(std::uint32_t i1, std::uint32_t i2, std::uint32_t i3) final;
-
-        std::uint8_t component;
-        std::optional<ConstantOperation> constant_operation;
-    };
-
-    using ExpressionPtr = std::shared_ptr<Expression>;
-    using ExpressionTup = VecN<ExpressionPtr, 3>;
-    using ExpressionVector = std::vector<ExpressionTup>;
-    using ExpressionMap = std::unordered_map<std::string, ExpressionVector>;
-
-    struct MDHIn {
-        std::vector<std::string> combine_operators;
-
-        static constexpr const char* combine_operatorsJson{ "combine operators" };
-    };
-
-    struct Views {
-        ExpressionMap input;
-        ExpressionMap output;
-
-        static constexpr const char* inputJson{ "input" };
-        static constexpr const char* outputJson{ "output" };
-    };
-
-    struct MDH {
-        MDHIn mdh;
-        Views views;
-
-        static constexpr const char* mdhJson{ "MDH" };
-        static constexpr const char* viewsJson{ "views" };
-    };
-
-}
-
 namespace TPS {
 
     using MemRegionMap = std::unordered_map<std::string, std::uint8_t>;
@@ -167,7 +98,6 @@ namespace TPS {
 
 struct MDHConfig {
     Model::Model model;
-    MDH::MDH mdh;
     TPS::TPS tps;
 };
 
@@ -243,26 +173,6 @@ namespace Model {
     void from_json(const nlohmann::json& j, Colors& v);
     void from_json(const nlohmann::json& j, Layer& v);
     void from_json(const nlohmann::json& j, Model& v);
-
-}
-
-namespace MDH {
-
-    bool operator==(const MDHIn& lhs, const MDHIn& rhs) noexcept;
-    bool operator!=(const MDHIn& lhs, const MDHIn& rhs) noexcept;
-
-    bool operator==(const Views& lhs, const Views& rhs) noexcept;
-    bool operator!=(const Views& lhs, const Views& rhs) noexcept;
-
-    bool operator==(const MDH& lhs, const MDH& rhs) noexcept;
-    bool operator!=(const MDH& lhs, const MDH& rhs) noexcept;
-
-    void from_json(const nlohmann::json& j, ExpressionPtr& v);
-    void from_json(const nlohmann::json& j, ConstantExpression& v);
-    void from_json(const nlohmann::json& j, ComponentExpression& v);
-    void from_json(const nlohmann::json& j, MDHIn& v);
-    void from_json(const nlohmann::json& j, Views& v);
-    void from_json(const nlohmann::json& j, MDH& v);
 
 }
 

@@ -137,15 +137,10 @@ using BoundsMap = std::unordered_map<std::string, BufferBounds3D>;
 
 BufferSizes computeBufferSizes(const MDH2Vis::MDHConfig& config)
 {
-    BoundsMap in_bounds_map{};
-    BoundsMap out_bounds_map{};
+    BoundsMap bounds_map{};
 
-    for (auto& input : config.mdh.views.input) {
-        in_bounds_map.insert_or_assign(input.first, StartBounds3D);
-    }
-
-    for (auto& output : config.mdh.views.output) {
-        out_bounds_map.insert_or_assign(output.first, StartBounds3D);
+    for (auto& operation : MDH2Vis::OperationMap::operations()) {
+        bounds_map.insert_or_assign(operation.first, StartBounds3D);
     }
 
     auto computeBounds{ [](BufferBounds3D& bounds, const MDH2Vis::OperationContainer& operationContainer,
@@ -233,22 +228,13 @@ BufferSizes computeBufferSizes(const MDH2Vis::MDHConfig& config)
     auto maxZ{ config.tps.layer0.tileSize[2] };
 
     std::size_t viewNumber{ 0 };
-    std::size_t numViews{ in_bounds_map.size() + out_bounds_map.size() };
+    std::size_t numViews{ bounds_map.size() };
 
     std::cout << "Computing buffer sizes... " << 0 << " of " << numViews;
 
-    for (auto& input : in_bounds_map) {
+    for (auto& input : bounds_map) {
         const auto& operationContainer{ MDH2Vis::OperationMap::getOperations(input.first) };
         computeBounds(input.second, operationContainer, maxX, maxY, maxZ);
-        viewNumber++;
-
-        std::cout << "\33[2K\r" << std::flush;
-        std::cout << "Computing buffer sizes... " << viewNumber << " of " << numViews;
-    }
-
-    for (auto& output : out_bounds_map) {
-        const auto& operationContainer{ MDH2Vis::OperationMap::getOperations(output.first) };
-        computeBounds(output.second, operationContainer, maxX, maxY, maxZ);
         viewNumber++;
 
         std::cout << "\33[2K\r" << std::flush;
@@ -271,11 +257,8 @@ BufferSizes computeBufferSizes(const MDH2Vis::MDHConfig& config)
         }
     } };
 
-    std::cout << "Input:" << std::endl;
-    computeSizes(buffer_sizes.inputMap, in_bounds_map);
-    std::cout << std::endl;
-    std::cout << "Output:" << std::endl;
-    computeSizes(buffer_sizes.outputMap, out_bounds_map);
+    std::cout << "Buffers:" << std::endl;
+    computeSizes(buffer_sizes.inputMap, bounds_map);
     std::cout << std::endl;
 
     return buffer_sizes;

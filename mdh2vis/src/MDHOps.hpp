@@ -20,6 +20,11 @@ enum class Component { X, Y, Z };
 
 class OperationMap {
 public:
+    static const std::unordered_map<std::string, OperationContainer>& operations()
+    {
+        return getInstance().m_operations;
+    }
+
     static const OperationContainer& getOperations(const std::string& name) { return getInstance().m_operations[name]; }
 
     static void addOperation(const std::string& name, Component component, Operation operation)
