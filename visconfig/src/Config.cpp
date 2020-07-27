@@ -1,6 +1,39 @@
 #include <visconfig/Config.hpp>
 
+#include <fstream>
+#include <iostream>
+
 namespace Visconfig {
+
+Config from_file(const std::filesystem::path& path)
+{
+    if (!std::filesystem::is_regular_file(path)) {
+        std::abort();
+    } else {
+        try {
+            std::ifstream file{ path };
+            nlohmann::json j{};
+            file >> j;
+            return { j.get<Config>() };
+        } catch (nlohmann::json::exception& e) {
+            std::cerr << e.what() << std::endl;
+            std::abort();
+        }
+    }
+}
+
+void to_file(const std::filesystem::path& path, const Config& config)
+{
+    try {
+        nlohmann::json j{};
+        j = config;
+        std::ofstream file{ path };
+        file << std::setw(4) << j << std::endl;
+    } catch (std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        std::abort();
+    }
+}
 
 void to_json(nlohmann::json& j, const Config& v)
 {

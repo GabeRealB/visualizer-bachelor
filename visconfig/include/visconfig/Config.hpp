@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -63,6 +64,9 @@ struct Config {
     static constexpr const char* assetsJson{ "assets" };
     static constexpr const char* worldsJson{ "worlds" };
 };
+
+Config from_file(const std::filesystem::path& path);
+void to_file(const std::filesystem::path& path, const Config& config);
 
 void to_json(nlohmann::json& j, const Config& v);
 void from_json(const nlohmann::json& j, Config& v);
