@@ -434,7 +434,7 @@ Visconfig::Asset generateMainRenderTextureAsset()
     Visconfig::Asset asset{ "render_texture_main", Visconfig::Assets::AssetType::TextureRaw, textureData };
     textureData->width = 600;
     textureData->height = 400;
-    textureData->format = Visconfig::Assets::TextureFormat::RGB;
+    textureData->format = Visconfig::Assets::TextureFormat::RGBA;
 
     return asset;
 }
@@ -467,16 +467,35 @@ Visconfig::Entity generateMainViewCube(const MDH2Vis::TPS::Layer& cubeLayer, std
         std::make_shared<Visconfig::Components::TransformComponent>() });
 
     std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[1].data)->asset = "cube_mesh";
-    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
 
-    auto material{ std::static_pointer_cast<Visconfig::Components::MaterialComponent>(entity.components[2].data) };
+    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
+    auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
+
     texture->asset = "cube_texture";
     texture->slot = 0;
 
+    diffuseColor->value.fill(0.3f);
+    gridScale->value.push_back(
+        { static_cast<float>(cubeLayer.tileSize[0]), static_cast<float>(cubeLayer.tileSize[1]) });
+    gridScale->value.push_back(
+        { static_cast<float>(cubeLayer.tileSize[0]), static_cast<float>(cubeLayer.tileSize[2]) });
+    gridScale->value.push_back(
+        { static_cast<float>(cubeLayer.tileSize[1]), static_cast<float>(cubeLayer.tileSize[2]) });
+
+    auto material{ std::static_pointer_cast<Visconfig::Components::MaterialComponent>(entity.components[2].data) };
+
     material->asset = "cube_shader";
-    material->attributes.insert_or_assign("texture",
+    material->attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
+
+    material->attributes.insert_or_assign("diffuseColor",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, diffuseColor, false });
+    material->attributes.insert_or_assign("gridScale",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec2, gridScale, true });
 
     auto layer{ std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[3].data) };
     layer->mask = 1;
@@ -519,16 +538,24 @@ Visconfig::Entity generateMainViewCube(const MDH2Vis::TPS::Layer& cubeLayer, con
         std::make_shared<Visconfig::Components::ImplicitIterationComponent>() });
 
     std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[1].data)->asset = "cube_mesh";
-    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
 
-    auto material{ std::static_pointer_cast<Visconfig::Components::MaterialComponent>(entity.components[2].data) };
+    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
+    auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+
     texture->asset = "cube_texture";
     texture->slot = 0;
 
+    diffuseColor->value.fill(0.3f);
+
+    auto material{ std::static_pointer_cast<Visconfig::Components::MaterialComponent>(entity.components[2].data) };
+
     material->asset = "cube_shader";
-    material->attributes.insert_or_assign("texture",
+    material->attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
+    material->attributes.insert_or_assign("diffuseColor",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, diffuseColor, false });
 
     auto layer{ std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[3].data) };
     layer->mask = 1;
