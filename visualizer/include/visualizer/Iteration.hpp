@@ -11,6 +11,7 @@ struct Iteration {
     std::vector<glm::vec3> positions;
     std::size_t ticksPerIteration;
     std::size_t index;
+    std::size_t tick;
 };
 
 }

@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityQuery.hpp>
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Scene.hpp>
 #include <visualizer/Shader.hpp>
@@ -15,7 +17,7 @@ namespace Visualizer {
 
 class CompositingSystem : public System {
 public:
-    CompositingSystem(const VisualizerConfiguration& config, std::vector<std::shared_ptr<Texture2D>> views);
+    CompositingSystem();
 
     void run(void* data) final;
     void initialize() final;
@@ -23,10 +25,10 @@ public:
 
 private:
     Mesh m_quad;
+    EntityQuery m_entityQuery;
     ShaderEnvironment m_shaderEnvironment;
-    std::vector<Transform> m_viewTransforms;
     std::shared_ptr<ShaderProgram> m_program;
-    std::vector<std::shared_ptr<Texture2D>> m_views;
+    std::shared_ptr<ComponentManager> m_componentManager;
 };
 
 }

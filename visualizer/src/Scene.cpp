@@ -44,6 +44,7 @@ std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
     return Visualizer::ShaderProgram::create(*vertexShader, *fragmentShader);
 }
 
+/*
 std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
 {
     using namespace std::literals;
@@ -97,7 +98,7 @@ std::optional<Scene> loadScene(const VisualizerConfiguration& conf)
     systemManager->run("initialization"sv, initParameters);
 
     return scene;
-}
+}*/
 
 void initializeAsset(const std::string& name, const Visconfig::Assets::MeshAsset& asset)
 {
@@ -157,8 +158,20 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRa
     TextureInternalFormat internalFormat{};
 
     switch (asset.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internalFormat = TextureInternalFormat::Short;
+        break;
     case Visconfig::Assets::TextureFormat::RGB:
         format = TextureFormat::RGB;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
         internalFormat = TextureInternalFormat::Short;
         break;
     }
@@ -178,13 +191,13 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRa
         }
     }
 
-    AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), std::move(texture) });
+    AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), texture });
 }
 
 void initializeAsset(const std::string& name, const Visconfig::Assets::ShaderAsset& asset)
 {
     auto shader{ createShaderProgram(asset.vertex, asset.fragment) };
-    AssetDatabase::setAsset(name, { getTypeId<ShaderProgram>(), std::move(shader) });
+    AssetDatabase::setAsset(name, { getTypeId<ShaderProgram>(), shader });
 }
 
 void initializeAsset(const std::string& name, const Visconfig::Assets::FramebufferAsset& asset)
@@ -214,7 +227,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::Framebuff
         }
     }
 
-    AssetDatabase::setAsset(name, { getTypeId<Framebuffer>(), std::move(framebuffer) });
+    AssetDatabase::setAsset(name, { getTypeId<Framebuffer>(), framebuffer });
 }
 
 void initializeAsset(const std::string& name, const Visconfig::Assets::DefaultFramebufferAsset&)
@@ -681,7 +694,7 @@ void initializeMaterialAttribute(
 {
     switch (attribute.type) {
     case Visconfig::Components::MaterialAttributeType::Bool:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BoolMaterialAttribute>(attribute.data));
         } else {
@@ -690,7 +703,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Int:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IntMaterialAttribute>(attribute.data));
         } else {
@@ -699,7 +712,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UInt:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UIntMaterialAttribute>(attribute.data));
         } else {
@@ -708,7 +721,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Float:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::FloatMaterialAttribute>(attribute.data));
         } else {
@@ -717,7 +730,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec2MaterialAttribute>(attribute.data));
         } else {
@@ -726,7 +739,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec3MaterialAttribute>(attribute.data));
         } else {
@@ -735,7 +748,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec4MaterialAttribute>(attribute.data));
         } else {
@@ -744,7 +757,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec2MaterialAttribute>(attribute.data));
         } else {
@@ -753,7 +766,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec3MaterialAttribute>(attribute.data));
         } else {
@@ -762,7 +775,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec4MaterialAttribute>(attribute.data));
         } else {
@@ -771,7 +784,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec2MaterialAttribute>(attribute.data));
         } else {
@@ -780,7 +793,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec3MaterialAttribute>(attribute.data));
         } else {
@@ -789,7 +802,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec4MaterialAttribute>(attribute.data));
         } else {
@@ -798,7 +811,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec2MaterialAttribute>(attribute.data));
         } else {
@@ -807,7 +820,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec3MaterialAttribute>(attribute.data));
         } else {
@@ -816,7 +829,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec4MaterialAttribute>(attribute.data));
         } else {
@@ -825,7 +838,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x2MaterialAttribute>(attribute.data));
         } else {
@@ -834,7 +847,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x3MaterialAttribute>(attribute.data));
         } else {
@@ -843,7 +856,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x4MaterialAttribute>(attribute.data));
         } else {
@@ -852,7 +865,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x2MaterialAttribute>(attribute.data));
         } else {
@@ -861,7 +874,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x3MaterialAttribute>(attribute.data));
         } else {
@@ -870,7 +883,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x4MaterialAttribute>(attribute.data));
         } else {
@@ -879,7 +892,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x2:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x2MaterialAttribute>(attribute.data));
         } else {
@@ -888,7 +901,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x3:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x3MaterialAttribute>(attribute.data));
         } else {
@@ -897,7 +910,7 @@ void initializeMaterialAttribute(
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x4:
-        if (attribute.isArray) {
+        if (!attribute.isArray) {
             initializeMaterialAttribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x4MaterialAttribute>(attribute.data));
         } else {
@@ -950,12 +963,55 @@ void initializeComponent(
     std::vector<glm::vec3> positions{};
     positions.reserve(component.numIterations[0] * component.numIterations[1] * component.numIterations[2]);
 
-    /*
-     * TODO: Populate positions
-     */
+    glm::uvec3 order{};
+    switch (component.order) {
+    case Visconfig::Components::IterationOrder::XYZ:
+        order = { 0, 1, 2 };
+        break;
+    case Visconfig::Components::IterationOrder::XZY:
+        order = { 0, 2, 1 };
+        break;
+    case Visconfig::Components::IterationOrder::YXZ:
+        order = { 1, 0, 2 };
+        break;
+    case Visconfig::Components::IterationOrder::YZX:
+        order = { 2, 0, 1 };
+        break;
+    case Visconfig::Components::IterationOrder::ZXY:
+        order = { 1, 2, 0 };
+        break;
+    case Visconfig::Components::IterationOrder::ZYX:
+        order = { 2, 1, 0 };
+        break;
+    }
+
+    glm::uvec3 position{ 0, 0, 0 };
+    positions.push_back(position);
+
+    while (position[order[0]] != component.numIterations[order[0]]
+        || position[order[1]] != component.numIterations[order[1]]
+        || position[order[2]] != component.numIterations[order[2]]) {
+        if (position[order[0]] < component.numIterations[order[0]]) {
+            position[order[0]]++;
+        } else {
+            position[order[0]] = 0;
+            if (position[order[1]] < component.numIterations[order[1]]) {
+                position[order[1]]++;
+            } else {
+                position[order[1]] = 0;
+                if (position[order[2]] < component.numIterations[order[2]]) {
+                    position[order[2]]++;
+                } else {
+                    position[order[2]] = 0;
+                }
+            }
+        }
+
+        positions.push_back(position);
+    }
 
     *static_cast<Iteration*>(manager.getEntityComponentPointer(entity, getTypeId<Iteration>()))
-        = Iteration{ std::move(positions), component.ticksPerIteration, 0 };
+        = Iteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
 }
 
 void initializeComponent(
@@ -969,7 +1025,7 @@ void initializeComponent(
     }
 
     *static_cast<Iteration*>(manager.getEntityComponentPointer(entity, getTypeId<Iteration>()))
-        = Iteration{ std::move(positions), component.ticksPerIteration, 0 };
+        = Iteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
 }
 
 void initializeComponent(
@@ -1096,6 +1152,7 @@ World initializeWorld(const Visconfig::World& world)
     systemManager->addSystem<CameraMovementSystem>("tick"sv);
 
     systemManager->addSystem<MeshDrawingSystem>("draw"sv);
+    systemManager->addSystem<CompositingSystem>("composite"sv);
 
     return ecsWorld;
 }

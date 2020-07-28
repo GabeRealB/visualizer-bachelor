@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include <visualizer/Camera.hpp>
+#include <visualizer/FreeFly.hpp>
 #include <visualizer/Transform.hpp>
 
 namespace Visualizer {
@@ -14,7 +15,7 @@ CameraMovementSystem::CameraMovementSystem()
     , m_movementSpeed{ 10.0f }
     , m_rotationSpeed{ 0.005f }
     , m_movementMultiplier{ 1.5f }
-    , m_cameraQuery{ EntityQuery{}.with<Camera, Transform>() }
+    , m_cameraQuery{ EntityQuery{}.with<Camera, FreeFly, Transform>() }
     , m_componentManager{}
 {
     glfwGetCursorPos(glfwGetCurrentContext(), &m_mouseX, &m_mouseY);
@@ -35,12 +36,15 @@ void CameraMovementSystem::run(void*)
     auto eKey{ glfwGetKey(window, GLFW_KEY_E) };
 
     auto shiftKey{ glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) };
+    auto ctrlKey{ glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) };
     auto newTime{ glfwGetTime() };
     auto deltaTime{ static_cast<float>(newTime - m_currentTime) };
     m_currentTime = newTime;
 
     auto movementSpeed{ m_movementSpeed * deltaTime };
     if (shiftKey == GLFW_PRESS) {
+        movementSpeed *= m_movementMultiplier * 10.0f;
+    } else if (ctrlKey) {
         movementSpeed *= m_movementMultiplier;
     }
 

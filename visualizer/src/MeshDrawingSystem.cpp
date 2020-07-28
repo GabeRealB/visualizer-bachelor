@@ -26,14 +26,15 @@ void MeshDrawingSystem::run(void*)
     auto drawableMeshes{ m_meshQuery.query(*m_componentManager) };
 
     m_cameraQuery.query(*m_componentManager).forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
-        camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
-        auto cameraViewport{ camera->m_renderTarget->viewport() };
+        camera->m_renderTargets["cube"]->bind(FramebufferBinding::ReadWrite);
+        // camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
+        auto cameraViewport{ camera->m_renderTargets["cube"]->viewport() };
         glClear(GL_COLOR_BUFFER_BIT);
 
         auto viewMatrix{ glm::identity<glm::mat4>() };
         viewMatrix = glm::toMat4(glm::inverse(transform->rotation)) * glm::translate(viewMatrix, -transform->position);
         auto projectionMatrix{ glm::perspective(70.0f,
-            static_cast<float>(cameraViewport.width) / static_cast<float>(cameraViewport.height), 0.3f, 1000.0f) };
+            static_cast<float>(cameraViewport.width) / static_cast<float>(cameraViewport.height), 0.3f, 10000.0f) };
         auto viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         ShaderEnvironment cameraVariables{};

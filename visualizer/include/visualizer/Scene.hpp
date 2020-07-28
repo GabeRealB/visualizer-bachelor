@@ -16,8 +16,6 @@ struct Scene {
     std::vector<World> worlds;
 };
 
-std::optional<Scene> loadScene(const VisualizerConfiguration& config);
-
 Scene initializeScene(const Visconfig::Config& config);
 
 void tick(Scene& scene);
