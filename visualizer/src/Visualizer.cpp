@@ -46,13 +46,6 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
 
-    /*auto scene{ loadScene({}) };
-    if (!scene) {
-        std::cerr << "ERROR: Could not load the scene!" << std::endl;
-        glfwTerminate();
-        return 1;
-    }*/
-
     auto scene{ initializeScene(config) };
 
     while (!glfwWindowShouldClose(window)) {
