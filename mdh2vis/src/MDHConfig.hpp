@@ -47,15 +47,7 @@ namespace Model {
         static constexpr const char* colorsJson{ "colors" };
     };
 
-    struct Model {
-        Layer layer0;
-        Layer layer1;
-        Layer layer2;
-
-        static constexpr const char* layer0Json{ "layer 0" };
-        static constexpr const char* layer1Json{ "layer 1" };
-        static constexpr const char* layer2Json{ "layer 2" };
-    };
+    using Model = std::map<std::string, Layer>;
 
 }
 
@@ -84,15 +76,7 @@ namespace TPS {
         static constexpr const char* cmbResJson{ "CMB_RES" };
     };
 
-    struct TPS {
-        Layer layer0;
-        Layer layer1;
-        Layer layer2;
-
-        static constexpr const char* layer0Json{ "layer 0" };
-        static constexpr const char* layer1Json{ "layer 1" };
-        static constexpr const char* layer2Json{ "layer 2" };
-    };
+    using TPS = std::map<std::string, Layer>;
 
 }
 
@@ -167,12 +151,8 @@ namespace Model {
     bool operator==(const Layer& lhs, const Layer& rhs) noexcept;
     bool operator!=(const Layer& lhs, const Layer& rhs) noexcept;
 
-    bool operator==(const Model& lhs, const Model& rhs) noexcept;
-    bool operator!=(const Model& lhs, const Model& rhs) noexcept;
-
     void from_json(const nlohmann::json& j, Colors& v);
     void from_json(const nlohmann::json& j, Layer& v);
-    void from_json(const nlohmann::json& j, Model& v);
 
 }
 
@@ -181,11 +161,7 @@ namespace TPS {
     bool operator==(const Layer& lhs, const Layer& rhs) noexcept;
     bool operator!=(const Layer& lhs, const Layer& rhs) noexcept;
 
-    bool operator==(const TPS& lhs, const TPS& rhs) noexcept;
-    bool operator!=(const TPS& lhs, const TPS& rhs) noexcept;
-
     void from_json(const nlohmann::json& j, Layer& v);
-    void from_json(const nlohmann::json& j, TPS& v);
 
 }
 

@@ -24,11 +24,6 @@ namespace Model {
 
     bool operator!=(const Layer& lhs, const Layer& rhs) noexcept { return !(lhs == rhs); }
 
-    bool operator==(const Model& lhs, const Model& rhs) noexcept
-    {
-        return (lhs.layer0 == rhs.layer0 && lhs.layer1 == rhs.layer1 && lhs.layer2 == rhs.layer2);
-    }
-
     bool operator!=(const Model& lhs, const Model& rhs) noexcept { return !(lhs == rhs); }
 
     void from_json(const nlohmann::json& j, Colors& v)
@@ -48,12 +43,6 @@ namespace Model {
         j[Layer::colorsJson].get_to(v.colors);
     }
 
-    void from_json(const nlohmann::json& j, Model& v)
-    {
-        j[Model::layer0Json].get_to(v.layer0);
-        j[Model::layer1Json].get_to(v.layer1);
-        j[Model::layer2Json].get_to(v.layer2);
-    }
 }
 
 namespace TPS {
@@ -67,11 +56,6 @@ namespace TPS {
 
     bool operator!=(const Layer& lhs, const Layer& rhs) noexcept { return !(lhs == rhs); }
 
-    bool operator==(const TPS& lhs, const TPS& rhs) noexcept
-    {
-        return (lhs.layer0 == rhs.layer0 && lhs.layer1 == rhs.layer1 && lhs.layer2 == rhs.layer2);
-    }
-
     bool operator!=(const TPS& lhs, const TPS& rhs) noexcept { return !(lhs == rhs); }
 
     void from_json(const nlohmann::json& j, Layer& v)
@@ -84,13 +68,6 @@ namespace TPS {
         j[Layer::memRegionInpJson].get_to(v.memRegionInp);
         j[Layer::memRegionResJson].get_to(v.memRegionRes);
         j[Layer::cmbResJson].get_to(v.cmbRes);
-    }
-
-    void from_json(const nlohmann::json& j, TPS& v)
-    {
-        j[TPS::layer0Json].get_to(v.layer0);
-        j[TPS::layer1Json].get_to(v.layer1);
-        j[TPS::layer2Json].get_to(v.layer2);
     }
 
 }
