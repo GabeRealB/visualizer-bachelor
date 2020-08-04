@@ -1,0 +1,57 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Derzeitiger Stand}
+    \begin{itemize}
+        \item Fenstereinstellungen sind einstellbar
+        \item Die Würfel werden gezeichnet
+        \item SubSzenen wurden durch Welten ersetzt
+        \item SceneObjects wurden durch Entitäten ersetzt
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Welt}
+    \begin{itemize}
+        \item Eine Welt besteht aus mehreren Managern
+        \item Jeder Manager kommt in einer Welt nur ein mal vor.
+        \item Die Manager haben eine Referenz zur Welt.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Derzeitige Manager}
+    \begin{itemize}
+        \item EntityManager: Zustandig fürs erzeugen und entfernen von Entitäten
+        \item ComponentManager: Zuständig fürs speichern und laden von Componenten
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Welt Beispiel}
+    \lstinputlisting[style=context,xleftmargin=2em]{welt.cpp}
+\end{frame}
+
+\begin{frame}{ECS}
+    \begin{itemize}
+        \item Eine Welt ist vergleichbar mit einer Datenbank
+        \item Entitäten sind eindeutige Schlüssel innerhalb einer Welt
+        \item Archetypen beschreiben welche Typen von Komponenten zu einer Entität gehören (Tabelle)
+        \item Es können auf der Welt queries durchgeführt werden.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{ECS Beispiel}
+    \lstinputlisting[style=context,xleftmargin=2em]{ecs.cpp}
+\end{frame}
+
+\begin{frame}{Weiteres Vorgehen}
+    \begin{itemize}
+        \item Die Bewegung implementieren
+        \item Refactoring
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

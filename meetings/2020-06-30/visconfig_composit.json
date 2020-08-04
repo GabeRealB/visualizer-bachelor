@@ -1,0 +1,14 @@
+{
+    "type": "composit",
+    "data": {
+        "operations": {
+            "sources": [
+                {
+                    "texture": "render_texture0",
+                    "slot": 0
+                }
+            ],
+            "target": "default_framebuffer"
+        }
+    }
+}

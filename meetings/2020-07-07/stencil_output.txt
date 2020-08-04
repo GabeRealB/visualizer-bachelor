@@ -1,0 +1,11 @@
+Config info:
+Number of layers: 3
+Dimensions: 4096, 4096, 1
+
+Computing buffer sizes... 2 of 2
+
+Input:
+in: [4098, 4098, 1]
+
+Output:
+out: [4096, 4096, 1]

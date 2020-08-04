@@ -1,0 +1,46 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Derzeitiger Stand}
+    \begin{itemize}
+        \item Kamera kann bewegt und gedreht werden
+        \item Würfel bewegen sich
+        \item Neuer Manager: SystemManager
+        \item Refactoring wurde durchgeführt
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{SystemManager}
+    \begin{itemize}
+        \item Jede Welt kann einen SystemManager besitzen
+        \item Ein System verändert den Zustand einer Welt
+        \item Jedes System erbt von der Klasse System
+        \item Methoden "run", "initialize" und "terminate" müssen definiert werden
+        \item Jedes System kommt nur ein mal im SystemManager vor
+        \item Systeme werden in Gruppen zugeordnet
+        \item SystemManager kann eine Gruppe von Systeme ausführen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{System Beispiel}
+    \lstinputlisting[style=context,xleftmargin=2em]{CubeMovementSystem.cpp}
+\end{frame}
+
+\begin{frame}{SystemManager Beispiel}
+    \lstinputlisting[style=context,xleftmargin=2em]{SystemManager.cpp}
+\end{frame}
+
+\begin{frame}{Weiteres Vorgehen}
+    \begin{itemize}
+        \item Ein Problem mit der Kamera beheben
+        \item Initialisierung vereinfachen
+        \item Hilfsklassen für das Rendern implementieren
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

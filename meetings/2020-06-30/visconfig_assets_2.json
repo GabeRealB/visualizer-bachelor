@@ -1,0 +1,22 @@
+{
+    "name": "cube_texture",
+    "type": "texture_file",
+    "data": {
+        "path": "assets/texture/cube.png",
+        "attributes": [
+            "magnification_linear",
+            "minification_linear",
+            "generate_mipmaps"
+        ]
+    }
+},
+{
+    "name": "render_texture0",
+    "type": "texture_raw",
+    "data": {
+        "width": 0,
+        "height": 0,
+        "format": "rgb",
+        "attributes": []
+    }
+},

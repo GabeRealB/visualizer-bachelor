@@ -1,0 +1,51 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Derzeitiger Stand}
+    \begin{itemize}
+        \item OpenGL wird initialisiert
+        \item Das Programm wurde in Scenen und SubScenen unterteilt
+        \item Data-oriented design
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Scene}
+    \begin{itemize}
+        \item Eine Scene besteht aus mehreren SubScenes
+        \item Jede SubScene wird unabhängig von einander aktualisiert und gezeichnet
+        \item Die einzelnen Bilder werden im nachhinein zusammen ausgegeben
+        \item Eine SubScene besteht aus einer Camera und mehreren SceneObjects
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{SceneObject}
+    \begin{itemize}
+        \item Ein SceneObject ist eine Ansammlung von Komponenten
+        \item Bisherige Komponente sind Transform und CubeTickInfo
+        \item Transform: Position, Scalierung und Rotation
+        \item CubeTickInfo: Daten zum aktualisieren eines Würfels
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Buffer}
+    \begin{itemize}
+        \item GenericBuffer: Ein generischer OpenGL buffer
+        \item VertexAttributeBuffer: Spezialisierung von GenericBuffer
+        \item Mesh: Eine Ansammlung von buffer   
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Weiteres Vorgehen}
+    \begin{itemize}
+        \item Laden einer Scene implementieren
+        \item Das rendern einer SubScene implementieren
+        \item Das rendern einer Scene implementiern
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

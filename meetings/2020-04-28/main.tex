@@ -1,0 +1,63 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{JSON\hyp{}Format}
+    \lstinputlisting[style=context,xleftmargin=2em]{spec.json}
+\end{frame}
+
+\begin{frame}{Implementierung}
+    \begin{itemize}
+        \item Das Lesen und Schreiben dieses Formats ist implementiert.
+        \item Parsen von JSON durch die Bibliothek \href{https://github.com/nlohmann/json}
+            {nlohmann/json}, wie in der BA
+        \item Tests sind vorhanden und laufen erfolgreich.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Tooling}
+    \begin{itemize}
+        \item C++-Standard: ISO-C++ 17
+        \item Compiler-Flags: \monospaced{-Werror -Wall -Wextra -Wpedantic -O2}
+        \item Build: CMake
+        \item \href{https://webkit.org/code-style-guidelines/}{Webkit Styleguide}
+            \begin{itemize}
+                \item Umsetzung durch \monospaced{clang-format} und Git Hooks
+            \end{itemize}
+        \item Dokumentation: Javadoc
+        \item Tests: \href{https://github.com/onqtam/doctest}{onqtam/doctest}
+        \item Git:
+            \begin{itemize}
+                \item \href{https://zivgitlab.uni-muenster.de/b_rips01/pjs-ss20}{Repo} auf dem
+                    Gitlab des ZIV
+                \item Gitflow Workflow
+                \item Rebasen statt Mergen
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Weiteres Vorgehen}
+    Eckpunkte:
+    \begin{itemize}
+        \item Rendering eines \emph{einzigen} Top-Level-Würfel
+        \item Beliebig tief verschachtelt
+        \item Ohne Farbe und Größe
+    \end{itemize}
+    D.h. konkret:
+    \begin{itemize}
+        \item Render-Loop erstellen
+        \item Für jeden zu rendernden Würfel ein Vertex-Buffer-Objekt erstellen
+        \item Mit der Render-Order experimentieren
+        \item Zwei Systeme:
+            \begin{enumerate}
+                \item Zum Iterieren durch die inneren Würfel
+                \item Zum Rendern der Hierarchie
+            \end{enumerate}
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

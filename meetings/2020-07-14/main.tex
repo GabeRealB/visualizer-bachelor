@@ -1,0 +1,38 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Aufgaben}
+    \begin{itemize}
+        \item MDH Datei an dem Compiler übergeben
+        \item Einfache Optimierungen durchführen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Funktion}
+    \begin{itemize}
+        \item Ist in CMake integriert
+        \item mdh\_path.txt enthält Pfad zur JSON
+        \item Automatische Kompilation wenn sich die Datei verändert
+        \item Doppelte Opertionen werden entfernt
+        \item Ausgabe: MDHOps.cpp
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{mdh\_path.txt}
+    \lstinputlisting[style=context,xleftmargin=2em]{mdh_path.txt}
+\end{frame}
+
+\begin{frame}{MDHOps.cpp}
+    \lstinputlisting[style=context,xleftmargin=2em]{MDHOps_comb.cpp}
+\end{frame}
+
+\begin{frame}{MDHOps.cpp}
+    \lstinputlisting[style=context,xleftmargin=2em]{MDHOps_ops.cpp}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

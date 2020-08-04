@@ -1,0 +1,19 @@
+"assets": [
+    {
+        "name": "cube_mesh",
+        "type": "mesh",
+        "data": {
+            "vertices": [],
+            "indices": [],
+            "texture_coords0": []
+        }
+    },
+    {
+        "name": "quad_mesh",
+        "type": "mesh",
+        "data": {
+            "vertices": [],
+            "indices": [],
+            "texture_coords0": []
+        }
+    },

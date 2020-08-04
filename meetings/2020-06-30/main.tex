@@ -1,0 +1,53 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Entwurf: Programm Optionen}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_options.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Globale Resourcen}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_assets_1.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Globale Resourcen}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_assets_2.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Globale Resourcen}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_assets_3.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Äußerer Würfel}
+    \begin{itemize}
+        \item cube: Identifikations komponente
+        \item mesh: Vertices und Edges
+        \item texture2D: Textur
+        \item color: model.json[][ "color" ][ "tile" ]
+        \item layer: wird benutzt um Kameras zu filtern
+        \item transform: Position, Rotation, TILE\_SIZE
+        \item iterate\_implicit: Simuliert das aktuelle Verhalten
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Entwurf: Innerer Würfel}
+    \begin{itemize}
+        \item Wie ein äußerer Würfel
+        \item parent: Vater Würfel
+        \item transform: Ist relativ zum Vater Würfel
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Entwurf: Kamera}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_camera.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Ausgabe}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig_composit.json}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

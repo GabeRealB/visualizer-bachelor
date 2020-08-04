@@ -1,0 +1,22 @@
+{
+    "type": "camera",
+    "data": {
+        "layer_mask": "0xFFFFFFFFFFFFFFFF",
+        "targets": {
+            "cube": "framebuffer0",
+            "text": "framebuffer0"
+        }
+    }
+},
+{
+    "type": "free_fly_camera",
+    "data": {}
+},
+{
+    "type": "transform",
+    "data": {
+        "scale": [],
+        "position": [],
+        "rotation": []
+    }
+}

@@ -1,0 +1,80 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Aufgaben}
+    \begin{itemize}
+        \item Neues Konfigurationsschema implementieren
+        \item Model/MDH/TPS überführen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Projektstruktur}
+    \begin{itemize}
+        \item Visconfig: Konfiguration
+        \item Visualizer: OpenGL Runtime
+        \item MDH2Vis: Erzeugt eine Konfiguration
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: Visconfig}
+    \begin{itemize}
+        \item Fast vollständig
+        \item Soll 1 zu 1 alle Funktionen von Visualizer abdecken
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: Visualizer}
+    \begin{itemize}
+        \item Vollständig, bis auf Fehler
+        \item Weitere Komponenten werden wahrscheinlich noch dazu kommen
+        \item Viel unbenutzer Kode noch enthalten
+        \item Initialisierung wurde komplett überarbeitet
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: MDH2Vis}
+    \begin{itemize}
+        \item Noch nicht vollständig
+        \item Erzeugt eine partielle Konfiguration
+        \item Buffer werden noch nicht übersetzt
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Initialisierung: Früher}
+    \begin{itemize}
+        \item Konfiguration lesen
+        \item Welten generieren
+        \item Konfiguration in Entitäten überführen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Initialisierung: Jetzt}
+    \begin{itemize}
+        \item Konfiguration generieren (MDH2Vis)
+        \item Konfiguration lesen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Schwierigkeiten}
+    \begin{itemize}
+        \item Menge von Komponenten zu finden die Gewünschte Funktionen erfüllen
+        \item Konfiguration ist kein Kode
+        \item Kompromiss: Konfiguration nur fürs initialisieren
+        \item Falls mehr benötigt wird: Bibliothek zur Laufzeit laden
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Aufgaben}
+    \begin{itemize}
+        \item Aufräumen
+        \item MDH2Vis vollständig kompletieren
+    \end{itemize}
+\end{frame}
+
+
+\end{document}
+
+% vi: tw=100

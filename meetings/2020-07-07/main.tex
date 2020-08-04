@@ -1,0 +1,55 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Aufgaben}
+    \begin{itemize}
+        \item Konfiguration De-/Serialisieren
+        \item Größe der Views berechnen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{JSON format}
+    \lstinputlisting[style=context,xleftmargin=2em]{gemm_mdh.json}
+\end{frame}
+
+\begin{frame}{JSON format}
+    \lstinputlisting[style=context,xleftmargin=2em]{stencil_mdh.json}
+\end{frame}
+
+\begin{frame}{Ausgabe Gemm}
+    \lstinputlisting[style=context,xleftmargin=2em]{gemm_output.txt}
+\end{frame}
+
+\begin{frame}{Ausgabe Stencil}
+    \lstinputlisting[style=context,xleftmargin=2em]{stencil_output.txt}
+\end{frame}
+
+\begin{frame}{Algorithmus}
+    \begin{itemize}
+        \item Naiv Multithreaded: $O(n^3 * m * o)$
+        \item Mein PC: 16 Threads
+        \item Gemm: 25 Sekunden
+        \item Stencil: 2 Sekunden
+    \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Optimierungen}
+    \begin{itemize}
+        \item Doppelte Operationen entfernen
+        \item Stencil $in_X = [i1, i1+1, i1+2]$
+        \item Stencil $in_Y = [i2, i2+1, i2+2]$
+        \item Stencil $in_Z = [0]$
+        \item Stencil $out_X = [i1]$
+        \item Stencil $out_Y = [i2]$
+        \item Stencil $out_Z = [0]$
+        \item Fast 2x schneller
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100

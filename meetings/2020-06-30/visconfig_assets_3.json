@@ -1,0 +1,26 @@
+{
+    "name": "cube_shader",
+    "type": "shader",
+    "data": {
+        "vertex": "assets/texture/cube.vs.glsl",
+        "fragment": "assets/shaders/cube.fs.glsl"
+    }
+},
+{
+    "name": "framebuffer0",
+    "type": "framebuffer",
+    "data": {
+        "attachments": [
+            {
+                "type": "texture",
+                "destination": "color0",
+                "asset": "render_texture0"
+            }
+        ]
+    }
+},
+{
+    "name": "default_framebuffer",
+    "type": "default_framebuffer",
+    "data": {}
+}

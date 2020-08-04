@@ -1,0 +1,75 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Diese Woche}
+    \begin{itemize}
+        \item Textausgabe sollte funktionieren
+        \item Neues Projekt gestartet (MDH2Vis)
+        \item Neue Konfiguration entworfen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{MDH2Vis}
+    \begin{itemize}
+        \item Eingabe
+            \begin{itemize}
+                \item model.json
+                \item gemm\_mdh.json
+                \item gemm\_tps.json
+                \item stencil\_mdh.json
+                \item stencil\_tps.json
+            \end{itemize}
+        \item Ausgabe
+            \begin{itemize}
+                \item visconfig.json
+                \item assets Ordner (Vielleicht)
+            \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{MDH2Vis}
+    \lstinputlisting[style=context,xleftmargin=2em]{mdh2vis.sh}
+\end{frame}
+
+\begin{frame}{Konfiguration}
+    \begin{itemize}
+        \item Programm kann leichter ausgebaut werden
+        \item Globale Ressourcen werden an einem Ort gelagert
+        \item Programm kann sehr gut mit Komponenten arbeiten
+        \item Praktisch nah an einer Serialisierung der internen Repräsentation
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Entwurf}
+    \lstinputlisting[style=context,xleftmargin=2em]{visconfig.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Asset}
+    \lstinputlisting[style=context,xleftmargin=2em]{asset.json}
+\end{frame}
+
+\begin{frame}{Entwurf: World}
+    \lstinputlisting[style=context,xleftmargin=2em]{world.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Entity}
+    \lstinputlisting[style=context,xleftmargin=2em]{entity.json}
+\end{frame}
+
+\begin{frame}{Entwurf: Component}
+    \lstinputlisting[style=context,xleftmargin=2em]{component.json}
+\end{frame}
+
+\begin{frame}{Weiteres Vorgehen}
+    \begin{itemize}
+        \item MDH2Vis weiter ausbauen
+        \item Neue Konfiguration im Programm integrieren
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100
