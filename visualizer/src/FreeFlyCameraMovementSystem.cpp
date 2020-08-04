@@ -1,4 +1,4 @@
-#include <visualizer/CameraMovementSystem.hpp>
+#include <visualizer/FreeFlyCameraMovementSystem.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -8,7 +8,7 @@
 
 namespace Visualizer {
 
-CameraMovementSystem::CameraMovementSystem()
+FreeFlyCameraMovementSystem::FreeFlyCameraMovementSystem()
     : m_mouseX{ 0.0 }
     , m_mouseY{ 0.0 }
     , m_currentTime{ glfwGetTime() }
@@ -21,11 +21,11 @@ CameraMovementSystem::CameraMovementSystem()
     glfwGetCursorPos(glfwGetCurrentContext(), &m_mouseX, &m_mouseY);
 }
 
-void CameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void FreeFlyCameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
 
-void CameraMovementSystem::terminate() { m_componentManager = nullptr; }
+void FreeFlyCameraMovementSystem::terminate() { m_componentManager = nullptr; }
 
-void CameraMovementSystem::run(void*)
+void FreeFlyCameraMovementSystem::run(void*)
 {
     auto window{ glfwGetCurrentContext() };
     auto wKey{ glfwGetKey(window, GLFW_KEY_W) };

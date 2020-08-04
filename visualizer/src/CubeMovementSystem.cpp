@@ -2,7 +2,6 @@
 
 #include <GLFW/glfw3.h>
 
-#include <visualizer/CubeTickInfo.hpp>
 #include <visualizer/Iteration.hpp>
 #include <visualizer/Transform.hpp>
 

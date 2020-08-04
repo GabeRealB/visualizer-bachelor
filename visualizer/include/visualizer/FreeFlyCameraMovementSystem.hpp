@@ -11,9 +11,9 @@
 
 namespace Visualizer {
 
-class CameraMovementSystem : public System {
+class FreeFlyCameraMovementSystem : public System {
 public:
-    CameraMovementSystem();
+    FreeFlyCameraMovementSystem();
 
     void run(void* data) final;
     void initialize() final;

@@ -8,15 +8,12 @@ set(VISUALIZER_INCLUDES
         include/visualizer/AlignedMemory.hpp
         include/visualizer/AssetDatabase.hpp
         include/visualizer/Camera.hpp
-        include/visualizer/CameraInitializationSystem.hpp
-        include/visualizer/CameraMovementSystem.hpp
+        include/visualizer/FreeFlyCameraMovementSystem.hpp
         include/visualizer/ComponentManager.hpp
         include/visualizer/CompositingSystem.hpp
         include/visualizer/Composition.hpp
         include/visualizer/Cube.hpp
-        include/visualizer/CubeInitializationSystem.hpp
         include/visualizer/CubeMovementSystem.hpp
-        include/visualizer/CubeTickInfo.hpp
         include/visualizer/Entity.hpp
         include/visualizer/EntityArchetype.hpp
         include/visualizer/EntityArchetype.impl
@@ -53,11 +50,9 @@ set(VISUALIZER_INCLUDES
         )
 
 set(VISUALIZER_SRC
-        src/CameraInitializationSystem.cpp
-        src/CameraMovementSystem.cpp
+        src/FreeFlyCameraMovementSystem.cpp
         src/ComponentManager.cpp
         src/CompositingSystem.cpp
-        src/CubeInitializationSystem.cpp
         src/CubeMovementSystem.cpp
         src/Entity.cpp
         src/EntityArchetype.cpp
