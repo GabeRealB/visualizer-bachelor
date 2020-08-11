@@ -6,13 +6,18 @@
 #include <string_view>
 #include <vector>
 
+#include <visualizer/ActiveCameraSwitcher.hpp>
 #include <visualizer/AssetDatabase.hpp>
 #include <visualizer/Camera.hpp>
+#include <visualizer/CameraSwitchingSystem.hpp>
+#include <visualizer/CameraTypeSwitchingSystem.hpp>
 #include <visualizer/CompositingSystem.hpp>
 #include <visualizer/Composition.hpp>
 #include <visualizer/Cube.hpp>
 #include <visualizer/CubeMovementSystem.hpp>
 #include <visualizer/EntityManager.hpp>
+#include <visualizer/FixedCamera.hpp>
+#include <visualizer/FixedCameraMovementSystem.hpp>
 #include <visualizer/FreeFly.hpp>
 #include <visualizer/FreeFlyCameraMovementSystem.hpp>
 #include <visualizer/Iteration.hpp>
@@ -233,6 +238,12 @@ void addEntity(
             break;
         case Visconfig::Components::ComponentType::FreeFlyCamera:
             archetype = EntityArchetype::with<FreeFly>(archetype);
+            break;
+        case Visconfig::Components::ComponentType::FixedCamera:
+            archetype = EntityArchetype::with<FixedCamera>(archetype);
+            break;
+        case Visconfig::Components::ComponentType::CameraSwitcher:
+            archetype = EntityArchetype::with<ActiveCameraSwitcher>(archetype);
             break;
         case Visconfig::Components::ComponentType::Composition:
             archetype = EntityArchetype::with<Composition>(archetype);
@@ -977,8 +988,8 @@ void initializeComponent(
         targets.insert_or_assign(target.first, std::move(framebufferAsset));
     }
 
-    *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>()))
-        = Camera{ true, RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
+    *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>())) = Camera{ component.active,
+        component.fixed, RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
 }
 
 void initializeComponent(
@@ -986,6 +997,32 @@ void initializeComponent(
 {
     (void)component;
     *static_cast<FreeFly*>(manager.getEntityComponentPointer(entity, getTypeId<FreeFly>())) = {};
+}
+
+void initializeComponent(ComponentManager& manager, Entity entity,
+    const Visconfig::Components::FixedCameraComponent& component,
+    const std::unordered_map<std::size_t, Entity>& entityIdMap)
+{
+    auto& camera{ *static_cast<FixedCamera*>(manager.getEntityComponentPointer(entity, getTypeId<FixedCamera>())) };
+
+    camera.focus = entityIdMap.at(component.focus);
+    camera.distance = component.distance;
+    camera.horizontalAngle = component.horizontalAngle;
+    camera.verticalAngle = camera.verticalAngle;
+}
+
+void initializeComponent(ComponentManager& manager, Entity entity,
+    const Visconfig::Components::CameraSwitcherComponent& component,
+    const std::unordered_map<std::size_t, Entity>& entityIdMap)
+{
+    auto& switcher{ *static_cast<ActiveCameraSwitcher*>(
+        manager.getEntityComponentPointer(entity, getTypeId<ActiveCameraSwitcher>())) };
+
+    for (auto id : component.cameras) {
+        switcher.cameras.push_back(entityIdMap.at(id));
+    }
+
+    switcher.current = component.active;
 }
 
 void initializeComponent(
@@ -1059,6 +1096,16 @@ void initializeEntity(ComponentManager& manager, const std::unordered_map<std::s
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::FreeFlyCameraComponent>(component.data));
             break;
+        case Visconfig::Components::ComponentType::FixedCamera:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::FixedCameraComponent>(component.data),
+                entityIdMap);
+            break;
+        case Visconfig::Components::ComponentType::CameraSwitcher:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::CameraSwitcherComponent>(component.data),
+                entityIdMap);
+            break;
         case Visconfig::Components::ComponentType::Composition:
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CompositionComponent>(component.data));
@@ -1087,7 +1134,10 @@ World initializeWorld(const Visconfig::World& world)
     auto systemManager{ ecsWorld.addManager<SystemManager>() };
 
     systemManager->addSystem<CubeMovementSystem>("tick"sv);
+    systemManager->addSystem<CameraSwitchingSystem>("tick"sv);
+    systemManager->addSystem<CameraTypeSwitchingSystem>("tick"sv);
     systemManager->addSystem<FreeFlyCameraMovementSystem>("tick"sv);
+    systemManager->addSystem<FixedCameraMovementSystem>("tick"sv);
 
     systemManager->addSystem<MeshDrawingSystem>("draw"sv);
     systemManager->addSystem<CompositingSystem>("composite"sv);

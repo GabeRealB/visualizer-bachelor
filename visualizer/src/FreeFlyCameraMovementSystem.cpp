@@ -1,5 +1,7 @@
 #include <visualizer/FreeFlyCameraMovementSystem.hpp>
 
+#include <glad\glad.h>
+
 #include <GLFW/glfw3.h>
 
 #include <visualizer/Camera.hpp>
@@ -63,7 +65,7 @@ void FreeFlyCameraMovementSystem::run(void*)
     glm::vec3 mouseRotation{ m_rotationSpeed * mouseYOffset, m_rotationSpeed * mouseXOffset, 0.0 };
 
     m_cameraQuery.query(*m_componentManager)
-        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active; })
+        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active && !camera->m_fixed; })
         .forEach<Transform>([&](Transform* transform) {
             auto localRight{ transform->rotation * right };
             auto upRotation{ glm::angleAxis(mouseRotation.y, up) };
