@@ -608,7 +608,8 @@ Visconfig::Entity generateCube(const ProcessedConfig& mdhConfig, const ViewInfo&
     return entity;
 }
 
-Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t viewIndex, const std::string& framebufferName)
+Visconfig::Entity generateViewCamera(
+    std::size_t entityId, std::size_t focus, std::size_t viewIndex, const std::string& framebufferName)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -617,8 +618,14 @@ Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t viewIndex
         { Visconfig::Components::ComponentType::Camera, std::make_shared<Visconfig::Components::CameraComponent>() });
     entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
         std::make_shared<Visconfig::Components::TransformComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::FreeFlyCamera,
+        std::make_shared<Visconfig::Components::FreeFlyCameraComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::FixedCamera,
+        std::make_shared<Visconfig::Components::FixedCameraComponent>() });
 
     auto camera{ std::static_pointer_cast<Visconfig::Components::CameraComponent>(entity.components[0].data) };
+    camera->active = false;
+    camera->fixed = true;
     camera->layerMask = 1ull << viewIndex;
     camera->targets.insert_or_assign("cube", framebufferName);
     camera->targets.insert_or_assign("text", framebufferName);
@@ -636,9 +643,16 @@ Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t viewIndex
     transform->scale[1] = 1.0f;
     transform->scale[2] = 1.0f;
 
+    auto fixedCamera{ std::static_pointer_cast<Visconfig::Components::FixedCameraComponent>(
+        entity.components[3].data) };
+    fixedCamera->focus = focus;
+    fixedCamera->distance = 10.0f;
+    fixedCamera->horizontalAngle = 0.0f;
+    fixedCamera->verticalAngle = 0.0f;
+
     if (viewIndex == 0) {
-        entity.components.push_back({ Visconfig::Components::ComponentType::FreeFlyCamera,
-            std::make_shared<Visconfig::Components::FreeFlyCameraComponent>() });
+        camera->active = true;
+        camera->fixed = false;
     }
 
     return entity;
@@ -651,6 +665,8 @@ Visconfig::Entity generateCoordinatorEntity(std::size_t entityId)
 
     entity.components.push_back({ Visconfig::Components::ComponentType::Composition,
         std::make_shared<Visconfig::Components::CompositionComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::CameraSwitcher,
+        std::make_shared<Visconfig::Components::CameraSwitcherComponent>() });
 
     return entity;
 }
@@ -665,6 +681,14 @@ void extentComposition(Visconfig::World& world, std::array<float, 2> scale, std:
         { scale[0], scale[1] }, { position[0], position[1] }, src, target });
 }
 
+void extendCameraSwitcher(Visconfig::World& world, std::size_t camera)
+{
+    auto cameraSwitcher{ std::static_pointer_cast<Visconfig::Components::CameraSwitcherComponent>(
+        world.entities[0].components[1].data) };
+
+    cameraSwitcher->cameras.push_back(camera);
+}
+
 void generateMainViewConfig(
     Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world, std::size_t& numEntities)
 {
@@ -677,8 +701,11 @@ void generateMainViewConfig(
         numEntities++;
     }
 
-    world.entities.push_back(generateViewCamera(numEntities++, 0, "framebuffer_0"));
+    auto focusEntity{ numEntities - 1 };
+    auto cameraEntity{ numEntities++ };
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, "framebuffer_0"));
     extentComposition(world, { 1.0f, 1.0f }, { 0.0f, 0.0f }, "render_texture_0", "default_framebuffer");
+    extendCameraSwitcher(world, cameraEntity);
 }
 
 void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
@@ -694,10 +721,13 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
         numEntities++;
     }
 
+    auto focusEntity{ numEntities - 1 };
+    auto cameraEntity{ numEntities++ };
     world.entities.push_back(
-        generateViewCamera(numEntities++, subview + 1, "framebuffer_" + std::to_string(subview + 1)));
+        generateViewCamera(cameraEntity, focusEntity, subview + 1, "framebuffer_" + std::to_string(subview + 1)));
     extentComposition(world, { 0.2f, 0.2f }, { 1.0f, 1.0f - (subview * 0.2f) },
         "render_texture_" + std::to_string(subview + 1), "default_framebuffer");
+    extendCameraSwitcher(world, cameraEntity);
 }
 
 void generateWorld(Visconfig::Config& config, const ProcessedConfig& mdhConfig)
