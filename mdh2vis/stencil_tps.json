@@ -1,13 +1,25 @@
 {
   "layer 0": {
-    "SIG_array_to_OCL": [ 1, 0, 2 ],
-    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_array_to_OCL": [
+      1,
+      0,
+      2
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
     "SIG_buffer-do": {
-      "in": [ 0, 1, 2 ]
+      "in": [
+        0,
+        1,
+        2
+      ]
     },
     "TILE_SIZE": [
-      4096,
-      4096,
+      32,
+      32,
       1
     ],
     "NUM_THREADS": [
@@ -24,19 +36,31 @@
     "CMB_RES": false
   },
   "layer 1": {
-    "SIG_array_to_OCL": [ 1, 0, 2 ],
-    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_array_to_OCL": [
+      1,
+      0,
+      2
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
     "SIG_buffer-do": {
-      "in": [ 0, 1, 2 ]
+      "in": [
+        0,
+        1,
+        2
+      ]
     },
     "TILE_SIZE": [
-      1024,
-      128,
+      8,
+      16,
       1
     ],
     "NUM_THREADS": [
-      4,
-      32,
+      2,
+      2,
       1
     ],
     "MEM_REGION_INP": {
@@ -48,19 +72,31 @@
     "CMB_RES": false
   },
   "layer 2": {
-    "SIG_array_to_OCL": [ 1, 0, 2 ],
-    "SIG_mdh-do":       [ 0, 1, 2 ],
+    "SIG_array_to_OCL": [
+      1,
+      0,
+      2
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
     "SIG_buffer-do": {
-      "in": [ 0, 1, 2 ]
+      "in": [
+        0,
+        1,
+        2
+      ]
     },
     "TILE_SIZE": [
-      64,
+      2,
       2,
       1
     ],
     "NUM_THREADS": [
-      4,
-      32,
+      2,
+      2,
       1
     ],
     "MEM_REGION_INP": {
