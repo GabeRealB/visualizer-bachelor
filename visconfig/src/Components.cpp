@@ -35,6 +35,12 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::FreeFlyCamera:
         to_json(j, *std::static_pointer_cast<FreeFlyCameraComponent>(v));
         break;
+    case ComponentType::FixedCamera:
+        to_json(j, *std::static_pointer_cast<FixedCameraComponent>(v));
+        break;
+    case ComponentType::CameraSwitcher:
+        to_json(j, *std::static_pointer_cast<CameraSwitcherComponent>(v));
+        break;
     case ComponentType::Composition:
         to_json(j, *std::static_pointer_cast<CompositionComponent>(v));
         break;
@@ -94,6 +100,16 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::FixedCamera: {
+        auto ptr{ std::make_shared<FixedCameraComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
+    case ComponentType::CameraSwitcher: {
+        auto ptr{ std::make_shared<CameraSwitcherComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     case ComponentType::Composition: {
         auto ptr{ std::make_shared<CompositionComponent>() };
         from_json(j, *ptr);
@@ -115,6 +131,8 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::ExplicitIteration, "explicit_iteration" },
     { ComponentType::Camera, "camera" },
     { ComponentType::FreeFlyCamera, "free_fly_camera" },
+    { ComponentType::FixedCamera, "fixed_camera" },
+    { ComponentType::CameraSwitcher, "camera_switcher" },
     { ComponentType::Composition, "composition" },
 };
 
@@ -285,12 +303,16 @@ void from_json(const nlohmann::json& j, ExplicitIterationComponent& v)
 
 void to_json(nlohmann::json& j, const CameraComponent& v)
 {
+    j[CameraComponent::activeJson] = v.active;
+    j[CameraComponent::fixedJson] = v.fixed;
     j[CameraComponent::layerMaskJson] = v.layerMask.to_string();
     j[CameraComponent::targetsJson] = v.targets;
 }
 
 void from_json(const nlohmann::json& j, CameraComponent& v)
 {
+    j[CameraComponent::activeJson].get_to(v.active);
+    j[CameraComponent::fixedJson].get_to(v.fixed);
     v.layerMask = std::bitset<64>{ j[CameraComponent::layerMaskJson].get<std::string>() };
     j[CameraComponent::targetsJson].get_to(v.targets);
 }
@@ -298,6 +320,34 @@ void from_json(const nlohmann::json& j, CameraComponent& v)
 void to_json(nlohmann::json&, const FreeFlyCameraComponent&) {}
 
 void from_json(const nlohmann::json&, FreeFlyCameraComponent&) {}
+
+void to_json(nlohmann::json& j, const FixedCameraComponent& v)
+{
+    j[FixedCameraComponent::focusJson] = v.focus;
+    j[FixedCameraComponent::distanceJson] = v.distance;
+    j[FixedCameraComponent::horizontalAngleJson] = v.horizontalAngle;
+    j[FixedCameraComponent::verticalAngleJson] = v.verticalAngle;
+}
+
+void from_json(const nlohmann::json& j, FixedCameraComponent& v)
+{
+    j[FixedCameraComponent::focusJson].get_to(v.focus);
+    j[FixedCameraComponent::distanceJson].get_to(v.distance);
+    j[FixedCameraComponent::horizontalAngleJson].get_to(v.horizontalAngle);
+    j[FixedCameraComponent::verticalAngleJson].get_to(v.verticalAngle);
+}
+
+void to_json(nlohmann::json& j, const CameraSwitcherComponent& v)
+{
+    j[CameraSwitcherComponent::camerasJson] = v.cameras;
+    j[CameraSwitcherComponent::activeJson] = v.active;
+}
+
+void from_json(const nlohmann::json& j, CameraSwitcherComponent& v)
+{
+    j[CameraSwitcherComponent::camerasJson].get_to(v.cameras);
+    j[CameraSwitcherComponent::activeJson].get_to(v.active);
+}
 
 void to_json(nlohmann::json& j, const CompositionComponent& v)
 {

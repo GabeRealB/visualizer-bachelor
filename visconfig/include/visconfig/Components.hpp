@@ -22,6 +22,8 @@ enum class ComponentType {
     ExplicitIteration,
     Camera,
     FreeFlyCamera,
+    FixedCamera,
+    CameraSwitcher,
     Composition
 };
 
@@ -207,14 +209,38 @@ struct ExplicitIterationComponent : public ComponentData {
 };
 
 struct CameraComponent : public ComponentData {
+    bool active;
+    bool fixed;
     std::bitset<64> layerMask;
     std::unordered_map<std::string, std::string> targets;
 
+    static constexpr const char* activeJson{ "active" };
+    static constexpr const char* fixedJson{ "fixed" };
     static constexpr const char* layerMaskJson{ "layer_mask" };
     static constexpr const char* targetsJson{ "targets" };
 };
 
 struct FreeFlyCameraComponent : public ComponentData {
+};
+
+struct FixedCameraComponent : public ComponentData {
+    std::size_t focus;
+    float distance;
+    float horizontalAngle;
+    float verticalAngle;
+
+    static constexpr const char* focusJson{ "focus" };
+    static constexpr const char* distanceJson{ "distance" };
+    static constexpr const char* horizontalAngleJson{ "horizontal_angle" };
+    static constexpr const char* verticalAngleJson{ "vertical_angle" };
+};
+
+struct CameraSwitcherComponent : public ComponentData {
+    std::vector<std::size_t> cameras;
+    std::size_t active;
+
+    static constexpr const char* camerasJson{ "cameras" };
+    static constexpr const char* activeJson{ "active" };
 };
 
 struct CompositionOperation {
@@ -277,6 +303,12 @@ void from_json(const nlohmann::json& j, CameraComponent& v);
 
 void to_json(nlohmann::json& j, const FreeFlyCameraComponent& v);
 void from_json(const nlohmann::json& j, FreeFlyCameraComponent& v);
+
+void to_json(nlohmann::json& j, const FixedCameraComponent& v);
+void from_json(const nlohmann::json& j, FixedCameraComponent& v);
+
+void to_json(nlohmann::json& j, const CameraSwitcherComponent& v);
+void from_json(const nlohmann::json& j, CameraSwitcherComponent& v);
 
 void to_json(nlohmann::json& j, const CompositionComponent& v);
 void from_json(const nlohmann::json& j, CompositionComponent& v);
