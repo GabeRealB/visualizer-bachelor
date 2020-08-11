@@ -33,9 +33,7 @@ EntityComponentLayoutMap::EntityComponentLayoutMap(const EntityArchetype& archet
     for (std::size_t i = 0; i < m_layoutInfos.size(); ++i) {
         auto& layoutInfo{ m_layoutInfos[i] };
 
-        if (i == 0) {
-            continue;
-        } else {
+        if (i != 0) {
             auto& previousLayoutInfo{ m_layoutInfos[i - 1] };
             auto minIndex{ previousLayoutInfo.startIndex + previousLayoutInfo.size };
             auto indexAlignmentOffset{ minIndex % layoutInfo.alignment };
@@ -105,7 +103,7 @@ EntityComponentMap::EntityComponentMap(const EntityArchetype& archetype)
     m_entities.assign(10, { 0, 0 });
     m_componentsSpan = { m_componentsData.get(), m_componentLayoutMap.paddedSize() * 10 };
     m_entityMap.reserve(10);
-    assert(reinterpret_cast<std::uintptr_t>(m_componentsData.get()) % m_componentLayoutMap[0]->alignment == 0);
+    assert(reinterpret_cast<std::uintptr_t>(m_componentsData.get()) % m_componentLayoutMap[0].value().alignment == 0);
 }
 
 EntityComponentMap::EntityComponentMap(const EntityArchetype& archetype, const EntityComponentLayoutMap& layoutMap)
@@ -208,7 +206,7 @@ void* EntityComponentMap::component(Entity entity, TypeId typeId) const
         return nullptr;
     } else {
         auto entityIndex{ m_entityMap.at(entity) };
-        auto componentStartIndex{ m_componentLayoutMap.layoutInfo(typeId)->startIndex };
+        auto componentStartIndex{ m_componentLayoutMap.layoutInfo(typeId).value().startIndex };
         auto componentIndex{ (entityIndex * m_componentLayoutMap.paddedSize()) + componentStartIndex };
 
         return &m_componentsSpan[componentIndex];
@@ -255,8 +253,8 @@ void EntityComponentMap::grow(std::size_t entityCount)
         newMap.m_componentsSpan = { newMap.m_componentsData.get(), m_componentLayoutMap.paddedSize() * entityCount };
         newMap.m_entityMap.reserve(entityCount);
 
-        assert(
-            reinterpret_cast<std::uintptr_t>(newMap.m_componentsData.get()) % newMap.m_componentLayoutMap[0]->alignment
+        assert(reinterpret_cast<std::uintptr_t>(newMap.m_componentsData.get())
+                % newMap.m_componentLayoutMap[0].value().alignment
             == 0);
 
         for (std::size_t i = entityCount - 1; i <= 0; --i) {
