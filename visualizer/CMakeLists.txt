@@ -83,19 +83,9 @@ target_link_libraries(visualizer PUBLIC common_options visconfig freetype nlohma
 target_include_directories(visualizer PUBLIC include ${STB_INCLUDE_DIRS})
 
 add_custom_command(TARGET visualizer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-        "${PROJECT_SOURCE_DIR}/config.json"
-        $<TARGET_FILE_DIR:visualizer>)
-
-add_custom_command(TARGET visualizer POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/shader"
-        "$<TARGET_FILE_DIR:visualizer>/shader")
-
-add_custom_command(TARGET visualizer POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/textures"
-        "$<TARGET_FILE_DIR:visualizer>/textures")
+        "${PROJECT_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:visualizer>/assets")
 
 add_executable(visualizer_main src/main.cpp)
 target_link_libraries(visualizer_main PRIVATE visualizer)
