@@ -79,23 +79,19 @@ bool operator==(const MDHConfig& lhs, const MDHConfig& rhs) noexcept
 
 bool operator!=(const MDHConfig& lhs, const MDHConfig& rhs) noexcept { return !(lhs == rhs); }
 
-std::optional<MDHConfig> loadFromFiles(
-    const std::filesystem::path& modelPath, const std::filesystem::path& mdhPath, const std::filesystem::path& tpsPath)
+std::optional<MDHConfig> loadFromFiles(const std::filesystem::path& modelPath, const std::filesystem::path& tpsPath)
 {
-    if (!std::filesystem::exists(modelPath) || !std::filesystem::exists(mdhPath) || !std::filesystem::exists(tpsPath)) {
+    if (!std::filesystem::exists(modelPath) || !std::filesystem::exists(tpsPath)) {
         return std::nullopt;
     } else {
         try {
             std::ifstream modelStream{ modelPath };
-            std::ifstream mdhStream{ mdhPath };
             std::ifstream tpsStream{ tpsPath };
 
             nlohmann::json modelJson{};
-            nlohmann::json mdhJson{};
             nlohmann::json tpsJson{};
 
             modelStream >> modelJson;
-            mdhStream >> mdhJson;
             tpsStream >> tpsJson;
 
             Model::Model model{};

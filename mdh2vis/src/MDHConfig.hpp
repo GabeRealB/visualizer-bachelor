@@ -168,7 +168,6 @@ namespace TPS {
 bool operator==(const MDHConfig& lhs, const MDHConfig& rhs) noexcept;
 bool operator!=(const MDHConfig& lhs, const MDHConfig& rhs) noexcept;
 
-std::optional<MDHConfig> loadFromFiles(
-    const std::filesystem::path& modelPath, const std::filesystem::path& mdhPath, const std::filesystem::path& tpsPath);
+std::optional<MDHConfig> loadFromFiles(const std::filesystem::path& modelPath, const std::filesystem::path& tpsPath);
 
 }
