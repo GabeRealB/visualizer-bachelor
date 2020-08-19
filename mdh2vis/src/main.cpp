@@ -9,9 +9,7 @@
 #include "MDHConfig.hpp"
 #include "MDHOps.hpp"
 
-constexpr std::string_view UsageStr{
-    "Usage: mdh2vis --model model-path --mdh mdh-path --tps tps-path [--out output-dir]"
-};
+constexpr std::string_view UsageStr{ "Usage: mdh2vis --model model-path --tps tps-path [--out output-dir]" };
 
 constexpr std::size_t screenWidth = 1200;
 constexpr std::size_t screenHeight = 900;
@@ -23,8 +21,21 @@ struct SequentialLayer {
 };
 
 struct LayerInfo {
+    std::size_t iterationRate;
     std::array<float, 3> scale;
-    std::array<std::size_t, 3> iterationRate;
+    std::array<float, 3> absoluteScale;
+    std::vector<std::array<float, 3>> positions;
+};
+
+struct MainLayerInfo {
+    std::array<float, 3> scale;
+    std::array<float, 3> absoluteScale;
+    std::array<std::size_t, 3> numIterations;
+};
+
+struct MainViewInfo {
+    std::vector<MainLayerInfo> layers;
+    std::vector<MainLayerInfo> threads;
 };
 
 struct ViewInfo {
@@ -33,7 +44,7 @@ struct ViewInfo {
 };
 
 struct ProcessedConfig {
-    ViewInfo mainView;
+    MainViewInfo mainView;
     std::vector<ViewInfo> subViews;
     std::vector<SequentialLayer> config;
 };
@@ -46,7 +57,7 @@ Visconfig::Config generateConfig(const ProcessedConfig& config);
 
 int main(int argc, char* argv[])
 {
-    if (argc != 7 && argc != 9) {
+    if (argc != 5 && argc != 7) {
         std::cerr << UsageStr << std::endl;
         return 1;
     }
@@ -54,21 +65,15 @@ int main(int argc, char* argv[])
     auto workingDir{ std::filesystem::current_path() };
 
     std::filesystem::path modelPath{};
-    std::filesystem::path mdhPath{};
     std::filesystem::path tpsPath{};
 
     bool modelSet{ false };
-    bool mdhSet{ false };
     bool tpsSet{ false };
 
     for (int i = 1; i < argc - 1; ++i) {
         if (std::strcmp(argv[i], "--model") == 0) {
             modelPath = argv[i + 1];
             modelSet = true;
-            ++i;
-        } else if (std::strcmp(argv[i], "--mdh") == 0) {
-            mdhPath = argv[i + 1];
-            mdhSet = true;
             ++i;
         } else if (std::strcmp(argv[i], "--tps") == 0) {
             tpsPath = argv[i + 1];
@@ -83,12 +88,10 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (!modelSet || !mdhSet || !tpsSet) {
+    if (!modelSet || !tpsSet) {
         std::cerr << UsageStr << std::endl;
         return 1;
     }
-
-    std::cout << "Output path: " << workingDir << std::endl << std::endl;
 
     if (!std::filesystem::exists(workingDir)) {
         std::cerr << "Could not find " << workingDir << std::endl;
@@ -98,16 +101,17 @@ int main(int argc, char* argv[])
         std::cerr << "Could not find " << modelPath << std::endl;
         return 1;
     }
-    if (!std::filesystem::exists(mdhPath)) {
-        std::cerr << "Could not find " << mdhPath << std::endl;
-        return 1;
-    }
     if (!std::filesystem::exists(tpsPath)) {
         std::cerr << "Could not find " << tpsPath << std::endl;
         return 1;
     }
 
-    auto mdhConfig{ MDH2Vis::loadFromFiles(modelPath, mdhPath, tpsPath) };
+    std::cout << "Paths:" << std::endl;
+    std::cout << "\tOutput:" << workingDir << std::endl;
+    std::cout << "\tModel:" << modelPath << std::endl;
+    std::cout << "\tTPS:" << tpsPath << std::endl;
+
+    auto mdhConfig{ MDH2Vis::loadFromFiles(modelPath, tpsPath) };
     if (!mdhConfig) {
         std::cerr << "Could not load configs" << std::endl;
         return 1;
@@ -132,32 +136,65 @@ void printConfigInfo(const ProcessedConfig& config)
 
 void processView(const MDH2Vis::MDHConfig& mdhConfig, ProcessedConfig& config)
 {
+    auto adjustLayer{ [](MainLayerInfo& current, const MainLayerInfo& previous) {
+        current.scale = {
+            current.absoluteScale[0] / previous.absoluteScale[0],
+            current.absoluteScale[1] / previous.absoluteScale[1],
+            current.absoluteScale[2] / previous.absoluteScale[2],
+        };
+
+        current.numIterations = {
+            static_cast<std::size_t>(previous.absoluteScale[0] / current.absoluteScale[0]) - 1,
+            static_cast<std::size_t>(previous.absoluteScale[1] / current.absoluteScale[1]) - 1,
+            static_cast<std::size_t>(previous.absoluteScale[2] / current.absoluteScale[2]) - 1,
+        };
+
+        if (current.absoluteScale[0] == previous.absoluteScale[0]) {
+            current.numIterations[0] = 0;
+        }
+        if (current.absoluteScale[1] == previous.absoluteScale[1]) {
+            current.numIterations[1] = 0;
+        }
+        if (current.absoluteScale[2] == previous.absoluteScale[2]) {
+            current.numIterations[2] = 0;
+        }
+    } };
+
+    auto adjustLayerVector{ [&](std::vector<MainLayerInfo>& layers) {
+        for (auto pos{ layers.begin() + 1 }; pos != layers.end(); pos++) {
+            adjustLayer(*pos, *(pos - 1));
+        }
+    } };
+
+    std::array<float, 3> threadScale{ 1.0f, 1.0f, 1.0f };
+
     for (auto& tps : mdhConfig.tps) {
-        config.mainView.layers.push_back(
-            LayerInfo{ { static_cast<float>(tps.second.tileSize[0]), static_cast<float>(tps.second.tileSize[1]),
-                           static_cast<float>(tps.second.tileSize[2]) },
-                { 0, 0, 0 } });
+        threadScale[0] *= tps.second.numThreads[0];
+        threadScale[1] *= tps.second.numThreads[1];
+        threadScale[2] *= tps.second.numThreads[2];
+
+        auto absoluteScale{ threadScale };
+        absoluteScale[0] *= tps.second.tileSize[0];
+        absoluteScale[1] *= tps.second.tileSize[1];
+        absoluteScale[2] *= tps.second.tileSize[2];
+
+        config.mainView.layers.push_back(MainLayerInfo{ absoluteScale, absoluteScale, { 0, 0, 0 } });
     }
 
-    for (auto pos{ config.mainView.layers.begin() + 1 }; pos != config.mainView.layers.end(); pos++) {
+    for (std::size_t i{ 0 }; i < config.config.size(); i++) {
+        std::array<float, 3> absoluteScale{ 1, 1, 1 };
+        for (std::size_t j{ i }; j < config.config.size(); ++j) {
+            absoluteScale[0] *= config.config[j].tps.numThreads[0];
+            absoluteScale[1] *= config.config[j].tps.numThreads[1];
+            absoluteScale[2] *= config.config[j].tps.numThreads[2];
+        }
 
-        auto index{ std::distance(config.mainView.layers.begin(), pos) };
-
-        const auto& currentLayer{ config.config[index] };
-        const auto& previousLayer{ config.config[index - 1] };
-
-        pos->scale = {
-            static_cast<float>(currentLayer.tps.tileSize[0]) / static_cast<float>(previousLayer.tps.tileSize[0]),
-            static_cast<float>(currentLayer.tps.tileSize[1]) / static_cast<float>(previousLayer.tps.tileSize[1]),
-            static_cast<float>(currentLayer.tps.tileSize[2]) / static_cast<float>(previousLayer.tps.tileSize[2]),
-        };
-
-        pos->iterationRate = {
-            (previousLayer.tps.tileSize[0] / currentLayer.tps.tileSize[0]) - 1,
-            (previousLayer.tps.tileSize[1] / currentLayer.tps.tileSize[1]) - 1,
-            (previousLayer.tps.tileSize[2] / currentLayer.tps.tileSize[2]) - 1,
-        };
+        config.mainView.threads.push_back(MainLayerInfo{ absoluteScale, absoluteScale, { 0, 0, 0 } });
     }
+
+    adjustLayerVector(config.mainView.layers);
+    adjustLayer(config.mainView.threads.front(), config.mainView.layers.back());
+    adjustLayerVector(config.mainView.threads);
 }
 
 void processView(ProcessedConfig& config, const std::string& name, const MDH2Vis::OperationContainer& operation)
@@ -271,35 +308,84 @@ void processView(ProcessedConfig& config, const std::string& name, const MDH2Vis
         };
     } };
 
+    auto computeIterationPositions{ [](const MDH2Vis::OperationContainer& operationContainer, std::uint32_t stepX,
+                                        std::uint32_t stepY, std::uint32_t stepZ, std::uint32_t maxX,
+                                        std::uint32_t maxY, std::uint32_t maxZ, float sizeX, float sizeY,
+                                        float sizeZ) -> std::vector<std::array<float, 3>> {
+        auto computeMin{ [](float& min, const MDH2Vis::Operation& operation, std::size_t i1, std::size_t i2,
+                             std::size_t i3) {
+            auto value{ static_cast<float>(operation(i1, i2, i3)) };
+
+            if (min > value) {
+                min = value;
+            }
+        } };
+
+        std::vector<std::array<float, 3>> positions{};
+
+        for (std::size_t i3 = 0; i3 < maxZ; i3 += stepZ) {
+            for (std::size_t i2 = 0; i2 < maxY; i2 += stepY) {
+                for (std::size_t i1 = 0; i1 < maxX; i1 += stepX) {
+                    std::array<float, 3> position{};
+                    position.fill(std::numeric_limits<float>::max());
+
+                    for (std::size_t i = 0; i < operationContainer.x.size(); ++i) {
+                        computeMin(position[0], operationContainer.x[i], i1, i2, i3);
+                    }
+                    for (std::size_t i = 0; i < operationContainer.y.size(); ++i) {
+                        computeMin(position[1], operationContainer.y[i], i1, i2, i3);
+                    }
+                    for (std::size_t i = 0; i < operationContainer.z.size(); ++i) {
+                        computeMin(position[2], operationContainer.z[i], i1, i2, i3);
+                    }
+
+                    position[0] /= sizeX;
+                    position[1] /= sizeY;
+                    position[2] /= sizeZ;
+
+                    positions.push_back(position);
+                }
+            }
+        }
+
+        return positions;
+    } };
+
     ViewInfo view{};
     view.name = name;
 
-    std::vector<std::array<float, 3>> constantScales{};
-
-    for (const auto& layer : config.config) {
-        auto scale{ computeBounds(operation, layer.tps.tileSize[0], layer.tps.tileSize[1], layer.tps.tileSize[2]) };
-        view.layers.push_back(LayerInfo{ scale, { 0, 0, 0 } });
-        constantScales.push_back(scale);
+    for (const auto& layer : config.mainView.layers) {
+        auto scale{ computeBounds(operation, layer.absoluteScale[0], layer.absoluteScale[1], layer.absoluteScale[2]) };
+        view.layers.push_back(LayerInfo{ 0, scale, scale, {} });
     }
 
-    for (auto pos{ view.layers.begin() + 1 }; pos != view.layers.end(); pos++) {
+    for (auto pos{ view.layers.begin() }; pos != view.layers.end(); pos++) {
 
         auto index{ std::distance(view.layers.begin(), pos) };
 
-        const auto& currentLayer{ config.config[index] };
-        const auto& previousLayer{ config.config[index - 1] };
+        const auto& currentLayer{ *pos };
+        const auto& mainViewLayer{ config.mainView.layers[index] };
 
-        pos->scale = {
-            pos->scale[0] / constantScales[index - 1][0],
-            pos->scale[1] / constantScales[index - 1][1],
-            pos->scale[2] / constantScales[index - 1][2],
-        };
+        pos->iterationRate
+            = mainViewLayer.absoluteScale[0] * mainViewLayer.absoluteScale[1] * mainViewLayer.absoluteScale[2];
 
-        pos->iterationRate = {
-            (previousLayer.tps.tileSize[0] / currentLayer.tps.tileSize[0]) - 1,
-            (previousLayer.tps.tileSize[1] / currentLayer.tps.tileSize[1]) - 1,
-            (previousLayer.tps.tileSize[2] / currentLayer.tps.tileSize[2]) - 1,
-        };
+        if (pos == view.layers.begin()) {
+            pos->positions = { { 0.0f, 0.0f, 0.0f } };
+        } else {
+            const auto& previousLayer{ *(pos - 1) };
+            const auto& previousMainViewLayer{ config.mainView.layers[index - 1] };
+
+            pos->scale = {
+                currentLayer.absoluteScale[0] / previousLayer.absoluteScale[0],
+                currentLayer.absoluteScale[1] / previousLayer.absoluteScale[1],
+                currentLayer.absoluteScale[2] / previousLayer.absoluteScale[2],
+            };
+
+            pos->positions = computeIterationPositions(operation, mainViewLayer.absoluteScale[0],
+                mainViewLayer.absoluteScale[1], mainViewLayer.absoluteScale[2], previousMainViewLayer.absoluteScale[0],
+                previousMainViewLayer.absoluteScale[1], previousMainViewLayer.absoluteScale[2],
+                currentLayer.absoluteScale[0], currentLayer.absoluteScale[1], currentLayer.absoluteScale[2]);
+        }
     }
 
     config.subViews.push_back(view);
@@ -392,7 +478,7 @@ Visconfig::Asset createCubeMeshAsset()
         { 0.0f, 0.0f, 0.0f }, // lower-left
         { 1.0f, 0.0f, 0.0f }, // lower-right
         { 1.0f, 1.0f, 0.0f }, // top-right
-        { 1.0f, 0.0f, 0.0f }, // top-left
+        { 0.0f, 1.0f, 0.0f }, // top-left
     };
 
     constexpr std::array<float, 4> flattenedTexCoords[]{
@@ -509,8 +595,8 @@ Visconfig::Asset generateFramebufferAsset(std::size_t index)
     return asset;
 }
 
-Visconfig::Entity generateCube(const ProcessedConfig& mdhConfig, const ViewInfo& view, std::size_t layerNumber,
-    std::size_t viewIndex, std::size_t entityId, std::size_t parentId)
+Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const MainViewInfo& view, std::size_t entityId,
+    std::size_t parentId, std::size_t layerNumber)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -526,13 +612,39 @@ Visconfig::Entity generateCube(const ProcessedConfig& mdhConfig, const ViewInfo&
     entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
         std::make_shared<Visconfig::Components::TransformComponent>() });
 
-    std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[1].data)->asset = "cube_mesh";
+    if (layerNumber > 0) {
+        entity.components.push_back({ Visconfig::Components::ComponentType::Parent,
+            std::make_shared<Visconfig::Components::ParentComponent>() });
+        entity.components.push_back({ Visconfig::Components::ComponentType::ImplicitIteration,
+            std::make_shared<Visconfig::Components::ImplicitIterationComponent>() });
+    }
+
+    [[maybe_unused]] constexpr auto cubeIndex{ 0 };
+    constexpr auto meshIndex{ 1 };
+    constexpr auto materialIndex{ 2 };
+    constexpr auto layerIndex{ 3 };
+    constexpr auto transformIndex{ 4 };
+    constexpr auto parentIndex{ 5 };
+    constexpr auto iterationIndex{ 6 };
+
+    constexpr auto meshAsset{ "cube_mesh" };
+    constexpr auto textureAsset{ "cube_texture" };
+    constexpr auto shaderAsset{ "cube_shader" };
+
+    auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
+    auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
+        entity.components[materialIndex].data) };
+    auto& layer{ *std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[layerIndex].data) };
+    auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
+        entity.components[transformIndex].data) };
+
+    mesh.asset = meshAsset;
 
     auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = "cube_texture";
+    texture->asset = textureAsset;
     texture->slot = 0;
 
     diffuseColor->value[0] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f;
@@ -540,70 +652,332 @@ Visconfig::Entity generateCube(const ProcessedConfig& mdhConfig, const ViewInfo&
     diffuseColor->value[2] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f;
     diffuseColor->value[3] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[3]) / 255.0f;
 
-    gridScale->value.push_back({ static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[0]),
-        static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[1]) });
-    gridScale->value.push_back({ static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[0]),
-        static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[2]) });
-    gridScale->value.push_back({ static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[1]),
-        static_cast<float>(mdhConfig.config[layerNumber].tps.tileSize[2]) });
+    if (layerNumber != view.layers.size() - 1) {
+        auto currentLayerScale{ view.layers[layerNumber].absoluteScale };
+        auto nextLayerScale{ view.layers[layerNumber + 1].absoluteScale };
 
-    auto material{ std::static_pointer_cast<Visconfig::Components::MaterialComponent>(entity.components[2].data) };
+        MDH2Vis::VecN<float, 3> scales{
+            static_cast<float>(currentLayerScale[0]) / static_cast<float>(nextLayerScale[0]),
+            static_cast<float>(currentLayerScale[1]) / static_cast<float>(nextLayerScale[1]),
+            static_cast<float>(currentLayerScale[2]) / static_cast<float>(nextLayerScale[2]),
+        };
 
-    material->asset = "cube_shader";
-    material->attributes.insert_or_assign("gridTexture",
+        gridScale->value.push_back({ scales[0], scales[1] });
+        gridScale->value.push_back({ scales[0], scales[2] });
+        gridScale->value.push_back({ scales[2], scales[1] });
+    } else {
+        MDH2Vis::VecN<float, 3> scales{
+            static_cast<float>(view.layers[layerNumber].absoluteScale[0]),
+            static_cast<float>(view.layers[layerNumber].absoluteScale[1]),
+            static_cast<float>(view.layers[layerNumber].absoluteScale[2]),
+        };
+
+        gridScale->value.push_back({ scales[0], scales[1] });
+        gridScale->value.push_back({ scales[0], scales[2] });
+        gridScale->value.push_back({ scales[2], scales[1] });
+    }
+
+    material.asset = shaderAsset;
+    material.attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
-
-    material->attributes.insert_or_assign("diffuseColor",
+    material.attributes.insert_or_assign("diffuseColor",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Vec4, diffuseColor, false });
-    material->attributes.insert_or_assign("gridScale",
+    material.attributes.insert_or_assign("gridScale",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Vec2, gridScale, true });
 
-    auto layer{ std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[3].data) };
-    layer->mask = 1llu << viewIndex;
+    layer.mask = 1llu;
 
-    auto transform{ std::static_pointer_cast<Visconfig::Components::TransformComponent>(entity.components[4].data) };
-    transform->rotation[0] = 0;
-    transform->rotation[1] = 0;
-    transform->rotation[2] = 0;
+    transform.rotation[0] = 0;
+    transform.rotation[1] = 0;
+    transform.rotation[2] = 0;
 
-    transform->position[0] = 0;
-    transform->position[1] = 0;
-    transform->position[2] = 0;
-
-    transform->scale[0] = view.layers[layerNumber].scale[0];
-    transform->scale[1] = view.layers[layerNumber].scale[1];
-    transform->scale[2] = view.layers[layerNumber].scale[2];
+    transform.scale[0] = view.layers[layerNumber].scale[0];
+    transform.scale[1] = view.layers[layerNumber].scale[1];
+    transform.scale[2] = view.layers[layerNumber].scale[2];
 
     if (layerNumber != 0) {
-        entity.components.push_back({ Visconfig::Components::ComponentType::Parent,
-            std::make_shared<Visconfig::Components::ParentComponent>() });
-        entity.components.push_back({ Visconfig::Components::ComponentType::ImplicitIteration,
-            std::make_shared<Visconfig::Components::ImplicitIterationComponent>() });
-
-        std::static_pointer_cast<Visconfig::Components::ParentComponent>(entity.components[5].data)->id = parentId;
-
-        auto iteration{ std::static_pointer_cast<Visconfig::Components::ImplicitIterationComponent>(
-            entity.components[6].data) };
-        iteration->order = Visconfig::Components::IterationOrder::XYZ;
-        iteration->ticksPerIteration = mdhConfig.config[layerNumber].tps.tileSize[0]
-            * mdhConfig.config[layerNumber].tps.tileSize[1] * mdhConfig.config[layerNumber].tps.tileSize[2];
-        iteration->numIterations[0] = view.layers[layerNumber].iterationRate[0];
-        iteration->numIterations[1] = view.layers[layerNumber].iterationRate[1];
-        iteration->numIterations[2] = view.layers[layerNumber].iterationRate[2];
-
         std::array<float, 3> halfScale{
             view.layers[layerNumber].scale[0] / 2.0f,
             view.layers[layerNumber].scale[1] / 2.0f,
             view.layers[layerNumber].scale[2] / 2.0f,
         };
 
-        transform->position[0] = -0.5f + halfScale[0];
-        transform->position[1] = 0.5f - halfScale[1];
-        transform->position[2] = -0.5f + halfScale[2];
+        transform.position[0] = -0.5f + halfScale[0];
+        transform.position[1] = 0.5f - halfScale[1];
+        transform.position[2] = -0.5f + halfScale[2];
+    } else {
+        transform.position[0] = 0;
+        transform.position[1] = 0;
+        transform.position[2] = 0;
     }
+
+    if (layerNumber != 0) {
+        auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
+            entity.components[parentIndex].data) };
+        auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ImplicitIterationComponent>(
+            entity.components[iterationIndex].data) };
+
+        parent.id = parentId;
+
+        iteration.order = Visconfig::Components::IterationOrder::XYZ;
+        iteration.numIterations[0] = view.layers[layerNumber].numIterations[0];
+        iteration.numIterations[1] = view.layers[layerNumber].numIterations[1];
+        iteration.numIterations[2] = view.layers[layerNumber].numIterations[2];
+
+        iteration.ticksPerIteration = view.layers[layerNumber].absoluteScale[0]
+            * view.layers[layerNumber].absoluteScale[1] * view.layers[layerNumber].absoluteScale[2];
+    }
+
+    return entity;
+}
+
+Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, const MainViewInfo& view,
+    std::size_t entityId, std::size_t parentId, std::size_t layerNumber)
+{
+    Visconfig::Entity entity{};
+    entity.id = entityId;
+
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Cube, std::make_shared<Visconfig::Components::CubeComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Mesh, std::make_shared<Visconfig::Components::MeshComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::Material,
+        std::make_shared<Visconfig::Components::MaterialComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Layer, std::make_shared<Visconfig::Components::LayerComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
+        std::make_shared<Visconfig::Components::TransformComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Parent, std::make_shared<Visconfig::Components::ParentComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::ImplicitIteration,
+        std::make_shared<Visconfig::Components::ImplicitIterationComponent>() });
+
+    [[maybe_unused]] constexpr auto cubeIndex{ 0 };
+    constexpr auto meshIndex{ 1 };
+    constexpr auto materialIndex{ 2 };
+    constexpr auto layerIndex{ 3 };
+    constexpr auto transformIndex{ 4 };
+    constexpr auto parentIndex{ 5 };
+    constexpr auto iterationIndex{ 6 };
+
+    constexpr auto meshAsset{ "cube_mesh" };
+    constexpr auto textureAsset{ "cube_texture" };
+    constexpr auto shaderAsset{ "cube_shader" };
+
+    auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
+    auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
+        entity.components[materialIndex].data) };
+    auto& layer{ *std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[layerIndex].data) };
+    auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
+        entity.components[transformIndex].data) };
+    auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
+        entity.components[parentIndex].data) };
+    auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ImplicitIterationComponent>(
+        entity.components[iterationIndex].data) };
+
+    mesh.asset = meshAsset;
+
+    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
+    auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
+
+    texture->asset = textureAsset;
+    texture->slot = 0;
+
+    diffuseColor->value[0] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[0]) / 255.0f;
+    diffuseColor->value[1] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[1]) / 255.0f;
+    diffuseColor->value[2] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[2]) / 255.0f;
+    diffuseColor->value[3] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[3]) / 255.0f;
+
+    if (layerNumber != view.threads.size() - 1) {
+        auto currentLayerScale{ view.threads[layerNumber].absoluteScale };
+        auto nextLayerScale{ view.threads[layerNumber + 1].absoluteScale };
+
+        MDH2Vis::VecN<float, 3> scales{
+            static_cast<float>(currentLayerScale[0]) / static_cast<float>(nextLayerScale[0]),
+            static_cast<float>(currentLayerScale[1]) / static_cast<float>(nextLayerScale[1]),
+            static_cast<float>(currentLayerScale[2]) / static_cast<float>(nextLayerScale[2]),
+        };
+
+        gridScale->value.push_back({ scales[0], scales[1] });
+        gridScale->value.push_back({ scales[0], scales[2] });
+        gridScale->value.push_back({ scales[2], scales[1] });
+    } else {
+        MDH2Vis::VecN<float, 3> scales{
+            static_cast<float>(view.threads[layerNumber].absoluteScale[0]),
+            static_cast<float>(view.threads[layerNumber].absoluteScale[1]),
+            static_cast<float>(view.threads[layerNumber].absoluteScale[2]),
+        };
+
+        gridScale->value.push_back({ scales[0], scales[1] });
+        gridScale->value.push_back({ scales[0], scales[2] });
+        gridScale->value.push_back({ scales[2], scales[1] });
+    }
+
+    material.asset = shaderAsset;
+    material.attributes.insert_or_assign("gridTexture",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
+    material.attributes.insert_or_assign("diffuseColor",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, diffuseColor, false });
+    material.attributes.insert_or_assign("gridScale",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec2, gridScale, true });
+
+    layer.mask = 1llu;
+
+    transform.rotation[0] = 0;
+    transform.rotation[1] = 0;
+    transform.rotation[2] = 0;
+
+    transform.scale[0] = view.threads[layerNumber].scale[0];
+    transform.scale[1] = view.threads[layerNumber].scale[1];
+    transform.scale[2] = view.threads[layerNumber].scale[2];
+
+    std::array<float, 3> halfScale{
+        view.threads[layerNumber].scale[0] / 2.0f,
+        view.threads[layerNumber].scale[1] / 2.0f,
+        view.threads[layerNumber].scale[2] / 2.0f,
+    };
+
+    transform.position[0] = -0.5f + halfScale[0];
+    transform.position[1] = 0.5f - halfScale[1];
+    transform.position[2] = -0.5f + halfScale[2];
+
+    parent.id = parentId;
+
+    iteration.order = Visconfig::Components::IterationOrder::XYZ;
+    iteration.numIterations[0] = view.threads[layerNumber].numIterations[0];
+    iteration.numIterations[1] = view.threads[layerNumber].numIterations[1];
+    iteration.numIterations[2] = view.threads[layerNumber].numIterations[2];
+
+    iteration.ticksPerIteration = view.threads[layerNumber].absoluteScale[0]
+        * view.threads[layerNumber].absoluteScale[1] * view.threads[layerNumber].absoluteScale[2];
+
+    return entity;
+}
+
+Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const ViewInfo& view, std::size_t entityId,
+    std::size_t parentId, std::size_t viewNumber, std::size_t layerNumber)
+{
+    Visconfig::Entity entity{};
+    entity.id = entityId;
+
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Cube, std::make_shared<Visconfig::Components::CubeComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Mesh, std::make_shared<Visconfig::Components::MeshComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::Material,
+        std::make_shared<Visconfig::Components::MaterialComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Layer, std::make_shared<Visconfig::Components::LayerComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
+        std::make_shared<Visconfig::Components::TransformComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Parent, std::make_shared<Visconfig::Components::ParentComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::ExplicitIteration,
+        std::make_shared<Visconfig::Components::ExplicitIterationComponent>() });
+
+    [[maybe_unused]] constexpr auto cubeIndex{ 0 };
+    constexpr auto meshIndex{ 1 };
+    constexpr auto materialIndex{ 2 };
+    constexpr auto layerIndex{ 3 };
+    constexpr auto transformIndex{ 4 };
+    constexpr auto parentIndex{ 5 };
+    constexpr auto iterationIndex{ 6 };
+
+    constexpr auto meshAsset{ "cube_mesh" };
+    constexpr auto textureAsset{ "cube_texture" };
+    constexpr auto shaderAsset{ "cube_shader" };
+
+    auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
+    auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
+        entity.components[materialIndex].data) };
+    auto& layer{ *std::static_pointer_cast<Visconfig::Components::LayerComponent>(entity.components[layerIndex].data) };
+    auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
+        entity.components[transformIndex].data) };
+    auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
+        entity.components[parentIndex].data) };
+    auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ExplicitIterationComponent>(
+        entity.components[iterationIndex].data) };
+
+    mesh.asset = meshAsset;
+
+    auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
+    auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
+
+    texture->asset = textureAsset;
+    texture->slot = 0;
+
+    std::size_t colorLayer{ 0 };
+
+    if (mdhConfig.config[layerNumber].tps.memRegionInp.contains(view.name)) {
+        colorLayer = mdhConfig.config[layerNumber].tps.memRegionInp.at(view.name);
+    } else {
+        colorLayer = mdhConfig.config[layerNumber].tps.memRegionRes.at(view.name);
+    }
+
+    diffuseColor->value[0] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[0]) / 255.0f;
+    diffuseColor->value[1] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[1]) / 255.0f;
+    diffuseColor->value[2] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[2]) / 255.0f;
+    diffuseColor->value[3] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[3]) / 255.0f;
+
+    gridScale->value.push_back({ 1, 1 });
+    gridScale->value.push_back({ 1, 1 });
+    gridScale->value.push_back({ 1, 1 });
+
+    material.asset = shaderAsset;
+    material.attributes.insert_or_assign("gridTexture",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
+    material.attributes.insert_or_assign("diffuseColor",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, diffuseColor, false });
+    material.attributes.insert_or_assign("gridScale",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec2, gridScale, true });
+
+    layer.mask = 1llu << (viewNumber + 1);
+
+    transform.rotation[0] = 0;
+    transform.rotation[1] = 0;
+    transform.rotation[2] = 0;
+
+    transform.scale[0] = view.layers[layerNumber].scale[0];
+    transform.scale[1] = view.layers[layerNumber].scale[1];
+    transform.scale[2] = view.layers[layerNumber].scale[2];
+
+    std::array<float, 3> halfScale{
+        view.layers[layerNumber].scale[0] / 2.0f,
+        view.layers[layerNumber].scale[1] / 2.0f,
+        view.layers[layerNumber].scale[2] / 2.0f,
+    };
+
+    if (layerNumber > 0) {
+        transform.position[0] = -0.5f + halfScale[0];
+        transform.position[1] = 0.5f - halfScale[1];
+        transform.position[2] = -0.5f + halfScale[2];
+    } else {
+        transform.position[0] = 0.0f;
+        transform.position[1] = 0.0f;
+        transform.position[2] = 0.0f;
+    }
+
+    parent.id = parentId;
+
+    iteration.positions = view.layers[layerNumber].positions;
+
+    /*
+    iteration.ticksPerIteration = view.layers[layerNumber].absoluteScale[0] * view.layers[layerNumber].absoluteScale[1]
+        * view.layers[layerNumber].absoluteScale[2];
+    */
+
+    iteration.ticksPerIteration = view.layers[layerNumber].iterationRate;
 
     return entity;
 }
@@ -695,13 +1069,22 @@ void generateMainViewConfig(
     config.assets.push_back(generateRenderTextureAsset(0));
     config.assets.push_back(generateFramebufferAsset(0));
 
+    auto focusEntity{ numEntities };
+
     for (auto layer{ mdhConfig.mainView.layers.begin() }; layer != mdhConfig.mainView.layers.end(); layer++) {
         auto index{ std::distance(mdhConfig.mainView.layers.begin(), layer) };
-        world.entities.push_back(generateCube(mdhConfig, mdhConfig.mainView, index, 0, numEntities, numEntities - 1));
+        world.entities.push_back(
+            generateMainViewCube(mdhConfig, mdhConfig.mainView, numEntities, numEntities - 1, index));
         numEntities++;
     }
 
-    auto focusEntity{ numEntities - 1 };
+    for (auto layer{ mdhConfig.mainView.threads.begin() }; layer != mdhConfig.mainView.threads.end(); layer++) {
+        auto index{ std::distance(mdhConfig.mainView.threads.begin(), layer) };
+        world.entities.push_back(
+            generateMainViewThreadCube(mdhConfig, mdhConfig.mainView, numEntities, numEntities - 1, index));
+        numEntities++;
+    }
+
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, "framebuffer_0"));
     extentComposition(world, { 1.0f, 1.0f }, { 0.0f, 0.0f }, "render_texture_0", "default_framebuffer");
@@ -709,23 +1092,24 @@ void generateMainViewConfig(
 }
 
 void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
-    std::size_t& numEntities, std::size_t subview)
+    std::size_t& numEntities, std::size_t subview, std::size_t numSubViews)
 {
     config.assets.push_back(generateRenderTextureAsset(subview + 1));
     config.assets.push_back(generateFramebufferAsset(subview + 1));
 
-    for (auto layer{ mdhConfig.mainView.layers.begin() }; layer != mdhConfig.mainView.layers.end(); layer++) {
-        auto index{ std::distance(mdhConfig.mainView.layers.begin(), layer) };
+    auto focusEntity{ numEntities };
+
+    for (auto layer{ mdhConfig.config.begin() }; layer != mdhConfig.config.end(); layer++) {
+        auto index{ std::distance(mdhConfig.config.begin(), layer) };
         world.entities.push_back(
-            generateCube(mdhConfig, mdhConfig.subViews[subview], index, subview + 1, numEntities, numEntities - 1));
+            generateSubViewCube(mdhConfig, mdhConfig.subViews[subview], numEntities, numEntities - 1, subview, index));
         numEntities++;
     }
 
-    auto focusEntity{ numEntities - 1 };
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(
         generateViewCamera(cameraEntity, focusEntity, subview + 1, "framebuffer_" + std::to_string(subview + 1)));
-    extentComposition(world, { 0.2f, 0.2f }, { 1.0f, 1.0f - (subview * 0.2f) },
+    extentComposition(world, { 0.2f, 0.2f }, { 0.7f, (-0.7f + ((numSubViews - 1) * 0.5f)) - (subview * 0.5f) },
         "render_texture_" + std::to_string(subview + 1), "default_framebuffer");
     extendCameraSwitcher(world, cameraEntity);
 }
@@ -740,7 +1124,7 @@ void generateWorld(Visconfig::Config& config, const ProcessedConfig& mdhConfig)
 
     for (auto pos{ mdhConfig.subViews.begin() }; pos != mdhConfig.subViews.end(); pos++) {
         auto index{ std::distance(mdhConfig.subViews.begin(), pos) };
-        generateSubViewConfig(config, mdhConfig, world, numEntities, index);
+        generateSubViewConfig(config, mdhConfig, world, numEntities, index, mdhConfig.subViews.size());
     }
 
     config.worlds.push_back(world);
