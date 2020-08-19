@@ -83,7 +83,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureFi
             texture->addAttribute(TextureMagnificationFilter::Linear);
             break;
         case Visconfig::Assets::TextureAttributes::MinificationLinear:
-            texture->addAttribute(TextureMinificationFilter::Linear);
+            texture->addAttribute(TextureMinificationFilter::LinearMipmapLinear);
             break;
         case Visconfig::Assets::TextureAttributes::GenerateMipMaps:
             break;
@@ -204,7 +204,7 @@ void initializeAsset(const Visconfig::Asset& asset)
 }
 
 void addEntity(
-    EntityManager& manager, std::unordered_map<std::size_t, Entity>& entityIdMap, const Visconfig::Entity& entity)
+    EntityManager& entityManager, std::unordered_map<std::size_t, Entity>& entityIdMap, const Visconfig::Entity& entity)
 {
     EntityArchetype archetype{};
     for (auto& component : entity.components) {
@@ -251,7 +251,7 @@ void addEntity(
         }
     }
 
-    entityIdMap.insert_or_assign(entity.id, manager.addEntity(archetype));
+    entityIdMap.insert_or_assign(entity.id, entityManager.addEntity(archetype));
 }
 
 void initializeComponent(
@@ -266,8 +266,9 @@ void initializeComponent(
 {
     auto meshAsset{ std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset(component.asset).data)) };
-    *static_cast<std::shared_ptr<Mesh>*>(manager.getEntityComponentPointer(entity, getTypeId<std::shared_ptr<Mesh>>()))
-        = std::move(meshAsset);
+    auto& mesh{ *static_cast<std::shared_ptr<Mesh>*>(
+        manager.getEntityComponentPointer(entity, getTypeId<std::shared_ptr<Mesh>>())) };
+    mesh = std::move(meshAsset);
 }
 
 void initializeComponent(ComponentManager& manager, Entity entity,
@@ -1008,7 +1009,7 @@ void initializeComponent(ComponentManager& manager, Entity entity,
     camera.focus = entityIdMap.at(component.focus);
     camera.distance = component.distance;
     camera.horizontalAngle = component.horizontalAngle;
-    camera.verticalAngle = camera.verticalAngle;
+    camera.verticalAngle = camera.verticalAngle + (glm::pi<float>() / 2);
 }
 
 void initializeComponent(ComponentManager& manager, Entity entity,

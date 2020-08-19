@@ -276,17 +276,25 @@ ShaderEnvironment::ShaderEnvironment(const ShaderEnvironment& other)
 ShaderEnvironment& ShaderEnvironment::operator=(const ShaderEnvironment& other)
 {
     if (this != &other) {
-        m_dataSize = other.m_dataSize;
-        m_parameterInfos = other.m_parameterInfos;
-        m_dataAlignment = other.m_dataAlignment;
-        m_parameterData = { AlignedDeleter<unsigned char>::allocate(other.m_dataAlignment, other.m_dataSize),
-            AlignedDeleter<unsigned char>{} };
-        std::memset(m_parameterData.get(), 0, m_dataSize);
+        if (other.m_dataSize == 0) {
+            m_dataSize = 0;
+            m_parameterInfos = {};
+            m_dataAlignment = 0;
+            m_parameterData = {};
+            m_parameterNames = {};
+        } else {
+            m_dataSize = other.m_dataSize;
+            m_parameterInfos = other.m_parameterInfos;
+            m_dataAlignment = other.m_dataAlignment;
+            m_parameterData = { AlignedDeleter<unsigned char>::allocate(other.m_dataAlignment, other.m_dataSize),
+                AlignedDeleter<unsigned char>{} };
+            std::memset(m_parameterData.get(), 0, m_dataSize);
 
-        m_parameterNames.clear();
-        m_parameterNames.resize(other.m_parameterNames.size());
-        for (auto& it : m_parameterInfos) {
-            m_parameterNames.emplace_back(it.first);
+            m_parameterNames.clear();
+            m_parameterNames.resize(other.m_parameterNames.size());
+            for (auto& it : m_parameterInfos) {
+                m_parameterNames.emplace_back(it.first);
+            }
         }
     }
     return *this;

@@ -6,6 +6,7 @@
 
 #include <visualizer/Camera.hpp>
 #include <visualizer/FixedCamera.hpp>
+#include <visualizer/Parent.hpp>
 #include <visualizer/Transform.hpp>
 
 namespace Visualizer {
@@ -20,6 +21,28 @@ FixedCameraMovementSystem::FixedCameraMovementSystem()
 void FixedCameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
 
 void FixedCameraMovementSystem::terminate() { m_componentManager = nullptr; }
+
+glm::quat safeQuatLookAt(
+    glm::vec3 const& lookFrom, glm::vec3 const& lookTo, glm::vec3 const& up, glm::vec3 const& alternativeUp)
+{
+    glm::vec3 direction = lookTo - lookFrom;
+    float directionLength = glm::length(direction);
+
+    // Check if the direction is valid; Also deals with NaN
+    if (directionLength <= 0.0001)
+        return glm::quat(1, 0, 0, 0); // Just return identity
+
+    // Normalize direction
+    direction /= directionLength;
+
+    // Is the normal up (nearly) parallel to direction?
+    if (glm::abs(glm::dot(direction, up)) > .9999f) {
+        // Use alternative up
+        return glm::quatLookAt(direction, alternativeUp);
+    } else {
+        return glm::quatLookAt(direction, up);
+    }
+}
 
 void FixedCameraMovementSystem::run(void*)
 {
@@ -45,45 +68,79 @@ void FixedCameraMovementSystem::run(void*)
     }
 
     m_cameraQuery.query(*m_componentManager)
-        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active && camera->m_fixed; })
-        .forEach<FixedCamera, Transform>([&](FixedCamera* camera, Transform* transform) {
-            if (wKey == GLFW_PRESS) {
-                camera->verticalAngle += movementSpeed;
-                if (camera->verticalAngle >= 2 * glm::pi<float>()) {
-                    camera->verticalAngle = 0;
+        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_fixed; })
+        .forEach<Camera, FixedCamera, Transform>([&](const Camera* camera, FixedCamera* fixedCamera,
+                                                     Transform* transform) {
+            if (camera->m_active) {
+                if (wKey == GLFW_PRESS) {
+                    fixedCamera->verticalAngle -= movementSpeed;
+                    if (fixedCamera->verticalAngle <= glm::radians(3.0f)) {
+                        fixedCamera->verticalAngle = glm::radians(3.0f);
+                    }
+                }
+
+                if (sKey == GLFW_PRESS) {
+                    fixedCamera->verticalAngle += movementSpeed;
+                    if (fixedCamera->verticalAngle >= glm::radians(177.0f)) {
+                        fixedCamera->verticalAngle = glm::radians(177.0f);
+                    }
+                }
+
+                if (aKey == GLFW_PRESS) {
+                    fixedCamera->horizontalAngle -= movementSpeed;
+                    if (fixedCamera->horizontalAngle <= 0) {
+                        fixedCamera->horizontalAngle += 2 * glm::pi<float>();
+                    }
+                }
+
+                if (dKey == GLFW_PRESS) {
+                    fixedCamera->horizontalAngle += movementSpeed;
+                    if (fixedCamera->horizontalAngle >= 2 * glm::pi<float>()) {
+                        fixedCamera->horizontalAngle -= 2 * glm::pi<float>();
+                    }
+                }
+
+                if (qKey == GLFW_PRESS) {
+                    fixedCamera->distance -= movementSpeed;
+                    if (fixedCamera->distance <= 0.0005f) {
+                        fixedCamera->distance = 0.0005f;
+                    }
+                }
+
+                if (eKey == GLFW_PRESS) {
+                    fixedCamera->distance += movementSpeed;
                 }
             }
 
-            if (sKey == GLFW_PRESS) {
-                camera->verticalAngle -= movementSpeed;
-                if (camera->verticalAngle <= -2 * glm::pi<float>()) {
-                    camera->verticalAngle = 0;
-                }
+            auto parent{ static_cast<const Parent*>(
+                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Parent>())) };
+            auto modelMatrix{ getModelMatrix(*static_cast<const Transform*>(
+                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Transform>()))) };
+
+            while (parent != nullptr) {
+                auto parentTransform{ static_cast<const Transform*>(
+                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
+                modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
+                parent = static_cast<const Parent*>(
+                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
             }
 
-            if (aKey == GLFW_PRESS) {
-                camera->horizontalAngle -= movementSpeed;
-                if (camera->horizontalAngle >= 2 * glm::pi<float>()) {
-                    camera->horizontalAngle = 0;
-                }
-            }
+            glm::vec4 position{ glm::sin(fixedCamera->verticalAngle) * glm::sin(fixedCamera->horizontalAngle)
+                    * fixedCamera->distance,
+                glm::cos(fixedCamera->verticalAngle) * fixedCamera->distance,
+                glm::sin(fixedCamera->verticalAngle) * glm::cos(fixedCamera->horizontalAngle) * fixedCamera->distance,
+                1.0f };
 
-            if (dKey == GLFW_PRESS) {
-                camera->horizontalAngle += movementSpeed;
-                if (camera->horizontalAngle <= -2 * glm::pi<float>()) {
-                    camera->horizontalAngle = 0;
-                }
-            }
+            auto cameraPosition{ modelMatrix * position };
+            auto focusPosition{ modelMatrix * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f } };
 
-            if (qKey == GLFW_PRESS) {
-                camera->distance -= movementSpeed;
-            }
+            auto direction{ focusPosition - cameraPosition };
+            auto directionNormalized{ glm::normalize(glm::vec3{ direction }) };
 
-            if (eKey == GLFW_PRESS) {
-                camera->distance += movementSpeed;
-            }
+            auto rotation{ glm::quatLookAt(directionNormalized, glm::vec3{ 0.0f, 1.0f, 0.0f }) };
 
-            (void)transform;
+            transform->position = cameraPosition;
+            transform->rotation = rotation;
         });
 }
 

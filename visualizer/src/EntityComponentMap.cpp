@@ -158,17 +158,17 @@ void EntityComponentMap::insert(Entity entity)
 {
     if (size() == capacity()) {
         grow(capacity() * 2);
-    } else {
-        auto entityIndex{ m_availableIndices.back() };
-        m_availableIndices.pop_back();
-        m_entityCount++;
-        m_entities[entityIndex] = entity;
-        m_entityMap.insert({ entity, entityIndex });
+    }
 
-        for (auto type : m_archetype.types()) {
-            auto componentPtr{ component(entity, type) };
-            m_archetype.componentInfo(type)->createFunc(componentPtr);
-        }
+    auto entityIndex{ m_availableIndices.back() };
+    m_availableIndices.pop_back();
+    m_entityCount++;
+    m_entities[entityIndex] = entity;
+    m_entityMap.insert({ entity, entityIndex });
+
+    for (auto type : m_archetype.types()) {
+        auto componentPtr{ component(entity, type) };
+        m_archetype.componentInfo(type)->createFunc(componentPtr);
     }
 }
 
@@ -246,7 +246,7 @@ void EntityComponentMap::grow(std::size_t entityCount)
         return;
     } else {
         EntityComponentMap newMap{ m_archetype, m_componentLayoutMap };
-        newMap.m_entities.assign(entityCount, { 0, 0 });
+        newMap.m_entities.reserve(entityCount);
         newMap.m_componentsData = { AlignedDeleter<unsigned char>::allocate(m_componentLayoutMap.alignment(),
                                         m_componentLayoutMap.paddedSize() * entityCount),
             AlignedDeleter<unsigned char>{} };
@@ -257,9 +257,21 @@ void EntityComponentMap::grow(std::size_t entityCount)
                 % newMap.m_componentLayoutMap[0].value().alignment
             == 0);
 
-        for (std::size_t i = entityCount - 1; i <= 0; --i) {
-            newMap.m_availableIndices.push_back(i);
+        for (std::size_t i = 0; i < entityCount; ++i) {
+            newMap.m_availableIndices.insert(newMap.m_availableIndices.cbegin(), i);
+            newMap.m_entities.push_back({ i, 0 });
+            newMap.m_entityMap.insert({ { i, 0 }, i });
         }
+
+        for (auto& entity : newMap.m_entities) {
+            for (auto type : newMap.m_archetype.types()) {
+                auto componentPtr{ newMap.component(entity, type) };
+                newMap.m_archetype.componentInfo(type)->createFunc(componentPtr);
+            }
+        }
+
+        newMap.m_entities.assign(entityCount, { 0, 0 });
+        newMap.m_entityMap.clear();
 
         for (auto& entity : m_entityMap) {
             newMap.moveComponents(*this, entity.first);

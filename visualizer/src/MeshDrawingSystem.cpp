@@ -20,15 +20,25 @@ MeshDrawingSystem::MeshDrawingSystem()
 void MeshDrawingSystem::run(void*)
 {
     glEnable(GL_BLEND);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    // glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     auto drawableMeshes{ m_meshQuery.query(*m_componentManager) };
 
     m_cameraQuery.query(*m_componentManager).forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
         camera->m_renderTargets["cube"]->bind(FramebufferBinding::ReadWrite);
-        // camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
         auto cameraViewport{ camera->m_renderTargets["cube"]->viewport() };
+
+        if (camera->m_active) {
+            glClearColor(0.4f, 0.05f, 0.05f, 1.0f);
+        } else {
+            glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        }
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(10, 10, cameraViewport.width - 20, cameraViewport.height - 20);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         auto viewMatrix{ glm::identity<glm::mat4>() };
@@ -79,9 +89,12 @@ void MeshDrawingSystem::run(void*)
         if (lastProgram != nullptr) {
             lastProgram->unbind();
         }
+
+        glDisable(GL_SCISSOR_TEST);
     });
 
     glBlendFunc(GL_ONE, GL_ZERO);
+    glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 }
 
