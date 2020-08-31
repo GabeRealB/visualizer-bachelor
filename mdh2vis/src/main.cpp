@@ -51,6 +51,17 @@ struct OutputLayerInfo {
     std::vector<std::array<float, 3>> absolutePositions;
 };
 
+struct OutputLayerInfo_ {
+    std::size_t iterationRate;
+    std::array<float, 3> size;
+    std::array<float, 3> absoluteSize;
+    std::array<std::size_t, 3> subdivisions;
+    std::vector<std::size_t> iterationRates;
+    std::array<std::size_t, 3> numIterations;
+    std::vector<std::array<float, 3>> positions;
+    std::vector<std::array<float, 3>> absolutePositions;
+};
+
 struct MainViewInfo {
     std::vector<MainLayerInfo> layers;
     std::vector<ThreadLayerInfo> threads;
@@ -62,7 +73,9 @@ struct SubViewInfo {
 };
 
 struct OutputViewInfo {
+    std::array<float, 3> size;
     std::vector<OutputLayerInfo> layers;
+    std::vector<OutputLayerInfo_> outputLayers;
 };
 
 struct ProcessedConfig {
@@ -481,196 +494,172 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
                                                                                                  : DimensionType::CC;
     dimensionTypes[2] = combineOperations.size() >= 3 && combineOperations[2].compare("CB") == 0 ? DimensionType::CB
                                                                                                  : DimensionType::CC;
+    std::array<float, 3> threadDimensions{ config.mainView.threads[0].absoluteScale };
 
-    std::array<float, 3> outputDimensions{ config.mainView.layers[0].absoluteScale };
+    auto generateLayer{ [](std::array<DimensionType, 3> dimensionTypes, std::array<float, 3> threadDimensions,
+                            std::array<float, 3> layerDimensions) -> OutputLayerInfo_ {
+        OutputLayerInfo_ layerInfo{};
 
-    if (dimensionTypes[0] == DimensionType::CB) {
-        outputDimensions[0] = config.mainView.threads[0].absoluteScale[0];
-    }
-    if (dimensionTypes[1] == DimensionType::CB) {
-        outputDimensions[1] = config.mainView.threads[0].absoluteScale[2];
-    }
-    if (dimensionTypes[2] == DimensionType::CB) {
-        outputDimensions[2] = config.mainView.threads[0].absoluteScale[2];
-    }
+        std::array<std::size_t, 3> subdivisions{ 0, 0, 0 };
+        std::array<float, 3> outputDimensions{ layerDimensions };
 
-    auto computeLayerInfo{ Overload{
-        [](std::array<std::size_t, 3> numIterations, std::array<float, 3> threadSize,
-            std::size_t iterationRate) -> OutputLayerInfo {
-            OutputLayerInfo layerInfo{};
-
-            numIterations[0]++;
-            numIterations[1]++;
-            numIterations[2]++;
-
-            auto iterations{ numIterations[0] * numIterations[1] * numIterations[2] };
-            layerInfo.iterationRates.resize(iterations, iterationRate);
-            layerInfo.scales.resize(iterations, threadSize);
-            layerInfo.positions.reserve(iterations);
-            layerInfo.absoluteScales.resize(iterations, threadSize);
-            layerInfo.absolutePositions.reserve(iterations);
-
-            for (std::size_t z{ 0 }; z < numIterations[2]; z++) {
-                for (std::size_t y{ 0 }; y < numIterations[1]; y++) {
-                    for (std::size_t x{ 0 }; x < numIterations[0]; x++) {
-                        std::array<float, 3> position{ x * threadSize[0], y * threadSize[1], z * threadSize[2] };
-
-                        layerInfo.positions.push_back(position);
-                        layerInfo.absolutePositions.push_back(position);
-                    }
-                }
-            }
-
-            return layerInfo;
-        },
-        [](std::array<std::size_t, 3> numIterations, std::array<float, 3> layerDimensions,
-            std::array<float, 3> outputDimensions, const OutputLayerInfo& innerLayer) -> OutputLayerInfo {
-            OutputLayerInfo layerInfo{};
-
-            numIterations[0]++;
-            numIterations[1]++;
-            numIterations[2]++;
-
-            std::vector<std::size_t> iterationRates{};
-            std::vector<std::array<float, 3>> scales{};
-
-            for (std::size_t i{ 0 }; i < innerLayer.positions.size(); i++) {
-                if (i == 0) {
-                    scales.push_back(innerLayer.scales[i]);
-                } else {
-                    const auto& previousScale{ scales.back() };
-
-                    std::array<float, 3> newScale{
-                        innerLayer.absolutePositions[i][0] + innerLayer.absoluteScales[i][0],
-                        innerLayer.absolutePositions[i][1] + innerLayer.absoluteScales[i][1],
-                        innerLayer.absolutePositions[i][2] + innerLayer.absoluteScales[i][2],
-                    };
-
-                    std::array<float, 3> maxScale{
-                        std::max(previousScale[0], newScale[0]),
-                        std::max(previousScale[1], newScale[1]),
-                        std::max(previousScale[2], newScale[2]),
-                    };
-
-                    std::array<float, 3> clampedScale{
-                        std::min(maxScale[0], outputDimensions[0]),
-                        std::min(maxScale[1], outputDimensions[1]),
-                        std::min(maxScale[2], outputDimensions[2]),
-                    };
-
-                    scales.push_back(clampedScale);
-                }
-
-                iterationRates.push_back(innerLayer.iterationRates[i]);
-            }
-
-            for (std::size_t z{ 0 }; z < numIterations[2]; z++) {
-                for (std::size_t y{ 0 }; y < numIterations[1]; y++) {
-                    for (std::size_t x{ 0 }; x < numIterations[0]; x++) {
-                        std::array<float, 3> position{ x * layerDimensions[0], y * layerDimensions[1],
-                            z * layerDimensions[2] };
-
-                        layerInfo.iterationRates.insert(
-                            layerInfo.iterationRates.end(), iterationRates.begin(), iterationRates.end());
-                        layerInfo.scales.insert(layerInfo.scales.end(), scales.begin(), scales.end());
-                        layerInfo.absoluteScales.insert(layerInfo.absoluteScales.end(), scales.begin(), scales.end());
-
-                        std::fill_n(std::back_inserter(layerInfo.positions), scales.size(), position);
-                        std::fill_n(std::back_inserter(layerInfo.absolutePositions), scales.size(), position);
-                    }
-                }
-            }
-
-            return layerInfo;
-        } } };
-
-    auto processLayer{ Overload{ [](OutputLayerInfo& layer, std::array<float, 3> dimensions) {
-                                    layer.iterationRates.resize(1, 1);
-                                    layer.scales.resize(1, dimensions);
-                                    layer.positions.resize(1, { 0.0f, 0.0f, 0.0f });
-                                    layer.absoluteScales = layer.scales;
-                                    layer.absolutePositions = layer.positions;
-                                },
-        [](OutputLayerInfo& layer, const OutputLayerInfo& outerLayer) {
-            for (std::size_t i{ 0 }, j{ 0 }; i < outerLayer.absoluteScales.size() && j < layer.absoluteScales.size();
-                 i++) {
-                for (std::size_t iterations{ 0 }; iterations != outerLayer.iterationRates[i];
-                     iterations += layer.iterationRates[j], j++) {
-                    layer.scales[j][0] = layer.absoluteScales[j][0] / outerLayer.absoluteScales[i][0];
-                    layer.scales[j][1] = layer.absoluteScales[j][1] / outerLayer.absoluteScales[i][1];
-                    layer.scales[j][2] = layer.absoluteScales[j][2] / outerLayer.absoluteScales[i][2];
-
-                    layer.positions[j][0] = layer.absolutePositions[j][0] / layer.absoluteScales[i][0];
-                    layer.positions[j][1] = layer.absolutePositions[j][1] / layer.absoluteScales[i][1];
-                    layer.positions[j][2] = layer.absolutePositions[j][2] / layer.absoluteScales[i][2];
-                }
-            }
-        } } };
-
-    auto compressLayer{ [](OutputLayerInfo& layer) {
-        std::vector<std::size_t> deletionList{};
-
-        for (std::size_t i{ 0 }, idx{ layer.iterationRates.size() - 1 }; i < layer.iterationRates.size() - 1;
-             i++, idx--) {
-            if (layer.positions[idx][0] == layer.positions[idx - 1][0]
-                && layer.positions[idx][1] == layer.positions[idx - 1][1]
-                && layer.positions[idx][2] == layer.positions[idx - 1][2]
-                && layer.scales[idx][0] == layer.scales[idx - 1][0] && layer.scales[idx][1] == layer.scales[idx - 1][1]
-                && layer.scales[idx][2] == layer.scales[idx - 1][2]) {
-                layer.iterationRates[idx - 1] += layer.iterationRates[idx];
-
-                deletionList.push_back(idx);
-            }
+        if (dimensionTypes[0] == DimensionType::CB) {
+            subdivisions[0] = 1;
+            outputDimensions[0] = threadDimensions[0];
+        } else {
+            subdivisions[0] = static_cast<std::size_t>(outputDimensions[0] / threadDimensions[0]);
+        }
+        if (dimensionTypes[1] == DimensionType::CB) {
+            subdivisions[1] = 1;
+            outputDimensions[1] = threadDimensions[2];
+        } else {
+            subdivisions[1] = static_cast<std::size_t>(outputDimensions[1] / threadDimensions[1]);
+        }
+        if (dimensionTypes[2] == DimensionType::CB) {
+            subdivisions[2] = 1;
+            outputDimensions[2] = threadDimensions[2];
+        } else {
+            subdivisions[2] = static_cast<std::size_t>(outputDimensions[2] / threadDimensions[2]);
         }
 
-        for (auto idx : deletionList) {
-            layer.iterationRates.erase(layer.iterationRates.begin() + idx);
-            layer.scales.erase(layer.scales.begin() + idx);
-            layer.positions.erase(layer.positions.begin() + idx);
-            layer.absoluteScales.erase(layer.absoluteScales.begin() + idx);
-            layer.absolutePositions.erase(layer.absolutePositions.begin() + idx);
-        }
+        layerInfo.subdivisions = subdivisions;
+        layerInfo.absoluteSize = outputDimensions;
+
+        return layerInfo;
     } };
 
-    auto& threadLayer{ config.mainView.threads.front() };
-    auto threadLayerIterationRate{ threadLayer.absoluteScale[0] * threadLayer.absoluteScale[1]
-        * threadLayer.absoluteScale[2] };
+    auto computePositions{ Overload{ [](OutputLayerInfo_& layer, std::array<float, 3> threadDimensions,
+                                         std::array<std::size_t, 3> iterations, std::size_t iterationRate) {
+                                        iterations[0]++;
+                                        iterations[1]++;
+                                        iterations[2]++;
 
-    auto pseudoThreadLayer{ computeLayerInfo.operator()(
-        threadLayer.numIterations, threadLayer.absoluteScale, threadLayerIterationRate) };
+                                        for (std::size_t z{ 0 }; z < iterations[2]; z++) {
+                                            for (std::size_t y{ 0 }; y < iterations[1]; y++) {
+                                                for (std::size_t x{ 0 }; x < iterations[0]; x++) {
+                                                    if (x >= layer.subdivisions[0] || y >= layer.subdivisions[1]
+                                                        || z >= layer.subdivisions[2]) {
+                                                        layer.iterationRates.back() += iterationRate;
+                                                    } else {
+                                                        std::array<float, 3> position{
+                                                            x * threadDimensions[0],
+                                                            -1.0f * y * threadDimensions[1],
+                                                            z * threadDimensions[2],
+                                                        };
 
-    for (std::size_t i{ config.mainView.layers.size() }, j{ 0 }; i--; j++) {
-        auto innerLayer{ std::ref(pseudoThreadLayer) };
+                                                        layer.absolutePositions.push_back(position);
+                                                        layer.iterationRates.push_back(iterationRate);
+                                                    }
+                                                }
+                                            }
+                                        }
 
-        if (j != 0) {
-            innerLayer = std::ref(*(config.outputView.layers.rbegin() + (j - 1)));
+                                        layer.iterationRate = 0;
+                                        for (auto rate : layer.iterationRates) {
+                                            layer.iterationRate += rate;
+                                        }
+                                    },
+        [](OutputLayerInfo_& layer, const OutputLayerInfo_& previousLayer, std::array<std::size_t, 3> iterations) {
+            iterations[0]++;
+            iterations[1]++;
+            iterations[2]++;
+
+            for (std::size_t z{ 0 }; z < iterations[2]; z++) {
+                for (std::size_t y{ 0 }; y < iterations[1]; y++) {
+                    for (std::size_t x{ 0 }; x < iterations[0]; x++) {
+                        std::array<float, 3> offset{
+                            x * previousLayer.absoluteSize[0],
+                            y * previousLayer.absoluteSize[1],
+                            z * previousLayer.absoluteSize[2],
+                        };
+                        if (offset[0] >= layer.absoluteSize[0] || offset[1] >= layer.absoluteSize[1]
+                            || offset[2] >= layer.absoluteSize[2]) {
+                            layer.iterationRates.back() += previousLayer.iterationRate;
+                            continue;
+                        } else {
+
+                            offset[1] *= -1.0f;
+
+                            for (std::size_t i{ 0 }; i < previousLayer.absolutePositions.size(); i++) {
+                                std::array<float, 3> position{
+                                    previousLayer.absolutePositions[i][0] + offset[0],
+                                    previousLayer.absolutePositions[i][1] + offset[1],
+                                    previousLayer.absolutePositions[i][2] + offset[2],
+                                };
+
+                                layer.absolutePositions.push_back(position);
+                                layer.iterationRates.push_back(previousLayer.iterationRates[i]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            layer.iterationRate = 0;
+            for (auto rate : layer.iterationRates) {
+                layer.iterationRate += rate;
+            }
+        } } };
+
+    auto computeRelativePositionAndSize{ Overload{ [](OutputLayerInfo_& layer) {
+                                                      layer.size = { 1.0f, 1.0f, 1.0f };
+                                                      layer.numIterations = { 0, 0, 0 };
+                                                      for (auto position : layer.absolutePositions) {
+                                                          position[0] /= layer.absoluteSize[0];
+                                                          position[1] /= layer.absoluteSize[1];
+                                                          position[2] /= layer.absoluteSize[2];
+                                                          layer.positions.push_back(position);
+                                                      }
+                                                  },
+        [](OutputLayerInfo_& layer, const OutputLayerInfo_& previousLayer) {
+            layer.size = {
+                layer.absoluteSize[0] / previousLayer.absoluteSize[0],
+                layer.absoluteSize[1] / previousLayer.absoluteSize[1],
+                layer.absoluteSize[2] / previousLayer.absoluteSize[2],
+            };
+            layer.numIterations = {
+                static_cast<std::size_t>(previousLayer.absoluteSize[0] / layer.absoluteSize[0]) - 1,
+                static_cast<std::size_t>(previousLayer.absoluteSize[1] / layer.absoluteSize[1]) - 1,
+                static_cast<std::size_t>(previousLayer.absoluteSize[2] / layer.absoluteSize[2]) - 1,
+            };
+            for (auto position : layer.absolutePositions) {
+                position[0] /= layer.absoluteSize[0];
+                position[1] /= layer.absoluteSize[1];
+                position[2] /= layer.absoluteSize[2];
+                layer.positions.push_back(position);
+            }
+        } } };
+
+    for (const auto& layer : config.mainView.layers) {
+        config.outputView.outputLayers.push_back(generateLayer(dimensionTypes, threadDimensions, layer.absoluteScale));
+    }
+
+    for (auto pos{ config.outputView.outputLayers.rbegin() }; pos != config.outputView.outputLayers.rend(); pos++) {
+        if (pos == config.outputView.outputLayers.rbegin()) {
+            const auto& threadLayer{ config.mainView.threads.front() };
+            auto iterationRate{ static_cast<std::size_t>(threadDimensions[0])
+                * static_cast<std::size_t>(threadDimensions[1]) * static_cast<std::size_t>(threadDimensions[2]) };
+            computePositions.operator()(*pos, threadDimensions, threadLayer.numIterations, iterationRate);
+        } else {
+            auto& layer{ *pos };
+            const auto& previousLayer{ *(pos - 1) };
+            auto previousIndex{ config.outputView.outputLayers.size()
+                - std::distance(config.outputView.outputLayers.rbegin(), pos) };
+
+            auto& previousMainLayer{ config.mainView.layers[previousIndex] };
+            computePositions.operator()(layer, previousLayer, previousMainLayer.numIterations);
         }
-
-        auto& layer{ config.mainView.layers[i] };
-
-        config.outputView.layers.insert(config.outputView.layers.begin(),
-            computeLayerInfo.operator()(layer.numIterations, layer.absoluteScale, outputDimensions, innerLayer.get()));
     }
 
-    const auto& firstLayer{ config.outputView.layers.front() };
-
-    OutputLayerInfo outputContainer{};
-    outputContainer.iterationRates = firstLayer.iterationRates;
-    outputContainer.scales.resize(outputContainer.iterationRates.size(), outputDimensions);
-    outputContainer.positions.resize(outputContainer.iterationRates.size(), { 0.0f, 0.0f, 0.0f });
-    outputContainer.absoluteScales = outputContainer.scales;
-    outputContainer.absolutePositions = outputContainer.positions;
-    config.outputView.layers.insert(config.outputView.layers.begin(), std::move(outputContainer));
-
-    for (auto layer{ config.outputView.layers.begin() + 1 }; layer != config.outputView.layers.end(); layer++) {
-        processLayer.operator()(*layer, *(layer - 1));
+    for (auto pos{ config.outputView.outputLayers.begin() }; pos != config.outputView.outputLayers.end(); pos++) {
+        if (pos == config.outputView.outputLayers.begin()) {
+            computeRelativePositionAndSize.operator()(*pos);
+        } else {
+            computeRelativePositionAndSize.operator()(*pos, *(pos - 1));
+        }
     }
 
-    processLayer.operator()(config.outputView.layers.front(), outputDimensions);
-
-    for (auto& layer : config.outputView.layers) {
-        compressLayer(layer);
-    }
+    config.outputView.size = config.outputView.outputLayers.front().absoluteSize;
 }
 
 ProcessedConfig processConfig(const MDH2Vis::MDHConfig& mdhConfig)
@@ -1172,8 +1161,8 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
     return entity;
 }
 
-Visconfig::Entity generateOutputViewCube(const ProcessedConfig& mdhConfig, const OutputViewInfo& view,
-    std::size_t entityId, std::size_t parentId, std::size_t viewNumber, std::size_t layerNumber)
+Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float, 3> scale, std::array<float, 4> color,
+    std::size_t entityId, std::size_t parentId, std::size_t layerId, bool hasParent)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -1189,11 +1178,9 @@ Visconfig::Entity generateOutputViewCube(const ProcessedConfig& mdhConfig, const
     entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
         std::make_shared<Visconfig::Components::TransformComponent>() });
 
-    if (layerNumber > 0) {
+    if (hasParent) {
         entity.components.push_back({ Visconfig::Components::ComponentType::Parent,
             std::make_shared<Visconfig::Components::ParentComponent>() });
-        entity.components.push_back({ Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration,
-            std::make_shared<Visconfig::Components::ExplicitHeterogeneousIterationComponent>() });
     }
 
     [[maybe_unused]] constexpr auto cubeIndex{ 0 };
@@ -1202,7 +1189,6 @@ Visconfig::Entity generateOutputViewCube(const ProcessedConfig& mdhConfig, const
     constexpr auto layerIndex{ 3 };
     constexpr auto transformIndex{ 4 };
     constexpr auto parentIndex{ 5 };
-    constexpr auto iterationIndex{ 6 };
 
     constexpr auto meshAsset{ "cube_mesh" };
     constexpr auto textureAsset{ "cube_texture" };
@@ -1224,29 +1210,14 @@ Visconfig::Entity generateOutputViewCube(const ProcessedConfig& mdhConfig, const
     texture->asset = textureAsset;
     texture->slot = 0;
 
-    if (layerNumber > 0) {
-        std::size_t colorLayer{ layerNumber - 1 };
+    diffuseColor->value[0] = color[0];
+    diffuseColor->value[1] = color[1];
+    diffuseColor->value[2] = color[2];
+    diffuseColor->value[3] = color[3];
 
-        diffuseColor->value[0] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.tile[0]) / 255.0f;
-        diffuseColor->value[1] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.tile[1]) / 255.0f;
-        diffuseColor->value[2] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.tile[2]) / 255.0f;
-        diffuseColor->value[3] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.tile[3]) / 255.0f;
-    } else {
-        diffuseColor->value[0] = 128.0f / 255.0f;
-        diffuseColor->value[1] = 128.0f / 255.0f;
-        diffuseColor->value[2] = 128.0f / 255.0f;
-        diffuseColor->value[3] = 128.0f / 255.0f;
-
-        diffuseColor->value[0] = 255.0f / 255.0f;
-        diffuseColor->value[1] = 255.0f / 255.0f;
-        diffuseColor->value[2] = 255.0f / 255.0f;
-    }
-    diffuseColor->value[3]
-        = interpolateLinear(minTransparency, maxTransparency, 0, view.layers.size() - 1, layerNumber);
-
-    gridScale->value.push_back({ 1, 1 });
-    gridScale->value.push_back({ 1, 1 });
-    gridScale->value.push_back({ 1, 1 });
+    gridScale->value.push_back({ 1.0f, 1.0f });
+    gridScale->value.push_back({ 1.0f, 1.0f });
+    gridScale->value.push_back({ 1.0f, 1.0f });
 
     material.asset = shaderAsset;
     material.attributes.insert_or_assign("gridTexture",
@@ -1259,43 +1230,134 @@ Visconfig::Entity generateOutputViewCube(const ProcessedConfig& mdhConfig, const
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Vec2, gridScale, true });
 
-    layer.mask = 1llu << viewNumber;
+    layer.mask = layerId;
+
+    transform.position[0] = position[0];
+    transform.position[1] = position[1];
+    transform.position[2] = position[2];
 
     transform.rotation[0] = 0;
     transform.rotation[1] = 0;
     transform.rotation[2] = 0;
 
-    transform.scale[0] = view.layers[layerNumber].scales[0][0];
-    transform.scale[1] = view.layers[layerNumber].scales[0][1];
-    transform.scale[2] = view.layers[layerNumber].scales[0][2];
+    transform.scale[0] = scale[0];
+    transform.scale[1] = scale[1];
+    transform.scale[2] = scale[2];
 
-    std::array<float, 3> halfScale{
-        view.layers[layerNumber].scales[0][0] / 2.0f,
-        view.layers[layerNumber].scales[0][1] / 2.0f,
-        view.layers[layerNumber].scales[0][2] / 2.0f,
-    };
-
-    if (layerNumber > 0) {
-        transform.position[0] = -0.5f + halfScale[0];
-        transform.position[1] = 0.5f - halfScale[1];
-        transform.position[2] = -0.5f + halfScale[2];
-    } else {
-        transform.position[0] = 0.0f;
-        transform.position[1] = 0.0f;
-        transform.position[2] = 0.0f;
-    }
-
-    if (layerNumber > 0) {
+    if (hasParent) {
         auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
             entity.components[parentIndex].data) };
-        auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ExplicitHeterogeneousIterationComponent>(
+        parent.id = parentId;
+    }
+
+    return entity;
+}
+
+Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const ProcessedConfig& mdhConfig,
+    const OutputViewInfo& view, std::size_t& entityId, std::size_t parentId, std::size_t viewNumber,
+    std::size_t layerNumber)
+{
+    Visconfig::Entity entity{};
+    entity.id = entityId;
+
+    entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
+        std::make_shared<Visconfig::Components::TransformComponent>() });
+    entity.components.push_back({ Visconfig::Components::ComponentType::EntityActivation,
+        std::make_shared<Visconfig::Components::EntityActivationComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Parent, std::make_shared<Visconfig::Components::ParentComponent>() });
+
+    if (layerNumber > 0) {
+        entity.components.push_back({ Visconfig::Components::ComponentType::ImplicitIteration,
+            std::make_shared<Visconfig::Components::ImplicitIterationComponent>() });
+    }
+
+    constexpr auto transformIndex{ 0 };
+    constexpr auto entityActivationIndex{ 1 };
+    constexpr auto parentIndex{ 2 };
+    constexpr auto iterationIndex{ 3 };
+
+    auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
+        entity.components[transformIndex].data) };
+    auto& entityActivation{ *std::static_pointer_cast<Visconfig::Components::EntityActivationComponent>(
+        entity.components[entityActivationIndex].data) };
+    auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
+        entity.components[parentIndex].data) };
+
+    std::array<float, 3> halfScale{
+        view.outputLayers[layerNumber].size[0] / 2.0f,
+        view.outputLayers[layerNumber].size[1] / 2.0f,
+        view.outputLayers[layerNumber].size[2] / 2.0f,
+    };
+
+    transform.rotation[0] = 0;
+    transform.rotation[1] = 0;
+    transform.rotation[2] = 0;
+
+    transform.scale[0] = view.outputLayers[layerNumber].size[0];
+    transform.scale[1] = view.outputLayers[layerNumber].size[1];
+    transform.scale[2] = view.outputLayers[layerNumber].size[2];
+
+    transform.position[0] = -0.5f + halfScale[0];
+    transform.position[1] = 0.5f - halfScale[1];
+    transform.position[2] = -0.5f + halfScale[2];
+
+    std::array<float, 4> color{
+        static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f,
+        static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[1]) / 255.0f,
+        static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f,
+        interpolateLinear(minTransparency, maxTransparency, 0, view.outputLayers.size(), layerNumber + 1),
+    };
+
+    auto& threadLayer{ mdhConfig.mainView.threads.front() };
+    std::array<float, 3> childScale{
+        threadLayer.absoluteScale[0] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[0],
+        threadLayer.absoluteScale[1] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[1],
+        threadLayer.absoluteScale[2] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[2],
+    };
+
+    std::array<float, 3> childHalfScale{
+        childScale[0] / 2.0f,
+        childScale[1] / 2.0f,
+        childScale[2] / 2.0f,
+    };
+
+    std::array<float, 3> childStartPos{
+        -0.5f + childHalfScale[0],
+        0.5f - childHalfScale[1],
+        -0.5f + childHalfScale[2],
+    };
+
+    auto parentEntity{ entityId };
+    std::vector<std::size_t> children{};
+    for (auto pos : view.outputLayers[layerNumber].positions) {
+        auto first{ entityId == parentEntity };
+        auto cubeLayer{ first ? 1llu << viewNumber : 0 };
+        entityId++;
+
+        pos[0] += childStartPos[0];
+        pos[1] += childStartPos[1];
+        pos[2] += childStartPos[2];
+
+        children.push_back(entityId);
+        world.entities.push_back(generateCube(pos, childScale, color, entityId, parentEntity, cubeLayer, true));
+    }
+
+    entityActivation.layer = 1llu << viewNumber;
+    entityActivation.entities = children;
+    entityActivation.ticksPerIteration = view.outputLayers[layerNumber].iterationRates;
+
+    parent.id = parentId;
+
+    if (layerNumber > 0) {
+        auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ImplicitIterationComponent>(
             entity.components[iterationIndex].data) };
 
-        parent.id = parentId;
-
-        iteration.scales = view.layers[layerNumber].scales;
-        iteration.positions = view.layers[layerNumber].positions;
-        iteration.ticksPerIteration = view.layers[layerNumber].iterationRates;
+        iteration.order = Visconfig::Components::IterationOrder::XYZ;
+        iteration.numIterations[0] = view.outputLayers[layerNumber].numIterations[0];
+        iteration.numIterations[1] = view.outputLayers[layerNumber].numIterations[1];
+        iteration.numIterations[2] = view.outputLayers[layerNumber].numIterations[2];
+        iteration.ticksPerIteration = view.outputLayers[layerNumber].iterationRate;
     }
 
     return entity;
@@ -1570,11 +1632,17 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     config.assets.push_back(generateFramebufferAsset(subview));
 
     auto focusEntity{ numEntities };
+    world.entities.push_back(generateCube({ 0, 0, 0 }, mdhConfig.outputView.size, { 1.0f, 1.0f, 1.0f, minTransparency },
+        numEntities++, 0, 1llu << subview, false));
 
-    for (auto layer{ mdhConfig.outputView.layers.begin() }; layer != mdhConfig.outputView.layers.end(); layer++) {
-        auto index{ std::distance(mdhConfig.outputView.layers.begin(), layer) };
+    auto parent{ focusEntity };
+    for (auto layer{ mdhConfig.outputView.outputLayers.begin() }; layer != mdhConfig.outputView.outputLayers.end();
+         layer++) {
+        auto index{ std::distance(mdhConfig.outputView.outputLayers.begin(), layer) };
+        auto newParent{ numEntities };
         world.entities.push_back(
-            generateOutputViewCube(mdhConfig, mdhConfig.outputView, numEntities, numEntities - 1, subview, index));
+            generateOutputViewCube(world, mdhConfig, mdhConfig.outputView, numEntities, parent, subview, index));
+        parent = newParent;
         numEntities++;
     }
 
