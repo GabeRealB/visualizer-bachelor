@@ -20,6 +20,7 @@ enum class ComponentType {
     Transform,
     ImplicitIteration,
     ExplicitIteration,
+    EntityActivation,
     ExplicitHeterogeneousIteration,
     Camera,
     FreeFlyCamera,
@@ -209,6 +210,16 @@ struct ExplicitIterationComponent : public ComponentData {
     static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
+struct EntityActivationComponent : public ComponentData {
+    std::size_t layer;
+    std::vector<std::size_t> entities;
+    std::vector<std::size_t> ticksPerIteration;
+
+    static constexpr const char* layerJson{ "layer" };
+    static constexpr const char* entitiesJson{ "entities" };
+    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
+};
+
 struct ExplicitHeterogeneousIterationComponent : public ComponentData {
     std::vector<std::size_t> ticksPerIteration;
     std::vector<std::array<float, 3>> scales;
@@ -308,6 +319,9 @@ void from_json(const nlohmann::json& j, ImplicitIterationComponent& v);
 
 void to_json(nlohmann::json& j, const ExplicitIterationComponent& v);
 void from_json(const nlohmann::json& j, ExplicitIterationComponent& v);
+
+void to_json(nlohmann::json& j, const EntityActivationComponent& v);
+void from_json(const nlohmann::json& j, EntityActivationComponent& v);
 
 void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v);
 void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent& v);

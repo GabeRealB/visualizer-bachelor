@@ -29,6 +29,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::ExplicitIteration:
         to_json(j, *std::static_pointer_cast<ExplicitIterationComponent>(v));
         break;
+    case ComponentType::EntityActivation:
+        to_json(j, *std::static_pointer_cast<EntityActivationComponent>(v));
+        break;
     case ComponentType::ExplicitHeterogeneousIteration:
         to_json(j, *std::static_pointer_cast<ExplicitHeterogeneousIterationComponent>(v));
         break;
@@ -93,6 +96,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::EntityActivation: {
+        auto ptr{ std::make_shared<EntityActivationComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     case ComponentType::ExplicitHeterogeneousIteration: {
         auto ptr{ std::make_shared<ExplicitHeterogeneousIterationComponent>() };
         from_json(j, *ptr);
@@ -137,6 +145,7 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::Transform, "transform" },
     { ComponentType::ImplicitIteration, "implicit_iteration" },
     { ComponentType::ExplicitIteration, "explicit_iteration" },
+    { ComponentType::EntityActivation, "entity_activation" },
     { ComponentType::ExplicitHeterogeneousIteration, "explicit_heterogeneous_iteration" },
     { ComponentType::Camera, "camera" },
     { ComponentType::FreeFlyCamera, "free_fly_camera" },
@@ -308,6 +317,20 @@ void from_json(const nlohmann::json& j, ExplicitIterationComponent& v)
 {
     j[ExplicitIterationComponent::positionsJson].get_to(v.positions);
     j[ExplicitIterationComponent::ticksPerIterationJson].get_to(v.ticksPerIteration);
+}
+
+void to_json(nlohmann::json& j, const EntityActivationComponent& v)
+{
+    j[EntityActivationComponent::layerJson] = v.layer;
+    j[EntityActivationComponent::entitiesJson] = v.entities;
+    j[EntityActivationComponent::ticksPerIterationJson] = v.ticksPerIteration;
+}
+
+void from_json(const nlohmann::json& j, EntityActivationComponent& v)
+{
+    j[EntityActivationComponent::layerJson].get_to(v.layer);
+    j[EntityActivationComponent::entitiesJson].get_to(v.entities);
+    j[EntityActivationComponent::ticksPerIterationJson].get_to(v.ticksPerIteration);
 }
 
 void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v)
