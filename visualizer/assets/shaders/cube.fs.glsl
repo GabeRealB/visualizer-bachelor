@@ -10,5 +10,10 @@ in vec2 TexCoords;
 out vec4 outColor;
 
 void main() {
-    outColor = texture(gridTexture, TexCoords) * diffuseColor;
+    vec4 textureColor = vec4(texture(gridTexture, TexCoords).xyz, 1.0f);
+    outColor = textureColor * diffuseColor;
+
+    if (textureColor == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
+        outColor.a = 1.0f;
+    }
 }

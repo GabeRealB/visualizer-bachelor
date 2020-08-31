@@ -20,7 +20,6 @@ MeshDrawingSystem::MeshDrawingSystem()
 void MeshDrawingSystem::run(void*)
 {
     glEnable(GL_BLEND);
-    // glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     auto drawableMeshes{ m_meshQuery.query(*m_componentManager) };
@@ -50,41 +49,107 @@ void MeshDrawingSystem::run(void*)
         ShaderEnvironment cameraVariables{};
         std::shared_ptr<ShaderProgram> lastProgram{ nullptr };
 
-        drawableMeshes
-            .forEachWithEntity<const std::shared_ptr<Mesh>, const Material, const Transform, const RenderLayer>(
-                [&](Entity entity, const std::shared_ptr<Mesh>* mesh, const Material* material,
-                    const Transform* transform, const RenderLayer*) {
-                    if (lastProgram != material->m_shader) {
-                        lastProgram = material->m_shader;
-                        cameraVariables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
-                        cameraVariables.set("viewProjectionMatrix", viewProjectionMatrix);
-                        material->m_shader->bind();
-                    }
+        std::vector<std::tuple<Entity, const std::shared_ptr<Mesh>*, const Material*, glm::mat4>> meshList{};
 
-                    auto modelMatrix{ getModelMatrix(*transform) };
-                    auto parent{ static_cast<const Parent*>(
-                        m_componentManager->getEntityComponentPointer(entity, getTypeId<Parent>())) };
+        drawableMeshes.forEachWithEntity<const std::shared_ptr<Mesh>, const Material, const Transform,
+            const RenderLayer>(
+            [&](Entity entity, const std::shared_ptr<Mesh>* mesh, const Material* material, const Transform* transform,
+                const RenderLayer*) {
+                /*
+                if (lastProgram != material->m_shader) {
+                    lastProgram = material->m_shader;
+                    cameraVariables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+                    cameraVariables.set("viewProjectionMatrix", viewProjectionMatrix);
+                    material->m_shader->bind();
+                }
+                */
 
-                    while (parent != nullptr) {
-                        auto parentTransform{ static_cast<const Transform*>(
-                            m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
-                        modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
-                        parent = static_cast<const Parent*>(
-                            m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
-                    }
-                    cameraVariables.set("modelMatrix", modelMatrix);
+                auto modelMatrix{ getModelMatrix(*transform) };
+                auto parent{ static_cast<const Parent*>(
+                    m_componentManager->getEntityComponentPointer(entity, getTypeId<Parent>())) };
 
-                    lastProgram->apply(cameraVariables);
-                    lastProgram->apply(material->m_materialVariables);
+                while (parent != nullptr) {
+                    auto parentTransform{ static_cast<const Transform*>(
+                        m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
+                    modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
+                    parent = static_cast<const Parent*>(
+                        m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+                }
 
-                    auto tmp{ mesh->get() };
-                    tmp->bind();
-                    glDrawElements(
-                        tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(), nullptr);
-                    tmp->unbind();
-                },
-                [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,
-                    const RenderLayer* layer) -> bool { return (*layer & camera->m_visibleLayers); });
+                meshList.insert(
+                    std::upper_bound(meshList.begin(), meshList.end(), entity,
+                        [](const Entity& entity,
+                            const std::tuple<Entity, const std::shared_ptr<Mesh>*, const Material*, glm::mat4>& tup) {
+                            return std::get<0>(tup).id < entity.id;
+                        }),
+                    { entity, mesh, material, modelMatrix });
+
+                /*
+                cameraVariables.set("modelMatrix", modelMatrix);
+
+                lastProgram->apply(cameraVariables);
+                lastProgram->apply(material->m_materialVariables);
+
+                auto tmp{ mesh->get() };
+                tmp->bind();
+                glDrawElements(
+                    tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(), nullptr);
+                tmp->unbind();
+                */
+            },
+            [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,
+                const RenderLayer* layer) -> bool { return (*layer & camera->m_visibleLayers); });
+
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+
+        for (auto& meshInfo : meshList) {
+            auto mesh{ std::get<1>(meshInfo) };
+            auto material{ std::get<2>(meshInfo) };
+            auto modelMatrix{ std::get<3>(meshInfo) };
+
+            if (lastProgram != material->m_shader) {
+                lastProgram = material->m_shader;
+                cameraVariables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+                cameraVariables.set("viewProjectionMatrix", viewProjectionMatrix);
+                material->m_shader->bind();
+            }
+
+            cameraVariables.set("modelMatrix", modelMatrix);
+
+            lastProgram->apply(cameraVariables);
+            lastProgram->apply(material->m_materialVariables);
+
+            auto tmp{ mesh->get() };
+            tmp->bind();
+            glDrawElements(tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(), nullptr);
+            tmp->unbind();
+        }
+
+        glCullFace(GL_BACK);
+
+        for (auto& meshInfo : meshList) {
+            auto mesh{ std::get<1>(meshInfo) };
+            auto material{ std::get<2>(meshInfo) };
+            auto modelMatrix{ std::get<3>(meshInfo) };
+
+            if (lastProgram != material->m_shader) {
+                lastProgram = material->m_shader;
+                cameraVariables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+                cameraVariables.set("viewProjectionMatrix", viewProjectionMatrix);
+                material->m_shader->bind();
+            }
+
+            cameraVariables.set("modelMatrix", modelMatrix);
+
+            lastProgram->apply(cameraVariables);
+            lastProgram->apply(material->m_materialVariables);
+
+            auto tmp{ mesh->get() };
+            tmp->bind();
+            glDrawElements(tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(), nullptr);
+            tmp->unbind();
+        }
 
         if (lastProgram != nullptr) {
             lastProgram->unbind();
