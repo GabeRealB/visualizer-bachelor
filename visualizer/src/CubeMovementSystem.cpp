@@ -11,6 +11,7 @@ CubeMovementSystem::CubeMovementSystem()
     : m_accumulator{ 0 }
     , m_currentTime{ 0 }
     , m_tickInterval{ 1.0 }
+    , m_cubesQueryActivation{ EntityQuery{}.with<EntityActivation>() }
     , m_cubesQueryHomogeneous{ EntityQuery{}.with<HomogeneousIteration, Transform>() }
     , m_cubesQueryHeterogeneous{ EntityQuery{}.with<HeterogeneousIteration, Transform>() }
     , m_componentManager{}
@@ -60,6 +61,29 @@ void stepIteration(HomogeneousIteration& iteration)
     if (++iteration.index >= iteration.positions.size()) {
         iteration.index = 0;
     }
+}
+
+void stepIteration(EntityActivation& iteration, const std::shared_ptr<ComponentManager>& componentManager)
+{
+    if (++iteration.tick % iteration.ticksPerIteration[iteration.index] != 0) {
+        return;
+    } else {
+        iteration.tick = 0;
+    }
+
+    if (++iteration.index >= iteration.entities.size()) {
+        iteration.index = 0;
+
+        for (auto entity : iteration.entities) {
+            auto& layer{ *static_cast<RenderLayer*>(
+                componentManager->getEntityComponentPointer(entity, getTypeId<RenderLayer>())) };
+            layer = 0;
+        }
+    }
+
+    auto& layer{ *static_cast<RenderLayer*>(
+        componentManager->getEntityComponentPointer(iteration.entities[iteration.index], getTypeId<RenderLayer>())) };
+    layer = iteration.layer;
 }
 
 void stepIteration(HeterogeneousIteration& iteration)
@@ -128,6 +152,11 @@ void CubeMovementSystem::run(void*)
     m_accumulator += deltaTime;
     if (m_accumulator >= m_tickInterval) {
         m_accumulator = 0;
+        m_cubesQueryActivation.query(*m_componentManager)
+            .forEach<EntityActivation>([&componentManager = this->m_componentManager](EntityActivation* iteration) {
+                stepIteration(*iteration, componentManager);
+            });
+
         m_cubesQueryHomogeneous.query(*m_componentManager)
             .forEach<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
                 reverseTransform(*iteration, *transform);

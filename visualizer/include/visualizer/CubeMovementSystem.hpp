@@ -18,6 +18,7 @@ private:
     double m_accumulator;
     double m_currentTime;
     double m_tickInterval;
+    EntityQuery m_cubesQueryActivation;
     EntityQuery m_cubesQueryHomogeneous;
     EntityQuery m_cubesQueryHeterogeneous;
     std::shared_ptr<ComponentManager> m_componentManager;

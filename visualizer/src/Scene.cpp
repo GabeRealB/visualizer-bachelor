@@ -233,6 +233,9 @@ void addEntity(
         case Visconfig::Components::ComponentType::ExplicitIteration:
             archetype = EntityArchetype::with<HomogeneousIteration>(archetype);
             break;
+        case Visconfig::Components::ComponentType::EntityActivation:
+            archetype = EntityArchetype::with<EntityActivation>(archetype);
+            break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
             archetype = EntityArchetype::with<HeterogeneousIteration>(archetype);
             break;
@@ -254,7 +257,10 @@ void addEntity(
         }
     }
 
-    entityIdMap.insert_or_assign(entity.id, entityManager.addEntity(archetype));
+    const auto [it, success] = entityIdMap.insert({ entity.id, entityManager.addEntity(archetype) });
+    if (!success) {
+        std::cerr << "Unable to insert into entity map" << std::endl;
+    }
 }
 
 void initializeComponent(
@@ -982,6 +988,33 @@ void initializeComponent(
 }
 
 void initializeComponent(ComponentManager& manager, Entity entity,
+    const Visconfig::Components::EntityActivationComponent& component,
+    const std::unordered_map<std::size_t, Entity>& entityIdMap)
+{
+    std::vector<Entity> entities{};
+    entities.reserve(component.entities.size());
+
+    std::vector<std::size_t> ticks{};
+    ticks.reserve(component.ticksPerIteration.size());
+
+    for (auto entityId : component.entities) {
+        entities.push_back(entityIdMap.at(entityId));
+    }
+
+    for (auto tick : component.ticksPerIteration) {
+        ticks.push_back(tick);
+    }
+
+    auto& entityActivation{ *static_cast<EntityActivation*>(
+        manager.getEntityComponentPointer(entity, getTypeId<EntityActivation>())) };
+    entityActivation.entities = entities;
+    entityActivation.ticksPerIteration = ticks;
+    entityActivation.layer.m_layerMask = component.layer;
+    entityActivation.index = 0;
+    entityActivation.tick = 0;
+}
+
+void initializeComponent(ComponentManager& manager, Entity entity,
     const Visconfig::Components::ExplicitHeterogeneousIterationComponent& component)
 {
     std::vector<glm::vec3> scales{};
@@ -1116,6 +1149,11 @@ void initializeEntity(ComponentManager& manager, const std::unordered_map<std::s
         case Visconfig::Components::ComponentType::ExplicitIteration:
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ExplicitIterationComponent>(component.data));
+            break;
+        case Visconfig::Components::ComponentType::EntityActivation:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::EntityActivationComponent>(component.data),
+                entityIdMap);
             break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
             initializeComponent(manager, ecs_entity,
