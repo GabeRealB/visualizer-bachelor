@@ -228,10 +228,13 @@ void addEntity(
             archetype = EntityArchetype::with<Transform>(archetype);
             break;
         case Visconfig::Components::ComponentType::ImplicitIteration:
-            archetype = EntityArchetype::with<Iteration>(archetype);
+            archetype = EntityArchetype::with<HomogeneousIteration>(archetype);
             break;
         case Visconfig::Components::ComponentType::ExplicitIteration:
-            archetype = EntityArchetype::with<Iteration>(archetype);
+            archetype = EntityArchetype::with<HomogeneousIteration>(archetype);
+            break;
+        case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
+            archetype = EntityArchetype::with<HeterogeneousIteration>(archetype);
             break;
         case Visconfig::Components::ComponentType::Camera:
             archetype = EntityArchetype::with<Camera>(archetype);
@@ -960,8 +963,8 @@ void initializeComponent(
         positions.push_back(position);
     }
 
-    *static_cast<Iteration*>(manager.getEntityComponentPointer(entity, getTypeId<Iteration>()))
-        = Iteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
+    *static_cast<HomogeneousIteration*>(manager.getEntityComponentPointer(entity, getTypeId<HomogeneousIteration>()))
+        = HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
 }
 
 void initializeComponent(
@@ -974,8 +977,33 @@ void initializeComponent(
         positions.push_back(glm::make_vec3(pos.data()));
     }
 
-    *static_cast<Iteration*>(manager.getEntityComponentPointer(entity, getTypeId<Iteration>()))
-        = Iteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
+    *static_cast<HomogeneousIteration*>(manager.getEntityComponentPointer(entity, getTypeId<HomogeneousIteration>()))
+        = HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
+}
+
+void initializeComponent(ComponentManager& manager, Entity entity,
+    const Visconfig::Components::ExplicitHeterogeneousIterationComponent& component)
+{
+    std::vector<glm::vec3> scales{};
+    std::vector<glm::vec3> positions{};
+    std::vector<std::size_t> ticksPerIteration{};
+    scales.reserve(component.scales.size());
+    positions.reserve(component.positions.size());
+    ticksPerIteration.reserve(component.ticksPerIteration.size());
+
+    for (auto& scale : component.scales) {
+        scales.push_back(glm::make_vec3(scale.data()));
+    }
+    for (auto& pos : component.positions) {
+        positions.push_back(glm::make_vec3(pos.data()));
+    }
+    for (auto& ticks : component.ticksPerIteration) {
+        ticksPerIteration.push_back(ticks);
+    }
+
+    *static_cast<HeterogeneousIteration*>(
+        manager.getEntityComponentPointer(entity, getTypeId<HeterogeneousIteration>()))
+        = HeterogeneousIteration{ std::move(scales), std::move(positions), std::move(ticksPerIteration), 0, 0 };
 }
 
 void initializeComponent(
@@ -1088,6 +1116,11 @@ void initializeEntity(ComponentManager& manager, const std::unordered_map<std::s
         case Visconfig::Components::ComponentType::ExplicitIteration:
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ExplicitIterationComponent>(component.data));
+            break;
+        case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::ExplicitHeterogeneousIterationComponent>(
+                    component.data));
             break;
         case Visconfig::Components::ComponentType::Camera:
             initializeComponent(manager, ecs_entity,

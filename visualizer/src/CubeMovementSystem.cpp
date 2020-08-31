@@ -11,7 +11,8 @@ CubeMovementSystem::CubeMovementSystem()
     : m_accumulator{ 0 }
     , m_currentTime{ 0 }
     , m_tickInterval{ 1.0 }
-    , m_cubesQuery{ EntityQuery{}.with<Iteration, Transform>() }
+    , m_cubesQueryHomogeneous{ EntityQuery{}.with<HomogeneousIteration, Transform>() }
+    , m_cubesQueryHeterogeneous{ EntityQuery{}.with<HeterogeneousIteration, Transform>() }
     , m_componentManager{}
 {
     m_currentTime = glfwGetTime();
@@ -21,7 +22,7 @@ void CubeMovementSystem::initialize() { m_componentManager = m_world->getManager
 
 void CubeMovementSystem::terminate() { m_componentManager = nullptr; }
 
-void reverseTransform(const Iteration& iteration, Transform& transform)
+void reverseTransform(const HomogeneousIteration& iteration, Transform& transform)
 {
     auto position = iteration.positions[iteration.index];
 
@@ -32,7 +33,23 @@ void reverseTransform(const Iteration& iteration, Transform& transform)
     transform.position -= glm::vec3{ posX, posY, posZ };
 }
 
-void stepIteration(Iteration& iteration)
+void reverseTransform(const HeterogeneousIteration& iteration, Transform& transform)
+{
+    auto scale = iteration.scales[iteration.index];
+    auto position = iteration.positions[iteration.index];
+
+    auto halfScale{ scale / 2.0f };
+    halfScale.y *= -1.0f;
+
+    auto posX{ scale.x * position.x };
+    auto posY{ -scale.y * position.y };
+    auto posZ{ scale.z * position.z };
+
+    auto offset{ halfScale + glm::vec3{ posX, posY, posZ } };
+    transform.position -= offset;
+}
+
+void stepIteration(HomogeneousIteration& iteration)
 {
     if (++iteration.tick % iteration.ticksPerIteration != 0) {
         return;
@@ -45,7 +62,20 @@ void stepIteration(Iteration& iteration)
     }
 }
 
-void computeTransform(const Iteration& iteration, Transform& transform)
+void stepIteration(HeterogeneousIteration& iteration)
+{
+    if (++iteration.tick % iteration.ticksPerIteration[iteration.index] != 0) {
+        return;
+    } else {
+        iteration.tick = 0;
+    }
+
+    if (++iteration.index >= iteration.positions.size()) {
+        iteration.index = 0;
+    }
+}
+
+void computeTransform(const HomogeneousIteration& iteration, Transform& transform)
 {
     auto position = iteration.positions[iteration.index];
 
@@ -54,6 +84,24 @@ void computeTransform(const Iteration& iteration, Transform& transform)
     auto posZ{ transform.scale.z * position.z };
 
     transform.position += glm::vec3{ posX, posY, posZ };
+}
+
+void computeTransform(const HeterogeneousIteration& iteration, Transform& transform)
+{
+    auto scale = iteration.scales[iteration.index];
+    auto position = iteration.positions[iteration.index];
+
+    auto halfScale{ scale / 2.0f };
+    halfScale.y *= -1.0f;
+
+    auto posX{ scale.x * position.x };
+    auto posY{ -scale.y * position.y };
+    auto posZ{ scale.z * position.z };
+
+    auto offset{ halfScale + glm::vec3{ posX, posY, posZ } };
+
+    transform.scale = scale;
+    transform.position += offset;
 }
 
 void CubeMovementSystem::run(void*)
@@ -80,8 +128,15 @@ void CubeMovementSystem::run(void*)
     m_accumulator += deltaTime;
     if (m_accumulator >= m_tickInterval) {
         m_accumulator = 0;
-        m_cubesQuery.query(*m_componentManager)
-            .forEach<Iteration, Transform>([](Iteration* iteration, Transform* transform) {
+        m_cubesQueryHomogeneous.query(*m_componentManager)
+            .forEach<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
+                reverseTransform(*iteration, *transform);
+                stepIteration(*iteration);
+                computeTransform(*iteration, *transform);
+            });
+
+        m_cubesQueryHeterogeneous.query(*m_componentManager)
+            .forEach<HeterogeneousIteration, Transform>([](HeterogeneousIteration* iteration, Transform* transform) {
                 reverseTransform(*iteration, *transform);
                 stepIteration(*iteration);
                 computeTransform(*iteration, *transform);
