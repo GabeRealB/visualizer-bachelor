@@ -20,6 +20,7 @@ enum class ComponentType {
     Transform,
     ImplicitIteration,
     ExplicitIteration,
+    ExplicitHeterogeneousIteration,
     Camera,
     FreeFlyCamera,
     FixedCamera,
@@ -208,6 +209,16 @@ struct ExplicitIterationComponent : public ComponentData {
     static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
+struct ExplicitHeterogeneousIterationComponent : public ComponentData {
+    std::vector<std::size_t> ticksPerIteration;
+    std::vector<std::array<float, 3>> scales;
+    std::vector<std::array<float, 3>> positions;
+
+    static constexpr const char* scalesJson{ "scales" };
+    static constexpr const char* positionsJson{ "positions" };
+    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
+};
+
 struct CameraComponent : public ComponentData {
     bool active;
     bool fixed;
@@ -297,6 +308,9 @@ void from_json(const nlohmann::json& j, ImplicitIterationComponent& v);
 
 void to_json(nlohmann::json& j, const ExplicitIterationComponent& v);
 void from_json(const nlohmann::json& j, ExplicitIterationComponent& v);
+
+void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v);
+void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent& v);
 
 void to_json(nlohmann::json& j, const CameraComponent& v);
 void from_json(const nlohmann::json& j, CameraComponent& v);
