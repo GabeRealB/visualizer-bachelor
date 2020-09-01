@@ -268,7 +268,7 @@ struct CameraSwitcherComponent : public ComponentData {
 struct CompositionOperation {
     float scale[2];
     float position[2];
-    std::string sourceTexture;
+    std::vector<std::string> sourceTexture;
     std::string target;
 
     static constexpr const char* scaleJson{ "scale" };

@@ -131,6 +131,8 @@ std::unordered_map<TextureFormat, std::string> s_textureFormatNames{
     { TextureFormat::RG, "rg" },
     { TextureFormat::RGB, "rgb" },
     { TextureFormat::RGBA, "rgba" },
+    { TextureFormat::R8, "r8" },
+    { TextureFormat::RGBA16F, "rgba16" },
 };
 
 void to_json(nlohmann::json& j, const TextureFormat& v) { j = s_textureFormatNames[v]; }

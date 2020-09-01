@@ -27,7 +27,7 @@ struct MeshAsset : public AssetData {
     static constexpr const char* texture_coords0Json{ "texture_coords0" };
 };
 
-enum class TextureFormat { R, RG, RGB, RGBA };
+enum class TextureFormat { R, RG, RGB, RGBA, R8, RGBA16F };
 enum class TextureAttributes { MagnificationLinear, MinificationLinear, GenerateMipMaps };
 
 struct TextureFileAsset : public AssetData {
