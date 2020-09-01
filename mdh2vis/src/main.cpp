@@ -21,6 +21,13 @@ constexpr float maxTransparency{ 0.95f };
 constexpr auto cubeMeshAsset{ "cube_mesh" };
 constexpr auto cubeTextureAsset{ "cube_texture" };
 constexpr auto cubeShaderAsset{ "cube_shader" };
+constexpr auto viewCompositionShaderAsset{ "view_composition_shader" };
+
+constexpr auto cubeShaderVertexPath{ "assets/shaders/cube.vs.glsl" };
+constexpr auto cubeShaderFragmentPath{ "assets/shaders/cube.fs.glsl" };
+
+constexpr auto viewCompositionShaderVertexPath{ "assets/shaders/compositing.vs.glsl" };
+constexpr auto viewCompositionShaderFragmentPath{ "assets/shaders/compositing.fs.glsl" };
 
 struct SequentialLayer {
     MDH2Vis::Model::Layer model;
@@ -849,12 +856,13 @@ Visconfig::Asset createCubeTextureAsset()
     return asset;
 }
 
-Visconfig::Asset createCubeShaderAsset()
+Visconfig::Asset createShaderAsset(
+    const std::string& vertexPath, const std::string& fragmentPath, const std::string& name)
 {
     auto shaderData{ std::make_shared<Visconfig::Assets::ShaderAsset>() };
-    Visconfig::Asset asset{ cubeShaderAsset, Visconfig::Assets::AssetType::Shader, shaderData };
-    shaderData->vertex = "assets/shaders/cube.vs.glsl";
-    shaderData->fragment = "assets/shaders/cube.fs.glsl";
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::Shader, shaderData };
+    shaderData->vertex = vertexPath;
+    shaderData->fragment = fragmentPath;
 
     return asset;
 }
@@ -1532,13 +1540,13 @@ Visconfig::Entity generateCoordinatorEntity(std::size_t entityId)
 }
 
 void extentComposition(Visconfig::World& world, std::array<float, 2> scale, std::array<float, 2> position,
-    const std::string& src, const std::string& target)
+    std::vector<std::string> src, const std::string& target, const std::string& shader)
 {
     auto composition{ std::static_pointer_cast<Visconfig::Components::CompositionComponent>(
         world.entities[0].components[0].data) };
 
     composition->operations.push_back(Visconfig::Components::CompositionOperation{
-        { scale[0], scale[1] }, { position[0], position[1] }, { src }, target });
+        { scale[0], scale[1] }, { position[0], position[1] }, std::move(src), target, shader });
 }
 
 void extendCameraSwitcher(Visconfig::World& world, std::size_t camera)
@@ -1586,7 +1594,8 @@ void generateMainViewConfig(
 
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, "framebuffer_0"));
-    extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, "render_texture_0", "default_framebuffer");
+    extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, { "render_texture_0" }, "default_framebuffer",
+        viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
 
@@ -1609,7 +1618,7 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
     world.entities.push_back(
         generateViewCamera(cameraEntity, focusEntity, subview + 2, "framebuffer_" + std::to_string(subview + 2)));
     extentComposition(world, { 0.2f, 0.2f }, { 0.7f, (-0.7f + ((numSubViews - 1) * 0.5f)) - (subview * 0.5f) },
-        "render_texture_" + std::to_string(subview + 2), "default_framebuffer");
+        { "render_texture_" + std::to_string(subview + 2) }, "default_framebuffer", viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
 
@@ -1637,8 +1646,8 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(
         generateViewCamera(cameraEntity, focusEntity, subview, "framebuffer_" + std::to_string(subview)));
-    extentComposition(
-        world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, "render_texture_" + std::to_string(subview), "default_framebuffer");
+    extentComposition(world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, { "render_texture_" + std::to_string(subview) },
+        "default_framebuffer", viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
 
@@ -1668,7 +1677,9 @@ Visconfig::Config generateConfig(const ProcessedConfig& config)
 
     visconfig.assets.push_back(createCubeMeshAsset());
     visconfig.assets.push_back(createCubeTextureAsset());
-    visconfig.assets.push_back(createCubeShaderAsset());
+    visconfig.assets.push_back(createShaderAsset(cubeShaderVertexPath, cubeShaderFragmentPath, cubeShaderAsset));
+    visconfig.assets.push_back(createShaderAsset(
+        viewCompositionShaderVertexPath, viewCompositionShaderFragmentPath, viewCompositionShaderAsset));
     visconfig.assets.push_back(createDefaultFramebufferAsset());
 
     generateWorld(visconfig, config);
