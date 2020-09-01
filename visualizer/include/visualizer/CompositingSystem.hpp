@@ -26,8 +26,6 @@ public:
 private:
     Mesh m_quad;
     EntityQuery m_entityQuery;
-    ShaderEnvironment m_shaderEnvironment;
-    std::shared_ptr<ShaderProgram> m_program;
     std::shared_ptr<ComponentManager> m_componentManager;
 };
 

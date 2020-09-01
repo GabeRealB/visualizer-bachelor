@@ -1114,10 +1114,16 @@ void initializeComponent(
             sources.push_back(std::move(sourceTextureAsset));
         }
 
+        auto shaderAsset{ std::static_pointer_cast<ShaderProgram>(
+            std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.shader).data)) };
+        auto material{ Material{
+            ShaderEnvironment{ *shaderAsset, ParameterQualifier::Program }, std::move(shaderAsset) } };
+
         auto framebufferAsset{ std::static_pointer_cast<Framebuffer>(
             std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.target).data)) };
 
-        operations.push_back({ Transform{ glm::identity<glm::quat>(), glm::vec3{ position, 0 }, glm::vec3{ scale, 0 } },
+        operations.push_back({ std::move(material),
+            Transform{ glm::identity<glm::quat>(), glm::vec3{ position, 0 }, glm::vec3{ scale, 0 } },
             std::move(sources), std::move(framebufferAsset) });
     }
 
