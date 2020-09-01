@@ -202,6 +202,12 @@ void from_json(const nlohmann::json& j, FramebufferType& v)
 
 std::unordered_map<FramebufferDestination, std::string> s_framebufferDestinationNames{
     { FramebufferDestination::Color0, "color0" },
+    { FramebufferDestination::Color1, "color1" },
+    { FramebufferDestination::Color2, "color2" },
+    { FramebufferDestination::Color3, "color3" },
+    { FramebufferDestination::Depth, "depth" },
+    { FramebufferDestination::Stencil, "stencil" },
+    { FramebufferDestination::DepthStencil, "depth_stencil" },
 };
 
 void to_json(nlohmann::json& j, const FramebufferDestination& v) { j = s_framebufferDestinationNames[v]; }

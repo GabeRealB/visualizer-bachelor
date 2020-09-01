@@ -59,7 +59,7 @@ struct ShaderAsset : public AssetData {
 };
 
 enum class FramebufferType { Texture, Renderbuffer };
-enum class FramebufferDestination { Color0 };
+enum class FramebufferDestination { Color0, Color1, Color2, Color3, Depth, Stencil, DepthStencil };
 
 struct FramebufferAttachment {
     FramebufferType type;
