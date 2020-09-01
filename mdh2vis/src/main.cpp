@@ -18,6 +18,10 @@ constexpr bool screenFullscreen = false;
 constexpr float minTransparency{ 0.1f };
 constexpr float maxTransparency{ 0.95f };
 
+constexpr auto cubeMeshAsset{ "cube_mesh" };
+constexpr auto cubeTextureAsset{ "cube_texture" };
+constexpr auto cubeShaderAsset{ "cube_shader" };
+
 struct SequentialLayer {
     MDH2Vis::Model::Layer model;
     MDH2Vis::TPS::Layer tps;
@@ -700,7 +704,7 @@ float interpolateLinear(float startValue, float endValue, std::size_t min, std::
 Visconfig::Asset createCubeMeshAsset()
 {
     auto meshData{ std::make_shared<Visconfig::Assets::MeshAsset>() };
-    Visconfig::Asset asset{ "cube_mesh", Visconfig::Assets::AssetType::Mesh, meshData };
+    Visconfig::Asset asset{ cubeMeshAsset, Visconfig::Assets::AssetType::Mesh, meshData };
 
     constexpr std::array<float, 4> vertices[]{
         { -0.5f, -0.5f, 0.5f, 1.0f }, // lower-left-front
@@ -836,7 +840,7 @@ Visconfig::Asset createCubeMeshAsset()
 Visconfig::Asset createCubeTextureAsset()
 {
     auto textureData{ std::make_shared<Visconfig::Assets::TextureFileAsset>() };
-    Visconfig::Asset asset{ "cube_texture", Visconfig::Assets::AssetType::TextureFile, textureData };
+    Visconfig::Asset asset{ cubeTextureAsset, Visconfig::Assets::AssetType::TextureFile, textureData };
     textureData->path = "assets/textures/cube.png";
     textureData->attributes.push_back(Visconfig::Assets::TextureAttributes::MagnificationLinear);
     textureData->attributes.push_back(Visconfig::Assets::TextureAttributes::MinificationLinear);
@@ -848,7 +852,7 @@ Visconfig::Asset createCubeTextureAsset()
 Visconfig::Asset createCubeShaderAsset()
 {
     auto shaderData{ std::make_shared<Visconfig::Assets::ShaderAsset>() };
-    Visconfig::Asset asset{ "cube_shader", Visconfig::Assets::AssetType::Shader, shaderData };
+    Visconfig::Asset asset{ cubeShaderAsset, Visconfig::Assets::AssetType::Shader, shaderData };
     shaderData->vertex = "assets/shaders/cube.vs.glsl";
     shaderData->fragment = "assets/shaders/cube.fs.glsl";
 
@@ -917,10 +921,6 @@ Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const M
     constexpr auto parentIndex{ 5 };
     constexpr auto iterationIndex{ 6 };
 
-    constexpr auto meshAsset{ "cube_mesh" };
-    constexpr auto textureAsset{ "cube_texture" };
-    constexpr auto shaderAsset{ "cube_shader" };
-
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
         entity.components[materialIndex].data) };
@@ -928,13 +928,13 @@ Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const M
     auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
         entity.components[transformIndex].data) };
 
-    mesh.asset = meshAsset;
+    mesh.asset = cubeMeshAsset;
 
     auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = textureAsset;
+    texture->asset = cubeTextureAsset;
     texture->slot = 0;
 
     diffuseColor->value[0] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f;
@@ -969,7 +969,7 @@ Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const M
         gridScale->value.push_back({ scales[2], scales[1] });
     }
 
-    material.asset = shaderAsset;
+    material.asset = cubeShaderAsset;
     material.attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
@@ -1058,10 +1058,6 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
     constexpr auto parentIndex{ 5 };
     constexpr auto iterationIndex{ 6 };
 
-    constexpr auto meshAsset{ "cube_mesh" };
-    constexpr auto textureAsset{ "cube_texture" };
-    constexpr auto shaderAsset{ "cube_shader" };
-
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
         entity.components[materialIndex].data) };
@@ -1071,13 +1067,13 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
     auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
         entity.components[parentIndex].data) };
 
-    mesh.asset = meshAsset;
+    mesh.asset = cubeMeshAsset;
 
     auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = textureAsset;
+    texture->asset = cubeTextureAsset;
     texture->slot = 0;
 
     diffuseColor->value[0] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[0]) / 255.0f;
@@ -1112,7 +1108,7 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
         gridScale->value.push_back({ scales[2], scales[1] });
     }
 
-    material.asset = shaderAsset;
+    material.asset = cubeShaderAsset;
     material.attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
@@ -1190,10 +1186,6 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
     constexpr auto transformIndex{ 4 };
     constexpr auto parentIndex{ 5 };
 
-    constexpr auto meshAsset{ "cube_mesh" };
-    constexpr auto textureAsset{ "cube_texture" };
-    constexpr auto shaderAsset{ "cube_shader" };
-
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
         entity.components[materialIndex].data) };
@@ -1201,13 +1193,13 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
     auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
         entity.components[transformIndex].data) };
 
-    mesh.asset = meshAsset;
+    mesh.asset = cubeMeshAsset;
 
     auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = textureAsset;
+    texture->asset = cubeTextureAsset;
     texture->slot = 0;
 
     diffuseColor->value[0] = color[0];
@@ -1219,7 +1211,7 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
     gridScale->value.push_back({ 1.0f, 1.0f });
     gridScale->value.push_back({ 1.0f, 1.0f });
 
-    material.asset = shaderAsset;
+    material.asset = cubeShaderAsset;
     material.attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
@@ -1392,10 +1384,6 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     constexpr auto parentIndex{ 5 };
     constexpr auto iterationIndex{ 6 };
 
-    constexpr auto meshAsset{ "cube_mesh" };
-    constexpr auto textureAsset{ "cube_texture" };
-    constexpr auto shaderAsset{ "cube_shader" };
-
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[meshIndex].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
         entity.components[materialIndex].data) };
@@ -1407,13 +1395,13 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     auto& iteration{ *std::static_pointer_cast<Visconfig::Components::ExplicitIterationComponent>(
         entity.components[iterationIndex].data) };
 
-    mesh.asset = meshAsset;
+    mesh.asset = cubeMeshAsset;
 
     auto texture{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = textureAsset;
+    texture->asset = cubeTextureAsset;
     texture->slot = 0;
 
     std::size_t colorLayer{ 0 };
@@ -1435,7 +1423,7 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     gridScale->value.push_back({ 1, 1 });
     gridScale->value.push_back({ 1, 1 });
 
-    material.asset = shaderAsset;
+    material.asset = cubeShaderAsset;
     material.attributes.insert_or_assign("gridTexture",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture, false });
@@ -1550,7 +1538,7 @@ void extentComposition(Visconfig::World& world, std::array<float, 2> scale, std:
         world.entities[0].components[0].data) };
 
     composition->operations.push_back(Visconfig::Components::CompositionOperation{
-        { scale[0], scale[1] }, { position[0], position[1] }, src, target });
+        { scale[0], scale[1] }, { position[0], position[1] }, { src }, target });
 }
 
 void extendCameraSwitcher(Visconfig::World& world, std::size_t camera)
