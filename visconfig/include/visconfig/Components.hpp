@@ -270,11 +270,13 @@ struct CompositionOperation {
     float position[2];
     std::vector<std::string> sourceTexture;
     std::string target;
+    std::string shader;
 
     static constexpr const char* scaleJson{ "scale" };
     static constexpr const char* positionJson{ "position" };
     static constexpr const char* sourceTextureJson{ "source_texture" };
     static constexpr const char* targetJson{ "target" };
+    static constexpr const char* shaderJson{ "shader" };
 };
 
 struct CompositionComponent : public ComponentData {

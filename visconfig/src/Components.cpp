@@ -915,6 +915,7 @@ void to_json(nlohmann::json& j, const CompositionOperation& v)
     j[CompositionOperation::positionJson] = v.position;
     j[CompositionOperation::sourceTextureJson] = v.sourceTexture;
     j[CompositionOperation::targetJson] = v.target;
+    j[CompositionOperation::shaderJson] = v.shader;
 }
 
 void from_json(const nlohmann::json& j, CompositionOperation& v)
@@ -923,6 +924,7 @@ void from_json(const nlohmann::json& j, CompositionOperation& v)
     j[CompositionOperation::positionJson].get_to(v.position);
     j[CompositionOperation::sourceTextureJson].get_to(v.sourceTexture);
     j[CompositionOperation::targetJson].get_to(v.target);
+    j[CompositionOperation::shaderJson].get_to(v.shader);
 }
 
 }
