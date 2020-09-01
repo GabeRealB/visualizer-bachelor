@@ -21,6 +21,7 @@ constexpr float maxTransparency{ 0.95f };
 constexpr auto cubeMeshAsset{ "cube_mesh" };
 constexpr auto cubeTextureAsset{ "cube_texture" };
 constexpr auto cubeShaderAsset{ "cube_shader" };
+constexpr auto defaultFramebufferAsset{ "default_framebuffer" };
 constexpr auto viewCompositionShaderAsset{ "view_composition_shader" };
 
 constexpr auto cubeShaderVertexPath{ "assets/shaders/cube.vs.glsl" };
@@ -55,14 +56,6 @@ struct SubViewLayerInfo {
 };
 
 struct OutputLayerInfo {
-    std::vector<std::size_t> iterationRates;
-    std::vector<std::array<float, 3>> scales;
-    std::vector<std::array<float, 3>> positions;
-    std::vector<std::array<float, 3>> absoluteScales;
-    std::vector<std::array<float, 3>> absolutePositions;
-};
-
-struct OutputLayerInfo_ {
     std::size_t iterationRate;
     std::array<float, 3> size;
     std::array<float, 3> absoluteSize;
@@ -86,7 +79,6 @@ struct SubViewInfo {
 struct OutputViewInfo {
     std::array<float, 3> size;
     std::vector<OutputLayerInfo> layers;
-    std::vector<OutputLayerInfo_> outputLayers;
 };
 
 struct ProcessedConfig {
@@ -508,8 +500,8 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
     std::array<float, 3> threadDimensions{ config.mainView.threads[0].absoluteScale };
 
     auto generateLayer{ [](std::array<DimensionType, 3> dimensionTypes, std::array<float, 3> threadDimensions,
-                            std::array<float, 3> layerDimensions) -> OutputLayerInfo_ {
-        OutputLayerInfo_ layerInfo{};
+                            std::array<float, 3> layerDimensions) -> OutputLayerInfo {
+        OutputLayerInfo layerInfo{};
 
         std::array<std::size_t, 3> subdivisions{ 0, 0, 0 };
         std::array<float, 3> outputDimensions{ layerDimensions };
@@ -539,7 +531,7 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
         return layerInfo;
     } };
 
-    auto computePositions{ Overload{ [](OutputLayerInfo_& layer, std::array<float, 3> threadDimensions,
+    auto computePositions{ Overload{ [](OutputLayerInfo& layer, std::array<float, 3> threadDimensions,
                                          std::array<std::size_t, 3> iterations, std::size_t iterationRate) {
                                         iterations[0]++;
                                         iterations[1]++;
@@ -570,7 +562,7 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
                                             layer.iterationRate += rate;
                                         }
                                     },
-        [](OutputLayerInfo_& layer, const OutputLayerInfo_& previousLayer, std::array<std::size_t, 3> iterations) {
+        [](OutputLayerInfo& layer, const OutputLayerInfo& previousLayer, std::array<std::size_t, 3> iterations) {
             iterations[0]++;
             iterations[1]++;
             iterations[2]++;
@@ -612,7 +604,7 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
             }
         } } };
 
-    auto computeRelativePositionAndSize{ Overload{ [](OutputLayerInfo_& layer) {
+    auto computeRelativePositionAndSize{ Overload{ [](OutputLayerInfo& layer) {
                                                       layer.size = { 1.0f, 1.0f, 1.0f };
                                                       layer.numIterations = { 0, 0, 0 };
                                                       for (auto position : layer.absolutePositions) {
@@ -622,7 +614,7 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
                                                           layer.positions.push_back(position);
                                                       }
                                                   },
-        [](OutputLayerInfo_& layer, const OutputLayerInfo_& previousLayer) {
+        [](OutputLayerInfo& layer, const OutputLayerInfo& previousLayer) {
             layer.size = {
                 layer.absoluteSize[0] / previousLayer.absoluteSize[0],
                 layer.absoluteSize[1] / previousLayer.absoluteSize[1],
@@ -642,11 +634,11 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
         } } };
 
     for (const auto& layer : config.mainView.layers) {
-        config.outputView.outputLayers.push_back(generateLayer(dimensionTypes, threadDimensions, layer.absoluteScale));
+        config.outputView.layers.push_back(generateLayer(dimensionTypes, threadDimensions, layer.absoluteScale));
     }
 
-    for (auto pos{ config.outputView.outputLayers.rbegin() }; pos != config.outputView.outputLayers.rend(); pos++) {
-        if (pos == config.outputView.outputLayers.rbegin()) {
+    for (auto pos{ config.outputView.layers.rbegin() }; pos != config.outputView.layers.rend(); pos++) {
+        if (pos == config.outputView.layers.rbegin()) {
             const auto& threadLayer{ config.mainView.threads.front() };
             auto iterationRate{ static_cast<std::size_t>(threadDimensions[0])
                 * static_cast<std::size_t>(threadDimensions[1]) * static_cast<std::size_t>(threadDimensions[2]) };
@@ -654,23 +646,23 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
         } else {
             auto& layer{ *pos };
             const auto& previousLayer{ *(pos - 1) };
-            auto previousIndex{ config.outputView.outputLayers.size()
-                - std::distance(config.outputView.outputLayers.rbegin(), pos) };
+            auto previousIndex{ config.outputView.layers.size()
+                - std::distance(config.outputView.layers.rbegin(), pos) };
 
             auto& previousMainLayer{ config.mainView.layers[previousIndex] };
             computePositions.operator()(layer, previousLayer, previousMainLayer.numIterations);
         }
     }
 
-    for (auto pos{ config.outputView.outputLayers.begin() }; pos != config.outputView.outputLayers.end(); pos++) {
-        if (pos == config.outputView.outputLayers.begin()) {
+    for (auto pos{ config.outputView.layers.begin() }; pos != config.outputView.layers.end(); pos++) {
+        if (pos == config.outputView.layers.begin()) {
             computeRelativePositionAndSize.operator()(*pos);
         } else {
             computeRelativePositionAndSize.operator()(*pos, *(pos - 1));
         }
     }
 
-    config.outputView.size = config.outputView.outputLayers.front().absoluteSize;
+    config.outputView.size = config.outputView.layers.front().absoluteSize;
 }
 
 ProcessedConfig processConfig(const MDH2Vis::MDHConfig& mdhConfig)
@@ -869,30 +861,33 @@ Visconfig::Asset createShaderAsset(
 
 Visconfig::Asset createDefaultFramebufferAsset()
 {
-    return Visconfig::Asset{ "default_framebuffer", Visconfig::Assets::AssetType::DefaultFramebuffer,
+    return Visconfig::Asset{ defaultFramebufferAsset, Visconfig::Assets::AssetType::DefaultFramebuffer,
         std::make_shared<Visconfig::Assets::DefaultFramebufferAsset>() };
 }
 
-Visconfig::Asset generateRenderTextureAsset(std::size_t index)
+Visconfig::Asset generateRenderTextureAsset(
+    const std::string& name, std::size_t width, std::size_t height, Visconfig::Assets::TextureFormat format)
 {
     auto textureData{ std::make_shared<Visconfig::Assets::TextureRawAsset>() };
-    Visconfig::Asset asset{ "render_texture_" + std::to_string(index), Visconfig::Assets::AssetType::TextureRaw,
-        textureData };
-    textureData->width = screenWidth;
-    textureData->height = screenHeight;
-    textureData->format = Visconfig::Assets::TextureFormat::RGBA;
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::TextureRaw, textureData };
+    textureData->width = width;
+    textureData->height = height;
+    textureData->format = format;
 
     return asset;
 }
 
-Visconfig::Asset generateFramebufferAsset(std::size_t index)
+Visconfig::Asset generateFramebufferAsset(const std::string& name,
+    const std::vector<std::tuple<Visconfig::Assets::FramebufferType, Visconfig::Assets::FramebufferDestination,
+        std::string>>& attachments)
 {
     auto bufferData{ std::make_shared<Visconfig::Assets::FramebufferAsset>() };
-    Visconfig::Asset asset{ "framebuffer_" + std::to_string(index), Visconfig::Assets::AssetType::Framebuffer,
-        bufferData };
-    bufferData->attachments.push_back(
-        Visconfig::Assets::FramebufferAttachment{ Visconfig::Assets::FramebufferType::Texture,
-            Visconfig::Assets::FramebufferDestination::Color0, "render_texture_" + std::to_string(index) });
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::Framebuffer, bufferData };
+
+    for (auto& attachment : attachments) {
+        bufferData->attachments.push_back(Visconfig::Assets::FramebufferAttachment{
+            std::get<0>(attachment), std::get<1>(attachment), std::get<2>(attachment) });
+    }
 
     return asset;
 }
@@ -1285,18 +1280,18 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         entity.components[parentIndex].data) };
 
     std::array<float, 3> halfScale{
-        view.outputLayers[layerNumber].size[0] / 2.0f,
-        view.outputLayers[layerNumber].size[1] / 2.0f,
-        view.outputLayers[layerNumber].size[2] / 2.0f,
+        view.layers[layerNumber].size[0] / 2.0f,
+        view.layers[layerNumber].size[1] / 2.0f,
+        view.layers[layerNumber].size[2] / 2.0f,
     };
 
     transform.rotation[0] = 0;
     transform.rotation[1] = 0;
     transform.rotation[2] = 0;
 
-    transform.scale[0] = view.outputLayers[layerNumber].size[0];
-    transform.scale[1] = view.outputLayers[layerNumber].size[1];
-    transform.scale[2] = view.outputLayers[layerNumber].size[2];
+    transform.scale[0] = view.layers[layerNumber].size[0];
+    transform.scale[1] = view.layers[layerNumber].size[1];
+    transform.scale[2] = view.layers[layerNumber].size[2];
 
     transform.position[0] = -0.5f + halfScale[0];
     transform.position[1] = 0.5f - halfScale[1];
@@ -1306,14 +1301,14 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[1]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f,
-        interpolateLinear(minTransparency, maxTransparency, 0, view.outputLayers.size(), layerNumber + 1),
+        interpolateLinear(minTransparency, maxTransparency, 0, view.layers.size(), layerNumber + 1),
     };
 
     auto& threadLayer{ mdhConfig.mainView.threads.front() };
     std::array<float, 3> childScale{
-        threadLayer.absoluteScale[0] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[0],
-        threadLayer.absoluteScale[1] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[1],
-        threadLayer.absoluteScale[2] / mdhConfig.outputView.outputLayers[layerNumber].absoluteSize[2],
+        threadLayer.absoluteScale[0] / mdhConfig.outputView.layers[layerNumber].absoluteSize[0],
+        threadLayer.absoluteScale[1] / mdhConfig.outputView.layers[layerNumber].absoluteSize[1],
+        threadLayer.absoluteScale[2] / mdhConfig.outputView.layers[layerNumber].absoluteSize[2],
     };
 
     std::array<float, 3> childHalfScale{
@@ -1330,7 +1325,7 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
 
     auto parentEntity{ entityId };
     std::vector<std::size_t> children{};
-    for (auto pos : view.outputLayers[layerNumber].positions) {
+    for (auto pos : view.layers[layerNumber].positions) {
         auto first{ entityId == parentEntity };
         auto cubeLayer{ first ? 1llu << viewNumber : 0 };
         entityId++;
@@ -1345,7 +1340,7 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
 
     entityActivation.layer = 1llu << viewNumber;
     entityActivation.entities = children;
-    entityActivation.ticksPerIteration = view.outputLayers[layerNumber].iterationRates;
+    entityActivation.ticksPerIteration = view.layers[layerNumber].iterationRates;
 
     parent.id = parentId;
 
@@ -1354,10 +1349,10 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
             entity.components[iterationIndex].data) };
 
         iteration.order = Visconfig::Components::IterationOrder::XYZ;
-        iteration.numIterations[0] = view.outputLayers[layerNumber].numIterations[0];
-        iteration.numIterations[1] = view.outputLayers[layerNumber].numIterations[1];
-        iteration.numIterations[2] = view.outputLayers[layerNumber].numIterations[2];
-        iteration.ticksPerIteration = view.outputLayers[layerNumber].iterationRate;
+        iteration.numIterations[0] = view.layers[layerNumber].numIterations[0];
+        iteration.numIterations[1] = view.layers[layerNumber].numIterations[1];
+        iteration.numIterations[2] = view.layers[layerNumber].numIterations[2];
+        iteration.ticksPerIteration = view.layers[layerNumber].iterationRate;
     }
 
     return entity;
@@ -1560,8 +1555,14 @@ void extendCameraSwitcher(Visconfig::World& world, std::size_t camera)
 void generateMainViewConfig(
     Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world, std::size_t& numEntities)
 {
-    config.assets.push_back(generateRenderTextureAsset(0));
-    config.assets.push_back(generateFramebufferAsset(0));
+    constexpr auto renderTextureName{ "render_texture_0" };
+    constexpr auto framebufferName{ "framebuffer_0" };
+
+    config.assets.push_back(generateRenderTextureAsset(
+        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateFramebufferAsset(framebufferName,
+        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+            renderTextureName } }));
 
     auto focusEntity{ numEntities };
 
@@ -1593,8 +1594,8 @@ void generateMainViewConfig(
     }
 
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, "framebuffer_0"));
-    extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, { "render_texture_0" }, "default_framebuffer",
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, framebufferName));
+    extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
         viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
@@ -1602,8 +1603,14 @@ void generateMainViewConfig(
 void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
     std::size_t& numEntities, std::size_t subview, std::size_t numSubViews)
 {
-    config.assets.push_back(generateRenderTextureAsset(subview + 2));
-    config.assets.push_back(generateFramebufferAsset(subview + 2));
+    auto renderTextureName{ "render_texture_" + std::to_string(subview + 2) };
+    auto framebufferName{ "framebuffer_" + std::to_string(subview + 2) };
+
+    config.assets.push_back(generateRenderTextureAsset(
+        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateFramebufferAsset(framebufferName,
+        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+            renderTextureName } }));
 
     auto focusEntity{ numEntities };
 
@@ -1615,27 +1622,31 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
     }
 
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(
-        generateViewCamera(cameraEntity, focusEntity, subview + 2, "framebuffer_" + std::to_string(subview + 2)));
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview + 2, framebufferName));
     extentComposition(world, { 0.2f, 0.2f }, { 0.7f, (-0.7f + ((numSubViews - 1) * 0.5f)) - (subview * 0.5f) },
-        { "render_texture_" + std::to_string(subview + 2) }, "default_framebuffer", viewCompositionShaderAsset);
+        { renderTextureName }, defaultFramebufferAsset, viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
 
 void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
     std::size_t& numEntities, std::size_t subview)
 {
-    config.assets.push_back(generateRenderTextureAsset(subview));
-    config.assets.push_back(generateFramebufferAsset(subview));
+    auto renderTextureName{ "render_texture_" + std::to_string(subview) };
+    auto framebufferName{ "framebuffer_" + std::to_string(subview) };
+
+    config.assets.push_back(generateRenderTextureAsset(
+        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateFramebufferAsset(framebufferName,
+        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+            renderTextureName } }));
 
     auto focusEntity{ numEntities };
     world.entities.push_back(generateCube({ 0, 0, 0 }, mdhConfig.outputView.size, { 1.0f, 1.0f, 1.0f, minTransparency },
         numEntities++, 0, 1llu << subview, false));
 
     auto parent{ focusEntity };
-    for (auto layer{ mdhConfig.outputView.outputLayers.begin() }; layer != mdhConfig.outputView.outputLayers.end();
-         layer++) {
-        auto index{ std::distance(mdhConfig.outputView.outputLayers.begin(), layer) };
+    for (auto layer{ mdhConfig.outputView.layers.begin() }; layer != mdhConfig.outputView.layers.end(); layer++) {
+        auto index{ std::distance(mdhConfig.outputView.layers.begin(), layer) };
         auto newParent{ numEntities };
         world.entities.push_back(
             generateOutputViewCube(world, mdhConfig, mdhConfig.outputView, numEntities, parent, subview, index));
@@ -1644,10 +1655,9 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     }
 
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(
-        generateViewCamera(cameraEntity, focusEntity, subview, "framebuffer_" + std::to_string(subview)));
-    extentComposition(world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, { "render_texture_" + std::to_string(subview) },
-        "default_framebuffer", viewCompositionShaderAsset);
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview, framebufferName));
+    extentComposition(world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
+        viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
 }
 
