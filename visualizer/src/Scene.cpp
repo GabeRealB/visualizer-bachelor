@@ -164,6 +164,24 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::Framebuff
         case Visconfig::Assets::FramebufferDestination::Color0:
             destination = FramebufferAttachment::Color0;
             break;
+        case Visconfig::Assets::FramebufferDestination::Color1:
+            destination = FramebufferAttachment::Color1;
+            break;
+        case Visconfig::Assets::FramebufferDestination::Color2:
+            destination = FramebufferAttachment::Color2;
+            break;
+        case Visconfig::Assets::FramebufferDestination::Color3:
+            destination = FramebufferAttachment::Color3;
+            break;
+        case Visconfig::Assets::FramebufferDestination::Depth:
+            destination = FramebufferAttachment::Depth;
+            break;
+        case Visconfig::Assets::FramebufferDestination::Stencil:
+            destination = FramebufferAttachment::Stencil;
+            break;
+        case Visconfig::Assets::FramebufferDestination::DepthStencil:
+            destination = FramebufferAttachment::DepthStencil;
+            break;
         }
 
         switch (attachment.type) {
