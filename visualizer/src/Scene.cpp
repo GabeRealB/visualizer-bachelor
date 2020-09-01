@@ -117,6 +117,14 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRa
         format = TextureFormat::RGBA;
         internalFormat = TextureInternalFormat::Short;
         break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internalFormat = TextureInternalFormat::Float16;
+        break;
     }
 
     texture->copyData(format, internalFormat, 0, asset.width, asset.height, 0, nullptr);
@@ -1098,13 +1106,19 @@ void initializeComponent(
         auto position{ glm::make_vec2(operation.position) };
         auto scale{ glm::make_vec2(operation.scale) };
 
-        auto sourceTextureAsset{ std::static_pointer_cast<Texture2D>(
-            std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.sourceTexture).data)) };
+        std::vector<std::shared_ptr<Texture2D>> sources{};
+
+        for (const auto& src : operation.sourceTexture) {
+            auto sourceTextureAsset{ std::static_pointer_cast<Texture2D>(
+                std::const_pointer_cast<void>(AssetDatabase::getAsset(src).data)) };
+            sources.push_back(std::move(sourceTextureAsset));
+        }
+
         auto framebufferAsset{ std::static_pointer_cast<Framebuffer>(
             std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.target).data)) };
 
         operations.push_back({ Transform{ glm::identity<glm::quat>(), glm::vec3{ position, 0 }, glm::vec3{ scale, 0 } },
-            std::move(sourceTextureAsset), std::move(framebufferAsset) });
+            std::move(sources), std::move(framebufferAsset) });
     }
 
     *static_cast<Composition*>(manager.getEntityComponentPointer(entity, getTypeId<Composition>()))

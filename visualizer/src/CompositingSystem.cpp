@@ -55,9 +55,14 @@ void CompositingSystem::run(void*)
 
     m_entityQuery.query(*m_componentManager).forEach<Composition>([&](Composition* composition) {
         for (auto& operation : composition->operations) {
-            TextureSampler<Texture2D> sampler{ operation.source, TextureSlot::Slot0 };
             m_shaderEnvironment.set("transMatrix", getModelMatrix(operation.transform));
-            m_shaderEnvironment.set("view", sampler);
+
+            std::size_t i{ 0 };
+            for (const auto& source : operation.source) {
+                TextureSampler<Texture2D> sampler{ source, static_cast<TextureSlot>(i) };
+                m_shaderEnvironment.set("view_" + std::to_string(i), sampler);
+                i++;
+            }
 
             m_program->apply(m_shaderEnvironment);
 

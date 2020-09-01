@@ -10,7 +10,7 @@ namespace Visualizer {
 
 struct CompositionOperation {
     Transform transform;
-    std::shared_ptr<Texture2D> source;
+    std::vector<std::shared_ptr<Texture2D>> source;
     std::shared_ptr<Framebuffer> destination;
 };
 
