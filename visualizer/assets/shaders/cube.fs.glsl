@@ -16,4 +16,8 @@ void main() {
     if (textureColor == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
         outColor.a = 1.0f;
     }
+
+    if (outColor.a == 0.0f) {
+        discard;
+    }
 }
