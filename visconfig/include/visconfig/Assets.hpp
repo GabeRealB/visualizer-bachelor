@@ -9,7 +9,15 @@
 
 namespace Visconfig::Assets {
 
-enum class AssetType { Mesh, TextureFile, TextureRaw, Shader, Framebuffer, DefaultFramebuffer };
+enum class AssetType {
+    Mesh,
+    TextureFile,
+    TextureRaw,
+    Renderbuffer,
+    Shader,
+    Framebuffer,
+    DefaultFramebuffer,
+};
 
 struct AssetData {
 };
@@ -48,6 +56,18 @@ struct TextureRawAsset : public AssetData {
     static constexpr const char* heightJson{ "height" };
     static constexpr const char* formatJson{ "format" };
     static constexpr const char* attributesJson{ "attributes" };
+};
+
+enum class RenderbufferFormat { Depth24 };
+
+struct RenderbufferAsset : public AssetData {
+    std::size_t width;
+    std::size_t height;
+    RenderbufferFormat format;
+
+    static constexpr const char* widthJson{ "width" };
+    static constexpr const char* heightJson{ "height" };
+    static constexpr const char* formatJson{ "format" };
 };
 
 struct ShaderAsset : public AssetData {
@@ -91,6 +111,9 @@ void from_json(const nlohmann::json& j, TextureFormat& v);
 void to_json(nlohmann::json& j, const TextureAttributes& v);
 void from_json(const nlohmann::json& j, TextureAttributes& v);
 
+void to_json(nlohmann::json& j, const RenderbufferFormat& v);
+void from_json(const nlohmann::json& j, RenderbufferFormat& v);
+
 void to_json(nlohmann::json& j, const FramebufferType& v);
 void from_json(const nlohmann::json& j, FramebufferType& v);
 
@@ -107,6 +130,9 @@ void from_json(const nlohmann::json& j, TextureFileAsset& v);
 
 void to_json(nlohmann::json& j, const TextureRawAsset& v);
 void from_json(const nlohmann::json& j, TextureRawAsset& v);
+
+void to_json(nlohmann::json& j, const RenderbufferAsset& v);
+void from_json(const nlohmann::json& j, RenderbufferAsset& v);
 
 void to_json(nlohmann::json& j, const ShaderAsset& v);
 void from_json(const nlohmann::json& j, ShaderAsset& v);

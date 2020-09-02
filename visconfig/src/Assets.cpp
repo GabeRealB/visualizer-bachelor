@@ -17,6 +17,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<AssetData>& v, AssetType t
     case AssetType::TextureRaw:
         to_json(j, *std::static_pointer_cast<TextureRawAsset>(v));
         break;
+    case AssetType::Renderbuffer:
+        to_json(j, *std::static_pointer_cast<RenderbufferAsset>(v));
+        break;
     case AssetType::Shader:
         to_json(j, *std::static_pointer_cast<ShaderAsset>(v));
         break;
@@ -47,6 +50,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
         from_json(j, *ptr);
         v = std::static_pointer_cast<AssetData>(ptr);
     } break;
+    case AssetType::Renderbuffer: {
+        auto ptr{ std::make_shared<RenderbufferAsset>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<AssetData>(ptr);
+    } break;
     case AssetType::Shader: {
         auto ptr{ std::make_shared<ShaderAsset>() };
         from_json(j, *ptr);
@@ -67,63 +75,30 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
 
 /*Enums*/
 
-void to_json(nlohmann::json& j, const AssetType& v)
-{
-    switch (v) {
-    case AssetType::Mesh:
-        j = "mesh";
-        break;
-    case AssetType::TextureFile:
-        j = "texture_file";
-        break;
-    case AssetType::TextureRaw:
-        j = "texture_raw";
-        break;
-    case AssetType::Shader:
-        j = "shader";
-        break;
-    case AssetType::Framebuffer:
-        j = "framebuffer";
-        break;
-    case AssetType::DefaultFramebuffer:
-        j = "default_framebuffer";
-        break;
-    }
-}
+std::unordered_map<AssetType, std::string> s_AssetTypeNames{
+    { AssetType::Mesh, "mesh" },
+    { AssetType::TextureFile, "texture_file" },
+    { AssetType::TextureRaw, "texture_raw" },
+    { AssetType::Renderbuffer, "renderbuffer" },
+    { AssetType::Shader, "shader" },
+    { AssetType::Framebuffer, "framebuffer" },
+    { AssetType::DefaultFramebuffer, "default_framebuffer" },
+};
+
+void to_json(nlohmann::json& j, const AssetType& v) { j = s_AssetTypeNames[v]; }
 
 void from_json(const nlohmann::json& j, AssetType& v)
 {
     std::string type{};
     j.get_to(type);
 
-    constexpr std::array<const char*, 6> assetTypeNames{ "mesh", "texture_file", "texture_raw", "shader", "framebuffer",
-        "default_framebuffer" };
-    auto predicate{ [&](const char* val) -> bool { return std::strcmp(val, type.c_str()) == 0; } };
-    if (auto pos{ std::find_if(assetTypeNames.begin(), assetTypeNames.end(), predicate) };
-        pos != assetTypeNames.end()) {
-        auto index{ std::distance(assetTypeNames.begin(), pos) };
-        switch (index) {
-        case 0:
-            v = AssetType::Mesh;
-            return;
-        case 1:
-            v = AssetType::TextureFile;
-            return;
-        case 2:
-            v = AssetType::TextureRaw;
-            return;
-        case 3:
-            v = AssetType::Shader;
-            return;
-        case 4:
-            v = AssetType::Framebuffer;
-            return;
-        case 5:
-            v = AssetType::DefaultFramebuffer;
-            return;
-        }
+    auto predicate{ [&](const decltype(s_AssetTypeNames)::value_type& pair) -> bool { return pair.second == type; } };
+    if (auto pos{ std::find_if(s_AssetTypeNames.begin(), s_AssetTypeNames.end(), predicate) };
+        pos != s_AssetTypeNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
     }
-    std::abort();
 }
 
 std::unordered_map<TextureFormat, std::string> s_textureFormatNames{
@@ -171,6 +146,28 @@ void from_json(const nlohmann::json& j, TextureAttributes& v)
     } };
     if (auto pos{ std::find_if(s_textureAttributesNames.begin(), s_textureAttributesNames.end(), predicate) };
         pos != s_textureAttributesNames.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
+    }
+}
+
+std::unordered_map<RenderbufferFormat, std::string> s_renderbufferFormatNames{
+    { RenderbufferFormat::Depth24, "depth_24" },
+};
+
+void to_json(nlohmann::json& j, const RenderbufferFormat& v) { j = s_renderbufferFormatNames[v]; }
+
+void from_json(const nlohmann::json& j, RenderbufferFormat& v)
+{
+    std::string attribute{};
+    j.get_to(attribute);
+
+    auto predicate{ [&](const decltype(s_renderbufferFormatNames)::value_type& pair) -> bool {
+        return pair.second == attribute;
+    } };
+    if (auto pos{ std::find_if(s_renderbufferFormatNames.begin(), s_renderbufferFormatNames.end(), predicate) };
+        pos != s_renderbufferFormatNames.end()) {
         v = pos->first;
     } else {
         std::abort();
@@ -273,6 +270,20 @@ void from_json(const nlohmann::json& j, TextureRawAsset& v)
     j[TextureRawAsset::heightJson].get_to(v.height);
     j[TextureRawAsset::formatJson].get_to(v.format);
     j[TextureRawAsset::attributesJson].get_to(v.attributes);
+}
+
+void to_json(nlohmann::json& j, const RenderbufferAsset& v)
+{
+    j[RenderbufferAsset::widthJson] = v.width;
+    j[RenderbufferAsset::heightJson] = v.height;
+    j[RenderbufferAsset::formatJson] = v.format;
+}
+
+void from_json(const nlohmann::json& j, RenderbufferAsset& v)
+{
+    j[RenderbufferAsset::widthJson].get_to(v.width);
+    j[RenderbufferAsset::heightJson].get_to(v.height);
+    j[RenderbufferAsset::formatJson].get_to(v.format);
 }
 
 void to_json(nlohmann::json& j, const ShaderAsset& v)
