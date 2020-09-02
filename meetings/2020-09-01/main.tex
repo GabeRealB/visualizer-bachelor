@@ -1,0 +1,72 @@
+\documentclass{../presentation}
+
+\begin{document}
+
+\frame[plain]{\titlepage}
+
+\begin{frame}{Aufgaben}
+    \begin{itemize}
+        \item Ausgabe richtig anzeigen
+        \item Optik verbessern
+        \item Aufräumen
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: Visconfig}
+    \begin{itemize}
+        \item Komponenten wurden erweitert
+        \item Neue Komponenten
+        \begin{itemize}
+            \item EntityActivator
+            \begin{itemize}
+                \item Macht pro Iteration eine neue Entität sichtbar
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: Visualizer}
+    \begin{itemize}
+        \item Problem: Algorithmus funktioniert nicht mit verschachtelter Transparenz
+        \item Versucht:
+        \begin{itemize}
+            \item Weighted Blended Order-Independent Transparency http://jcgt.org/published/0002/02/09/
+            \item Teilweise implementiert
+            \item Vorerst nicht benutzt
+        \end{itemize}
+        \item Kompromiss:
+        \begin{itemize}
+            \item Bekannt: Innere Würfel werden später hinzugefügt und Entitäten
+                werden zur Laufzeit nicht hinzugefügt
+            \item Zeichne von hinten nach vorne
+            \item Erst die hinteren Flächen und dann die vorderen
+            \item Gut genug, wenn man sich außerhalb befindet
+            \item Schlechtere Performance (2x zeichnen)
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Status: MDH2Vis}
+    \begin{itemize}
+        \item Aufgabe: Ausgabewürfel richtig ausgeben
+        \item Problem: Nicht trivial + Menge an neuen Daten
+        \item Mittelweg:
+        \begin{itemize}
+            \item Berechne die neue Größe der Schicht
+            \item Teile dies in Blöcke der Größe eines Thread-Würfels auf
+            \item Pro Block eine Entität
+            \item Füge diese an einer leeren Entität an
+            \item Die leere Entität bewegt sich und aktiviert die Kinder mit EntityActivator
+        \end{itemize}
+        \item Ergebnis:
+        \begin{itemize}
+            \item Funktioniert wie erwartet
+            \item Seitenflächen der Blöcke sind jedoch sichtbar
+        \end{itemize}
+        \item Muss noch auf Linux Rechner getestet werden
+    \end{itemize}
+\end{frame}
+
+\end{document}
+
+% vi: tw=100
