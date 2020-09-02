@@ -233,11 +233,19 @@ struct ExplicitHeterogeneousIterationComponent : public ComponentData {
 struct CameraComponent : public ComponentData {
     bool active;
     bool fixed;
+    float fov;
+    float far;
+    float near;
+    float aspect;
     std::bitset<64> layerMask;
     std::unordered_map<std::string, std::string> targets;
 
     static constexpr const char* activeJson{ "active" };
     static constexpr const char* fixedJson{ "fixed" };
+    static constexpr const char* fovJson{ "fov" };
+    static constexpr const char* farJson{ "far" };
+    static constexpr const char* nearJson{ "near" };
+    static constexpr const char* aspectJson{ "aspect" };
     static constexpr const char* layerMaskJson{ "layer_mask" };
     static constexpr const char* targetsJson{ "targets" };
 };

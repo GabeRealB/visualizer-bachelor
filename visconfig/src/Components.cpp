@@ -351,6 +351,10 @@ void to_json(nlohmann::json& j, const CameraComponent& v)
 {
     j[CameraComponent::activeJson] = v.active;
     j[CameraComponent::fixedJson] = v.fixed;
+    j[CameraComponent::fovJson] = v.fov;
+    j[CameraComponent::farJson] = v.far;
+    j[CameraComponent::nearJson] = v.near;
+    j[CameraComponent::aspectJson] = v.aspect;
     j[CameraComponent::layerMaskJson] = v.layerMask.to_string();
     j[CameraComponent::targetsJson] = v.targets;
 }
@@ -359,6 +363,10 @@ void from_json(const nlohmann::json& j, CameraComponent& v)
 {
     j[CameraComponent::activeJson].get_to(v.active);
     j[CameraComponent::fixedJson].get_to(v.fixed);
+    j[CameraComponent::fovJson].get_to(v.fov);
+    j[CameraComponent::farJson].get_to(v.far);
+    j[CameraComponent::nearJson].get_to(v.near);
+    j[CameraComponent::aspectJson].get_to(v.aspect);
     v.layerMask = std::bitset<64>{ j[CameraComponent::layerMaskJson].get<std::string>() };
     j[CameraComponent::targetsJson].get_to(v.targets);
 }
