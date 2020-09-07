@@ -303,11 +303,22 @@ void from_json(const nlohmann::json& j, ShaderAsset& v)
     v.fragment = fragment;
 }
 
-void to_json(nlohmann::json& j, const FramebufferAsset& v) { j[FramebufferAsset::attachmentsJson] = v.attachments; }
+void to_json(nlohmann::json& j, const FramebufferAsset& v)
+{
+    j[FramebufferAsset::attachmentsJson] = v.attachments;
+    j[FramebufferAsset::viewportWidthJson] = v.viewportWidth;
+    j[FramebufferAsset::viewportHeightJson] = v.viewportHeight;
+    j[FramebufferAsset::viewportStartXJson] = v.viewportStartX;
+    j[FramebufferAsset::viewportStartYJson] = v.viewportStartY;
+}
 
 void from_json(const nlohmann::json& j, FramebufferAsset& v)
 {
     j[FramebufferAsset::attachmentsJson].get_to(v.attachments);
+    j[FramebufferAsset::viewportWidthJson].get_to(v.viewportWidth);
+    j[FramebufferAsset::viewportHeightJson].get_to(v.viewportHeight);
+    j[FramebufferAsset::viewportStartXJson].get_to(v.viewportStartX);
+    j[FramebufferAsset::viewportStartYJson].get_to(v.viewportStartY);
 }
 
 void to_json(nlohmann::json&, const DefaultFramebufferAsset&) {}

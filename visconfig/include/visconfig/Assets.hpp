@@ -93,8 +93,16 @@ struct FramebufferAttachment {
 
 struct FramebufferAsset : public AssetData {
     std::vector<FramebufferAttachment> attachments;
+    std::size_t viewportWidth;
+    std::size_t viewportHeight;
+    std::size_t viewportStartX;
+    std::size_t viewportStartY;
 
     static constexpr const char* attachmentsJson{ "attachments" };
+    static constexpr const char* viewportWidthJson{ "viewport_width" };
+    static constexpr const char* viewportHeightJson{ "viewport_height" };
+    static constexpr const char* viewportStartXJson{ "viewport_start_x" };
+    static constexpr const char* viewportStartYJson{ "viewport_start_y" };
 };
 
 struct DefaultFramebufferAsset : public AssetData {
