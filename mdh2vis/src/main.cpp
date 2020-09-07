@@ -4,6 +4,9 @@
 #include <string_view>
 #include <thread>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
+
 #include <visconfig/Config.hpp>
 
 #include "MDHConfig.hpp"
@@ -15,11 +18,26 @@ constexpr std::size_t screenWidth = 1200;
 constexpr std::size_t screenHeight = 900;
 constexpr bool screenFullscreen = false;
 
+constexpr std::size_t mainViewTextureBorderWidth{ 8 };
+constexpr std::size_t mainViewThreadTextureBorderWidth{ 1 };
+constexpr std::size_t subViewTextureBorderWidth{ 8 };
+constexpr std::size_t outputViewTextureBorderWidth{ 8 };
+
+constexpr float cameraFOV{ 70.0f };
+constexpr float cameraAspect{ static_cast<float>(screenWidth) / static_cast<float>(screenHeight) };
+constexpr float cameraAspectSmall{ cameraAspect / 2 };
+constexpr float cameraNear{ 0.3f };
+constexpr float cameraFar{ 10000.0f };
+
 constexpr float minTransparency{ 0.1f };
 constexpr float maxTransparency{ 0.95f };
 
+constexpr auto assetsDirectory{ "external_assets" };
+constexpr auto assetsTextureDirectory{ "external_assets/textures" };
+
 constexpr auto cubeMeshAsset{ "cube_mesh" };
 constexpr auto cubeTextureAsset{ "cube_texture" };
+constexpr auto outputCubeTextureAsset{ "output_cube_texture" };
 constexpr auto cubeShaderAsset{ "cube_shader" };
 constexpr auto defaultFramebufferAsset{ "default_framebuffer" };
 constexpr auto viewCompositionShaderAsset{ "view_composition_shader" };
@@ -700,6 +718,66 @@ float interpolateLinear(float startValue, float endValue, std::size_t min, std::
     }
 }
 
+void generateAssetsDirectory()
+{
+    if (std::filesystem::exists(assetsDirectory)) {
+        std::filesystem::remove_all(assetsDirectory);
+    }
+
+    std::filesystem::create_directory(assetsDirectory);
+    std::filesystem::create_directory(assetsTextureDirectory);
+}
+
+void generateTextureFile(const std::string& name, std::size_t width, std::size_t height, std::size_t subdivisionsX,
+    std::size_t subdivisionsY, std::size_t lineWidth)
+{
+    std::vector<std::byte> textureData{};
+    constexpr std::size_t textureMultiplier{ 8 };
+
+    std::size_t scaledWidth{ width * textureMultiplier };
+    std::size_t scaledHeight{ height * textureMultiplier };
+    std::size_t scaledLineWidth{ lineWidth };
+
+    std::size_t sectionWidth{ scaledWidth / subdivisionsX };
+    std::size_t sectionHeight{ scaledHeight / subdivisionsY };
+    std::size_t rowStride{ scaledWidth };
+
+    std::byte sectionColor{ std::numeric_limits<unsigned char>::max() };
+    std::byte borderColor{ std::numeric_limits<std::byte>::min() };
+
+    for (std::size_t i{ 0 }; i < subdivisionsY; i++) {
+        for (std::size_t j{ 0 }; j < sectionHeight; j++) {
+            if (j >= scaledLineWidth && j < sectionHeight - scaledLineWidth) {
+                for (std::size_t k{ 0 }; k < subdivisionsX; k++) {
+                    for (std::size_t l{ 0 }; l < sectionWidth; l++) {
+                        if (l >= scaledLineWidth && l < sectionWidth - scaledLineWidth) {
+                            textureData.push_back(sectionColor);
+                        } else {
+                            textureData.push_back(borderColor);
+                        }
+                    }
+                }
+            } else {
+                for (std::size_t k{ 0 }; k < scaledWidth; k++) {
+                    textureData.push_back(borderColor);
+                }
+            }
+        }
+    }
+
+    auto textureWidth{ static_cast<int>(scaledWidth) };
+    auto textureHeight{ static_cast<int>(scaledHeight) };
+    auto textureRowStride{ static_cast<int>(rowStride) };
+
+    if (textureWidth == 0 || static_cast<std::size_t>(textureWidth) < scaledWidth || textureHeight == 0
+        || static_cast<std::size_t>(textureHeight) < scaledHeight || textureRowStride == 0
+        || static_cast<std::size_t>(textureRowStride) < rowStride) {
+        return;
+    }
+
+    stbi_write_png(name.c_str(), textureWidth, textureHeight, 1, textureData.data(), textureRowStride);
+}
+
 Visconfig::Asset createCubeMeshAsset()
 {
     auto meshData{ std::make_shared<Visconfig::Assets::MeshAsset>() };
@@ -836,16 +914,31 @@ Visconfig::Asset createCubeMeshAsset()
     return asset;
 }
 
-Visconfig::Asset createCubeTextureAsset()
+Visconfig::Asset createTextureAsset(const std::string& name, const std::string& path,
+    const std::vector<Visconfig::Assets::TextureAttributes>& attributes)
 {
     auto textureData{ std::make_shared<Visconfig::Assets::TextureFileAsset>() };
-    Visconfig::Asset asset{ cubeTextureAsset, Visconfig::Assets::AssetType::TextureFile, textureData };
-    textureData->path = "assets/textures/cube.png";
-    textureData->attributes.push_back(Visconfig::Assets::TextureAttributes::MagnificationLinear);
-    textureData->attributes.push_back(Visconfig::Assets::TextureAttributes::MinificationLinear);
-    textureData->attributes.push_back(Visconfig::Assets::TextureAttributes::GenerateMipMaps);
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::TextureFile, textureData };
+    textureData->path = path;
+    textureData->attributes = attributes;
 
     return asset;
+}
+
+Visconfig::Asset createCubeTextureAsset()
+{
+    return createTextureAsset(cubeTextureAsset, "assets/textures/cube.png",
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps });
+}
+
+Visconfig::Asset createOutputCubeTextureAsset()
+{
+    return createTextureAsset(outputCubeTextureAsset, "assets/textures/output_cube.png",
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps });
 }
 
 Visconfig::Asset createShaderAsset(
@@ -877,7 +970,20 @@ Visconfig::Asset generateRenderTextureAsset(
     return asset;
 }
 
-Visconfig::Asset generateFramebufferAsset(const std::string& name,
+Visconfig::Asset generateRenderbufferAsset(
+    const std::string& name, std::size_t width, std::size_t height, Visconfig::Assets::RenderbufferFormat format)
+{
+    auto renderbufferAsset{ std::make_shared<Visconfig::Assets::RenderbufferAsset>() };
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::Renderbuffer, renderbufferAsset };
+    renderbufferAsset->width = width;
+    renderbufferAsset->height = height;
+    renderbufferAsset->format = format;
+
+    return asset;
+}
+
+Visconfig::Asset generateFramebufferAsset(const std::string& name, std::size_t startX, std::size_t startY,
+    std::size_t width, std::size_t height,
     const std::vector<std::tuple<Visconfig::Assets::FramebufferType, Visconfig::Assets::FramebufferDestination,
         std::string>>& attachments)
 {
@@ -888,6 +994,10 @@ Visconfig::Asset generateFramebufferAsset(const std::string& name,
         bufferData->attachments.push_back(Visconfig::Assets::FramebufferAttachment{
             std::get<0>(attachment), std::get<1>(attachment), std::get<2>(attachment) });
     }
+    bufferData->viewportWidth = width;
+    bufferData->viewportHeight = height;
+    bufferData->viewportStartX = startX;
+    bufferData->viewportStartY = startY;
 
     return asset;
 }
@@ -1161,7 +1271,7 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
 }
 
 Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float, 3> scale, std::array<float, 4> color,
-    std::size_t entityId, std::size_t parentId, std::size_t layerId, bool hasParent)
+    const std::string& textureAsset, std::size_t entityId, std::size_t parentId, std::size_t layerId, bool hasParent)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -1202,7 +1312,7 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
     auto diffuseColor{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto gridScale{ std::make_shared<Visconfig::Components::Vec2ArrayMaterialAttribute>() };
 
-    texture->asset = cubeTextureAsset;
+    texture->asset = textureAsset;
     texture->slot = 0;
 
     diffuseColor->value[0] = color[0];
@@ -1301,7 +1411,8 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[1]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f,
-        interpolateLinear(minTransparency, maxTransparency, 0, view.layers.size(), layerNumber + 1),
+        interpolateLinear(minTransparency, maxTransparency, 0,
+            mdhConfig.mainView.layers.size() + mdhConfig.mainView.threads.size() - 1, layerNumber),
     };
 
     auto& threadLayer{ mdhConfig.mainView.threads.front() };
@@ -1335,7 +1446,8 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         pos[2] += childStartPos[2];
 
         children.push_back(entityId);
-        world.entities.push_back(generateCube(pos, childScale, color, entityId, parentEntity, cubeLayer, true));
+        world.entities.push_back(
+            generateCube(pos, childScale, color, outputCubeTextureAsset, entityId, parentEntity, cubeLayer, true));
     }
 
     entityActivation.layer = 1llu << viewNumber;
@@ -1421,6 +1533,8 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     diffuseColor->value[3] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[3]) / 255.0f;
     diffuseColor->value[3]
         = interpolateLinear(minTransparency, maxTransparency, 0, view.layers.size() - 1, layerNumber);
+    diffuseColor->value[3] = interpolateLinear(minTransparency, maxTransparency, 0,
+        mdhConfig.mainView.layers.size() + mdhConfig.mainView.threads.size() - 1, layerNumber);
 
     gridScale->value.push_back({ 1, 1 });
     gridScale->value.push_back({ 1, 1 });
@@ -1471,8 +1585,8 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     return entity;
 }
 
-Visconfig::Entity generateViewCamera(
-    std::size_t entityId, std::size_t focus, std::size_t viewIndex, const std::string& framebufferName)
+Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t focus, std::size_t viewIndex,
+    const std::string& framebufferName, float fov, float aspect, float near, float far, float distance)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -1489,6 +1603,10 @@ Visconfig::Entity generateViewCamera(
     auto camera{ std::static_pointer_cast<Visconfig::Components::CameraComponent>(entity.components[0].data) };
     camera->active = false;
     camera->fixed = true;
+    camera->fov = fov;
+    camera->aspect = aspect;
+    camera->near = near;
+    camera->far = far;
     camera->layerMask = 1ull << viewIndex;
     camera->targets.insert_or_assign("cube", framebufferName);
     camera->targets.insert_or_assign("text", framebufferName);
@@ -1500,7 +1618,7 @@ Visconfig::Entity generateViewCamera(
 
     transform->position[0] = 0.0f;
     transform->position[1] = 0.0f;
-    transform->position[2] = 0.0f;
+    transform->position[2] = distance;
 
     transform->scale[0] = 1.0f;
     transform->scale[1] = 1.0f;
@@ -1509,7 +1627,7 @@ Visconfig::Entity generateViewCamera(
     auto fixedCamera{ std::static_pointer_cast<Visconfig::Components::FixedCameraComponent>(
         entity.components[3].data) };
     fixedCamera->focus = focus;
-    fixedCamera->distance = 10.0f;
+    fixedCamera->distance = distance;
     fixedCamera->horizontalAngle = 0.0f;
     fixedCamera->verticalAngle = 0.0f;
 
@@ -1556,18 +1674,73 @@ void generateMainViewConfig(
     Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world, std::size_t& numEntities)
 {
     constexpr auto renderTextureName{ "render_texture_0" };
+    auto depthBufferName{ "renderbuffer_depth_0" };
     constexpr auto framebufferName{ "framebuffer_0" };
 
     config.assets.push_back(generateRenderTextureAsset(
-        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateFramebufferAsset(framebufferName,
+        renderTextureName, screenWidth / 2, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(
+        depthBufferName, screenWidth / 2, screenHeight, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth / 2, screenHeight,
         { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-            renderTextureName } }));
+              renderTextureName },
+            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                depthBufferName } }));
 
     auto focusEntity{ numEntities };
 
     for (auto layer{ mdhConfig.mainView.layers.begin() }; layer != mdhConfig.mainView.layers.end(); layer++) {
         auto index{ std::distance(mdhConfig.mainView.layers.begin(), layer) };
+
+        auto textureFrontName{ "view_0_cube_texture_" + std::to_string(index) + "_front" };
+        auto textureSideName{ "view_0_cube_texture_" + std::to_string(index) + "_side" };
+        auto textureTopName{ "view_0_cube_texture_" + std::to_string(index) + "_top" };
+
+        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
+        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
+        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+
+        if (static_cast<std::size_t>(index) == mdhConfig.mainView.layers.size() - 1) {
+            generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), 1, 1, mainViewTextureBorderWidth);
+            generateTextureFile(textureSidePath, static_cast<std::size_t>(layer->absoluteScale[2]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), 1, 1, mainViewTextureBorderWidth);
+            generateTextureFile(textureTopPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[2]), 1, 1, mainViewTextureBorderWidth);
+        } else {
+            auto currentLayerScale{ layer->absoluteScale };
+            auto nextLayerScale{ (layer + 1)->absoluteScale };
+
+            std::array<std::size_t, 3> subdivisions{
+                static_cast<std::size_t>(currentLayerScale[0] / nextLayerScale[0]),
+                static_cast<std::size_t>(currentLayerScale[1] / nextLayerScale[1]),
+                static_cast<std::size_t>(currentLayerScale[2] / nextLayerScale[2]),
+            };
+
+            generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), subdivisions[0], subdivisions[1],
+                mainViewTextureBorderWidth);
+            generateTextureFile(textureSidePath, static_cast<std::size_t>(layer->absoluteScale[2]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), subdivisions[2], subdivisions[1],
+                mainViewTextureBorderWidth);
+            generateTextureFile(textureTopPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[2]), subdivisions[0], subdivisions[2],
+                mainViewTextureBorderWidth);
+        }
+
+        config.assets.push_back(createTextureAsset(textureFrontName, textureFrontPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureSideName, textureSidePath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureTopName, textureTopPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+
         world.entities.push_back(
             generateMainViewCube(mdhConfig, mdhConfig.mainView, numEntities, numEntities - 1, index));
         numEntities++;
@@ -1578,6 +1751,58 @@ void generateMainViewConfig(
     for (auto layer{ mdhConfig.mainView.threads.begin() }; layer != mdhConfig.mainView.threads.end(); layer++) {
         std::vector<std::size_t> newParents{};
         auto index{ std::distance(mdhConfig.mainView.threads.begin(), layer) };
+
+        auto textureFrontName{ "view_0_cube_texture_" + std::to_string(index + mdhConfig.mainView.layers.size())
+            + "_front" };
+        auto textureSideName{ "view_0_cube_texture_" + std::to_string(index + mdhConfig.mainView.layers.size())
+            + "_side" };
+        auto textureTopName{ "view_0_cube_texture_" + std::to_string(index + mdhConfig.mainView.layers.size())
+            + "_top" };
+
+        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
+        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
+        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+
+        if (static_cast<std::size_t>(index) == mdhConfig.mainView.threads.size() - 1) {
+            generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), 1, 1, mainViewThreadTextureBorderWidth);
+            generateTextureFile(textureSidePath, static_cast<std::size_t>(layer->absoluteScale[2]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), 1, 1, mainViewThreadTextureBorderWidth);
+            generateTextureFile(textureTopPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[2]), 1, 1, mainViewThreadTextureBorderWidth);
+        } else {
+            auto currentLayerScale{ layer->absoluteScale };
+            auto nextLayerScale{ (layer + 1)->absoluteScale };
+
+            std::array<std::size_t, 3> subdivisions{
+                static_cast<std::size_t>(currentLayerScale[0] / nextLayerScale[0]),
+                static_cast<std::size_t>(currentLayerScale[1] / nextLayerScale[1]),
+                static_cast<std::size_t>(currentLayerScale[2] / nextLayerScale[2]),
+            };
+
+            generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), subdivisions[0], subdivisions[1],
+                mainViewThreadTextureBorderWidth);
+            generateTextureFile(textureSidePath, static_cast<std::size_t>(layer->absoluteScale[2]),
+                static_cast<std::size_t>(layer->absoluteScale[1]), subdivisions[2], subdivisions[1],
+                mainViewThreadTextureBorderWidth);
+            generateTextureFile(textureTopPath, static_cast<std::size_t>(layer->absoluteScale[0]),
+                static_cast<std::size_t>(layer->absoluteScale[2]), subdivisions[0], subdivisions[2],
+                mainViewThreadTextureBorderWidth);
+        }
+
+        config.assets.push_back(createTextureAsset(textureFrontName, textureFrontPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureSideName, textureSidePath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureTopName, textureTopPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
 
         for (auto& parent : threadParents) {
             for (std::size_t x{ 0 }; x < layer->numThreads[0]; x++) {
@@ -1593,8 +1818,13 @@ void generateMainViewConfig(
         threadParents = std::move(newParents);
     }
 
+    auto cameraDistance{ 2.0f
+        * std::max({ mdhConfig.mainView.layers[0].absoluteScale[0], mdhConfig.mainView.layers[0].absoluteScale[1],
+            mdhConfig.mainView.layers[0].absoluteScale[2] }) };
+
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, framebufferName));
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, framebufferName, cameraFOV,
+        cameraAspectSmall, cameraNear, cameraFar, cameraDistance));
     extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
         viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
@@ -1604,25 +1834,74 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
     std::size_t& numEntities, std::size_t subview, std::size_t numSubViews)
 {
     auto renderTextureName{ "render_texture_" + std::to_string(subview + 2) };
+    auto depthBufferName{ "renderbuffer_depth_" + std::to_string(subview + 2) };
     auto framebufferName{ "framebuffer_" + std::to_string(subview + 2) };
 
     config.assets.push_back(generateRenderTextureAsset(
         renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateFramebufferAsset(framebufferName,
+    config.assets.push_back(generateRenderbufferAsset(
+        depthBufferName, screenWidth, screenHeight, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth, screenHeight,
         { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-            renderTextureName } }));
+              renderTextureName },
+            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                depthBufferName } }));
 
     auto focusEntity{ numEntities };
 
     for (auto layer{ mdhConfig.config.begin() }; layer != mdhConfig.config.end(); layer++) {
         auto index{ std::distance(mdhConfig.config.begin(), layer) };
+
+        auto textureFrontName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+            + "_front" };
+        auto textureSideName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+            + "_side" };
+        auto textureTopName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+            + "_top" };
+
+        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
+        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
+        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+
+        generateTextureFile(textureFrontPath,
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[0]),
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[1]), 1, 1,
+            subViewTextureBorderWidth);
+        generateTextureFile(textureSidePath,
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[2]),
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[1]), 1, 1,
+            subViewTextureBorderWidth);
+        generateTextureFile(textureTopPath,
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[0]),
+            static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[2]), 1, 1,
+            subViewTextureBorderWidth);
+
+        config.assets.push_back(createTextureAsset(textureFrontName, textureFrontPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureSideName, textureSidePath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+        config.assets.push_back(createTextureAsset(textureTopName, textureTopPath,
+            { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+
         world.entities.push_back(
             generateSubViewCube(mdhConfig, mdhConfig.subViews[subview], numEntities, numEntities - 1, subview, index));
         numEntities++;
     }
 
+    auto cameraDistance{ 1.5f
+        * std::max({ mdhConfig.subViews[subview].layers[0].absoluteScale[0],
+            mdhConfig.subViews[subview].layers[0].absoluteScale[1],
+            mdhConfig.subViews[subview].layers[0].absoluteScale[2] }) };
+
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview + 2, framebufferName));
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview + 2, framebufferName, cameraFOV,
+        cameraAspect, cameraNear, cameraFar, cameraDistance));
     extentComposition(world, { 0.2f, 0.2f }, { 0.7f, (-0.7f + ((numSubViews - 1) * 0.5f)) - (subview * 0.5f) },
         { renderTextureName }, defaultFramebufferAsset, viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
@@ -1632,18 +1911,60 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     std::size_t& numEntities, std::size_t subview)
 {
     auto renderTextureName{ "render_texture_" + std::to_string(subview) };
+    auto depthBufferName{ "renderbuffer_depth_" + std::to_string(subview) };
     auto framebufferName{ "framebuffer_" + std::to_string(subview) };
 
     config.assets.push_back(generateRenderTextureAsset(
-        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateFramebufferAsset(framebufferName,
+        renderTextureName, screenWidth / 2, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(
+        depthBufferName, screenWidth / 2, screenHeight, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth / 2, screenHeight,
         { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-            renderTextureName } }));
+              renderTextureName },
+            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                depthBufferName } }));
+
+    auto textureFrontName{ "view_" + std::to_string(subview) + " _cube_texture_0_front" };
+    auto textureSideName{ "view_" + std::to_string(subview) + " _cube_texture_0_side" };
+    auto textureTopName{ "view_" + std::to_string(subview) + " _cube_texture_0_top" };
+    auto innerLayerTextureName{ "view_" + std::to_string(subview) + " _cube_texture_1" };
+
+    auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
+    auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
+    auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+    auto innerLayerTexturePath{ std::string{ assetsTextureDirectory } + "/" + innerLayerTextureName + ".png" };
+
+    generateTextureFile(textureFrontPath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
+        static_cast<std::size_t>(mdhConfig.outputView.size[1]), 1, 1, outputViewTextureBorderWidth);
+    generateTextureFile(textureSidePath, static_cast<std::size_t>(mdhConfig.outputView.size[2]),
+        static_cast<std::size_t>(mdhConfig.outputView.size[1]), 1, 1, outputViewTextureBorderWidth);
+    generateTextureFile(textureTopPath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
+        static_cast<std::size_t>(mdhConfig.outputView.size[2]), 1, 1, outputViewTextureBorderWidth);
+    generateTextureFile(innerLayerTexturePath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
+        static_cast<std::size_t>(mdhConfig.outputView.size[2]), 1, 1, 0);
+
+    config.assets.push_back(createTextureAsset(textureFrontName, textureFrontPath,
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+    config.assets.push_back(createTextureAsset(textureSideName, textureSidePath,
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+    config.assets.push_back(createTextureAsset(textureTopName, textureTopPath,
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
+    config.assets.push_back(createTextureAsset(innerLayerTextureName, innerLayerTexturePath,
+        { Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps }));
 
     auto focusEntity{ numEntities };
-    world.entities.push_back(generateCube({ 0, 0, 0 }, mdhConfig.outputView.size, { 1.0f, 1.0f, 1.0f, minTransparency },
-        numEntities++, 0, 1llu << subview, false));
+    world.entities.push_back(generateCube({ 0, 0, 0 }, mdhConfig.outputView.size, { 0.0f, 0.0f, 0.0f, 0.0f },
+        cubeTextureAsset, numEntities++, 0, 1llu << subview, false));
 
+    /*
     auto parent{ focusEntity };
     for (auto layer{ mdhConfig.outputView.layers.begin() }; layer != mdhConfig.outputView.layers.end(); layer++) {
         auto index{ std::distance(mdhConfig.outputView.layers.begin(), layer) };
@@ -1653,9 +1974,14 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
         parent = newParent;
         numEntities++;
     }
+    */
+
+    auto cameraDistance{ 2.0f
+        * std::max({ mdhConfig.outputView.size[0], mdhConfig.outputView.size[1], mdhConfig.outputView.size[2] }) };
 
     auto cameraEntity{ numEntities++ };
-    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview, framebufferName));
+    world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview, framebufferName, cameraFOV,
+        cameraAspectSmall, cameraNear, cameraFar, cameraDistance));
     extentComposition(world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
         viewCompositionShaderAsset);
     extendCameraSwitcher(world, cameraEntity);
@@ -1685,8 +2011,11 @@ Visconfig::Config generateConfig(const ProcessedConfig& config)
     visconfig.options.screenWidth = screenWidth;
     visconfig.options.screenFullscreen = screenFullscreen;
 
+    generateAssetsDirectory();
+
     visconfig.assets.push_back(createCubeMeshAsset());
     visconfig.assets.push_back(createCubeTextureAsset());
+    visconfig.assets.push_back(createOutputCubeTextureAsset());
     visconfig.assets.push_back(createShaderAsset(cubeShaderVertexPath, cubeShaderFragmentPath, cubeShaderAsset));
     visconfig.assets.push_back(createShaderAsset(
         viewCompositionShaderVertexPath, viewCompositionShaderFragmentPath, viewCompositionShaderAsset));
