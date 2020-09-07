@@ -1,0 +1,170 @@
+{
+  "layer 0": {
+    "SIG_array_to_OCL": [
+      2,
+      0,
+      1
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
+    "SIG_buffer-do": {
+      "A": [
+        0,
+        1,
+        2
+      ],
+      "B": [
+        0,
+        1,
+        2
+      ]
+    },
+    "TILE_SIZE": [
+      1024,
+      512,
+      630
+    ],
+    "NUM_THREADS": [
+      1,
+      1,
+      1
+    ],
+    "MEM_REGION_INP": {
+      "A": 0,
+      "B": 0
+    },
+    "MEM_REGION_RES": {
+      "C": 0
+    },
+    "CMB_RES": false
+  },
+  "layer 1": {
+    "SIG_array_to_OCL": [
+      2,
+      0,
+      1
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
+    "SIG_buffer-do": {
+      "A": [
+        0,
+        1,
+        2
+      ],
+      "B": [
+        0,
+        1,
+        2
+      ]
+    },
+    "TILE_SIZE": [
+      512,
+      256,
+      126
+    ],
+    "NUM_THREADS": [
+      1,
+      1,
+      1
+    ],
+    "MEM_REGION_INP": {
+      "A": 1,
+      "B": 1
+    },
+    "MEM_REGION_RES": {
+      "C": 1
+    },
+    "CMB_RES": true
+  },
+  "layer 2": {
+    "SIG_array_to_OCL": [
+      2,
+      0,
+      1
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
+    "SIG_buffer-do": {
+      "A": [
+        0,
+        1,
+        2
+      ],
+      "B": [
+        0,
+        1,
+        2
+      ]
+    },
+    "TILE_SIZE": [
+      256,
+      128,
+      93
+    ],
+    "NUM_THREADS": [
+      1,
+      1,
+      1
+    ],
+    "MEM_REGION_INP": {
+      "A": 2,
+      "B": 2
+    },
+    "MEM_REGION_RES": {
+      "C": 2
+    },
+    "CMB_RES": false
+  },
+  "layer 3": {
+    "SIG_array_to_OCL": [
+      2,
+      0,
+      1
+    ],
+    "SIG_mdh-do": [
+      0,
+      1,
+      2
+    ],
+    "SIG_buffer-do": {
+      "A": [
+        0,
+        1,
+        2
+      ],
+      "B": [
+        0,
+        1,
+        2
+      ]
+    },
+    "TILE_SIZE": [
+      8,
+      8,
+      7
+    ],
+    "NUM_THREADS": [
+      16,
+      2,
+      9
+    ],
+    "MEM_REGION_INP": {
+      "A": 3,
+      "B": 3
+    },
+    "MEM_REGION_RES": {
+      "C": 3
+    },
+    "CMB_RES": false
+  }
+}
