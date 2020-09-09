@@ -6,12 +6,14 @@ namespace Visualizer {
 
 Renderbuffer::Renderbuffer()
     : m_id{ 0 }
+    , m_samples{ 0 }
 {
     glGenRenderbuffers(1, &m_id);
 }
 
 Renderbuffer::Renderbuffer(Renderbuffer&& other) noexcept
     : m_id{ std::exchange(other.m_id, 0) }
+    , m_samples{ std::exchange(other.m_samples, 0) }
 {
 }
 
@@ -29,17 +31,20 @@ Renderbuffer& Renderbuffer::operator=(Renderbuffer&& other) noexcept
             glDeleteRenderbuffers(1, &m_id);
         }
         m_id = std::exchange(other.m_id, 0);
+        m_samples = std::exchange(other.m_samples, 0);
     }
     return *this;
 }
 
 GLuint Renderbuffer::id() const { return m_id; }
 
+GLsizei Renderbuffer::samples() const { return m_samples; }
+
 void Renderbuffer::bind() const { glBindRenderbuffer(GL_RENDERBUFFER, m_id); }
 
 void Renderbuffer::unbind() const { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
 
-void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei height)
+void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei height, GLsizei samples)
 {
     GLenum formatGl;
 
@@ -150,8 +155,10 @@ void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei h
         return;
     }
 
+    m_samples = samples;
+
     bind();
-    glRenderbufferStorage(GL_RENDERBUFFER, formatGl, width, height);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, formatGl, width, height);
     unbind();
 }
 

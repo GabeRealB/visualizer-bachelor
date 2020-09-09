@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <memory>
 #include <optional>
+#include <span>
 #include <unordered_map>
 #include <variant>
 
@@ -14,6 +15,9 @@ namespace Visualizer {
 enum class FramebufferBinding { Read, Write, ReadWrite };
 enum class FramebufferBufferType { Texture, Renderbuffer };
 enum class FramebufferAttachment { Color0, Color1, Color2, Color3, Depth, Stencil, DepthStencil };
+
+enum class FramebufferCopyFlags { Color, Depth, Stencil };
+enum class FramebufferCopyFilter { Nearest, Linear };
 
 struct Rect {
     GLint x;
@@ -46,6 +50,7 @@ public:
     void bind(FramebufferBinding binding) const;
     void unbind(FramebufferBinding binding) const;
 
+    void copyTo(Framebuffer& framebuffer, std::span<FramebufferCopyFlags> flags, FramebufferCopyFilter filter) const;
     void setViewport(GLint xCoord, GLint yCoord, GLsizei width, GLsizei height);
 
     void attachBuffer(FramebufferAttachment attachment, std::shared_ptr<Texture> texture);

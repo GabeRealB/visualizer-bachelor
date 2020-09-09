@@ -8,7 +8,8 @@ namespace Visualizer {
 
 CompositingSystem::CompositingSystem()
     : m_quad{}
-    , m_entityQuery{ EntityQuery{}.with<Composition>() }
+    , m_copyEntityQuery{ EntityQuery{}.with<Copy>() }
+    , m_compositionEntityQuery{ EntityQuery{}.with<Composition>() }
     , m_componentManager{}
 {
     GLuint indices[]{ 0, 1, 2, 0, 2, 3 };
@@ -44,7 +45,13 @@ void CompositingSystem::run(void*)
 
     m_quad.bind();
 
-    m_entityQuery.query(*m_componentManager).forEach<Composition>([&](Composition* composition) {
+    m_copyEntityQuery.query(*m_componentManager).forEach<Copy>([](Copy* copy) {
+        for (auto& operation : copy->operations) {
+            operation.source->copyTo(*operation.destination, operation.flags, operation.filter);
+        }
+    });
+
+    m_compositionEntityQuery.query(*m_componentManager).forEach<Composition>([&](Composition* composition) {
         for (auto& operation : composition->operations) {
             operation.material.m_shader->bind();
             operation.material.m_materialVariables.set("transMatrix", getModelMatrix(operation.transform));

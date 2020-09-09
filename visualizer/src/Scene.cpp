@@ -145,6 +145,74 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRa
     AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), texture });
 }
 
+void initializeAsset(const std::string& name, const Visconfig::Assets::TextureMultisampleRawAsset& asset)
+{
+    auto texture{ std::make_shared<Texture2DMultisample>() };
+
+    TextureFormat format{};
+    TextureInternalFormat internalFormat{};
+
+    switch (asset.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGB:
+        format = TextureFormat::RGB;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
+        internalFormat = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internalFormat = TextureInternalFormat::Float16;
+        break;
+    }
+
+    texture->initialize(format, internalFormat, asset.samples, asset.width, asset.height);
+
+    for (auto attribute : asset.attributes) {
+        switch (attribute) {
+        case Visconfig::Assets::TextureAttributes::MagnificationLinear:
+            texture->addAttribute(TextureMagnificationFilter::Linear);
+            break;
+        case Visconfig::Assets::TextureAttributes::MinificationLinear:
+            texture->addAttribute(TextureMinificationFilter::Linear);
+            break;
+        case Visconfig::Assets::TextureAttributes::GenerateMipMaps:
+            break;
+        }
+    }
+
+    AssetDatabase::setAsset(name, { getTypeId<Texture2DMultisample>(), texture });
+}
+
+void initializeAsset(const std::string& name, const Visconfig::Assets::RenderbufferAsset& asset)
+{
+    auto renderbuffer{ std::make_shared<Renderbuffer>() };
+
+    RenderbufferFormat format{};
+
+    switch (asset.format) {
+    case Visconfig::Assets::RenderbufferFormat::Depth24:
+        format = RenderbufferFormat::Depth24;
+        break;
+    }
+
+    renderbuffer->setFormat(format, asset.width, asset.height, asset.samples);
+    AssetDatabase::setAsset(name, { getTypeId<Renderbuffer>(), renderbuffer });
+}
+
 void initializeAsset(const std::string& name, const Visconfig::Assets::ShaderAsset& asset)
 {
     auto shader{ createShaderProgram(asset.vertex, asset.fragment) };
@@ -189,12 +257,19 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::Framebuff
             framebuffer->attachBuffer(
                 destination, std::static_pointer_cast<Texture2D>(std::const_pointer_cast<void>(attachmentAsset.data)));
             break;
+        case Visconfig::Assets::FramebufferType::TextureMultisample:
+            framebuffer->attachBuffer(destination,
+                std::static_pointer_cast<Texture2DMultisample>(std::const_pointer_cast<void>(attachmentAsset.data)));
+            break;
         case Visconfig::Assets::FramebufferType::Renderbuffer:
             framebuffer->attachBuffer(destination,
                 std::static_pointer_cast<Renderbuffer>(std::const_pointer_cast<void>(attachmentAsset.data)));
             break;
         }
     }
+
+    framebuffer->setViewport(static_cast<GLint>(asset.viewportStartX), static_cast<GLint>(asset.viewportStartY),
+        static_cast<GLsizei>(asset.viewportWidth), static_cast<GLsizei>(asset.viewportHeight));
 
     AssetDatabase::setAsset(name, { getTypeId<Framebuffer>(), framebuffer });
 }
@@ -215,6 +290,13 @@ void initializeAsset(const Visconfig::Asset& asset)
         break;
     case Visconfig::Assets::AssetType::TextureRaw:
         initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureRawAsset>(asset.data));
+        break;
+    case Visconfig::Assets::AssetType::TextureMultisampleRaw:
+        initializeAsset(
+            asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureMultisampleRawAsset>(asset.data));
+        break;
+    case Visconfig::Assets::AssetType::Renderbuffer:
+        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::RenderbufferAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::Shader:
         initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::ShaderAsset>(asset.data));
@@ -279,6 +361,9 @@ void addEntity(
             break;
         case Visconfig::Components::ComponentType::Composition:
             archetype = EntityArchetype::with<Composition>(archetype);
+            break;
+        case Visconfig::Components::ComponentType::Copy:
+            archetype = EntityArchetype::with<Copy>(archetype);
             break;
         }
     }
@@ -1076,8 +1161,9 @@ void initializeComponent(
         targets.insert_or_assign(target.first, std::move(framebufferAsset));
     }
 
-    *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>())) = Camera{ component.active,
-        component.fixed, RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
+    *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>()))
+        = Camera{ component.active, component.fixed, component.fov, component.far, component.near, component.aspect,
+              RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
 }
 
 void initializeComponent(
@@ -1147,6 +1233,51 @@ void initializeComponent(
 
     *static_cast<Composition*>(manager.getEntityComponentPointer(entity, getTypeId<Composition>()))
         = Composition{ std::move(operations) };
+}
+
+void initializeComponent(
+    ComponentManager& manager, Entity entity, const Visconfig::Components::CopyComponent& component)
+{
+    std::vector<CopyOperation> operations{};
+    operations.reserve(component.operations.size());
+
+    for (auto& operation : component.operations) {
+
+        auto sourceAsset{ std::static_pointer_cast<Framebuffer>(
+            std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.source).data)) };
+        auto destinationAsset{ std::static_pointer_cast<Framebuffer>(
+            std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.destination).data)) };
+
+        std::vector<FramebufferCopyFlags> flags{};
+
+        for (auto flag : operation.flags) {
+            switch (flag) {
+            case Visconfig::Components::CopyOperationFlag::Color:
+                flags.push_back(FramebufferCopyFlags::Color);
+                break;
+            case Visconfig::Components::CopyOperationFlag::Depth:
+                flags.push_back(FramebufferCopyFlags::Depth);
+                break;
+            case Visconfig::Components::CopyOperationFlag::Stencil:
+                flags.push_back(FramebufferCopyFlags::Stencil);
+                break;
+            }
+        }
+
+        FramebufferCopyFilter filter{};
+        switch (operation.filter) {
+        case Visconfig::Components::CopyOperationFilter::Nearest:
+            filter = FramebufferCopyFilter::Nearest;
+            break;
+        case Visconfig::Components::CopyOperationFilter::Linear:
+            filter = FramebufferCopyFilter::Linear;
+            break;
+        }
+
+        operations.push_back(CopyOperation{ sourceAsset, destinationAsset, std::move(flags), filter });
+    }
+
+    *static_cast<Copy*>(manager.getEntityComponentPointer(entity, getTypeId<Copy>())) = Copy{ std::move(operations) };
 }
 
 void initializeEntity(ComponentManager& manager, const std::unordered_map<std::size_t, Entity>& entityIdMap,
@@ -1219,6 +1350,10 @@ void initializeEntity(ComponentManager& manager, const std::unordered_map<std::s
         case Visconfig::Components::ComponentType::Composition:
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CompositionComponent>(component.data));
+            break;
+        case Visconfig::Components::ComponentType::Copy:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::CopyComponent>(component.data));
             break;
         }
     }

@@ -28,7 +28,7 @@ enum class TextureSlot : std::size_t {
     TmpSlot = 15
 };
 
-enum class TextureType { Texture2D };
+enum class TextureType { Texture2D, Texture2DMultisample };
 enum class TextureFormat { R, RG, RGB, RGBA, Depth, DepthStencil };
 enum class TextureInternalFormat { Byte, Short, Int8, Int16, Int32, UInt8, UInt16, UInt32, Float16, Float32 };
 enum class TextureMinificationFilter {
@@ -56,9 +56,6 @@ public:
 
     virtual void addAttribute(TextureMinificationFilter filter) = 0;
     virtual void addAttribute(TextureMagnificationFilter filter) = 0;
-    virtual void copyData(TextureFormat format, TextureInternalFormat internalFormat, GLint mipmapLevel, GLsizei width,
-        GLsizei height, GLsizei border, const unsigned char* data)
-        = 0;
 
 protected:
     Texture() = default;
@@ -87,10 +84,41 @@ public:
     void addAttribute(TextureMinificationFilter filter) final;
     void addAttribute(TextureMagnificationFilter filter) final;
     void copyData(TextureFormat format, TextureInternalFormat internalFormat, GLint mipmapLevel, GLsizei width,
-        GLsizei height, GLsizei border, const unsigned char* data) final;
+        GLsizei height, GLsizei border, const unsigned char* data);
 
 private:
     GLuint m_id;
+    std::size_t m_width;
+    std::size_t m_height;
+};
+
+class Texture2DMultisample : public Texture {
+public:
+    Texture2DMultisample();
+    Texture2DMultisample(const Texture2DMultisample& other) = delete;
+    Texture2DMultisample(Texture2DMultisample&& other) noexcept;
+    ~Texture2DMultisample();
+
+    Texture2DMultisample& operator=(const Texture2DMultisample& other) = delete;
+    Texture2DMultisample& operator=(Texture2DMultisample&& other) noexcept;
+
+    GLuint id() const final;
+    GLsizei samples() const;
+    std::size_t width() const;
+    std::size_t height() const;
+    TextureType type() const final;
+
+    void bind(TextureSlot slot) final;
+    void unbind(TextureSlot slot) final;
+
+    void addAttribute(TextureMinificationFilter filter) final;
+    void addAttribute(TextureMagnificationFilter filter) final;
+    void initialize(
+        TextureFormat format, TextureInternalFormat internalFormat, GLsizei samples, GLsizei width, GLsizei height);
+
+private:
+    GLuint m_id;
+    GLsizei m_samples;
     std::size_t m_width;
     std::size_t m_height;
 };

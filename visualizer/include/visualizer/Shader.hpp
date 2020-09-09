@@ -403,13 +403,22 @@ public:
                 }
             }
 
+            program->bind();
+            std::size_t textures{ 0 };
+
             for (auto& parameter : program->m_parameters) {
                 auto location{ glGetUniformLocation(program->m_program, std::get<3>(parameter).data()) };
                 if (location == -1) {
+                    program->unbind();
                     return nullptr;
                 }
                 program->m_parameterLocations.insert_or_assign(std::get<3>(parameter), location);
+
+                if (std::get<1>(parameter) == ParameterType::Sampler2D) {
+                    glUniform1i(location, textures++);
+                }
             }
+            program->unbind();
         }
         return program;
     }

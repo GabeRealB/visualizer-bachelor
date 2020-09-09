@@ -25,7 +25,8 @@ public:
 
 private:
     Mesh m_quad;
-    EntityQuery m_entityQuery;
+    EntityQuery m_copyEntityQuery;
+    EntityQuery m_compositionEntityQuery;
     std::shared_ptr<ComponentManager> m_componentManager;
 };
 

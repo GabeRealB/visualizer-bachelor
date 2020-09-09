@@ -13,6 +13,8 @@
 #include <visualizer/Shader.hpp>
 
 GLFWwindow* createWindow(Visconfig::Config& config);
+void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
+    const GLchar* message, const void* userParam);
 
 namespace Visualizer {
 
@@ -27,7 +29,8 @@ int run(const std::filesystem::path& configurationPath)
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_SAMPLES, config.options.screenMSAASamples);
     auto window{ createWindow(config) };
     if (!window) {
         std::cerr << "ERROR: Could not create a window!" << std::endl;
@@ -45,6 +48,12 @@ int run(const std::filesystem::path& configurationPath)
         glfwTerminate();
         return 1;
     }
+    glEnable(GL_MULTISAMPLE);
+
+#ifdef DEBUG_OPENGL
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback, 0);
+#endif // DEBUG_OPENGL
 
     auto scene{ initializeScene(config) };
 
@@ -88,4 +97,12 @@ GLFWwindow* createWindow(Visconfig::Config& config)
 
         return glfwCreateWindow(screenWidth, screenHeight, windowName, nullptr, nullptr);
     }
+}
+
+void GLAPIENTRY MessageCallback(
+    GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei, const GLchar* message, const void*)
+{
+    std::cerr << "GL CALLBACK: " << (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "") << " source = 0x" << source
+              << ", type = 0x" << type << ", id = 0x" << id << ", severity = 0x" << severity
+              << ", message = " << message << std::endl;
 }

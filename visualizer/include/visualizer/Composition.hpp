@@ -19,4 +19,15 @@ struct Composition {
     std::vector<CompositionOperation> operations;
 };
 
+struct CopyOperation {
+    std::shared_ptr<Framebuffer> source;
+    std::shared_ptr<Framebuffer> destination;
+    std::vector<FramebufferCopyFlags> flags;
+    FramebufferCopyFilter filter;
+};
+
+struct Copy {
+    std::vector<CopyOperation> operations;
+};
+
 }

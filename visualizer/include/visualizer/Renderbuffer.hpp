@@ -52,14 +52,16 @@ public:
     Renderbuffer& operator=(Renderbuffer&& other) noexcept;
 
     GLuint id() const;
+    GLsizei samples() const;
 
     void bind() const;
     void unbind() const;
 
-    void setFormat(RenderbufferFormat format, GLsizei width, GLsizei height);
+    void setFormat(RenderbufferFormat format, GLsizei width, GLsizei height, GLsizei samples);
 
 private:
     GLuint m_id;
+    GLsizei m_samples;
 };
 
 }

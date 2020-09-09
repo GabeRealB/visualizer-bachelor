@@ -20,7 +20,12 @@ MeshDrawingSystem::MeshDrawingSystem()
 void MeshDrawingSystem::run(void*)
 {
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    // glEnable(GL_DEPTH_TEST);
+    glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
+    // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // glDepthMask(GL_FALSE);
+    glDepthFunc(GL_NOTEQUAL);
 
     auto drawableMeshes{ m_meshQuery.query(*m_componentManager) };
 
@@ -33,17 +38,20 @@ void MeshDrawingSystem::run(void*)
         } else {
             glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         }
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glEnable(GL_SCISSOR_TEST);
-        glScissor(10, 10, cameraViewport.width - 20, cameraViewport.height - 20);
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glScissor(cameraViewport.x + 10, cameraViewport.y + 10, cameraViewport.width - 20, cameraViewport.height - 20);
+        glClearColor(0.3f, 0.3f, 0.3f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto viewMatrix{ glm::identity<glm::mat4>() };
         viewMatrix = glm::toMat4(glm::inverse(transform->rotation)) * glm::translate(viewMatrix, -transform->position);
+        /*
         auto projectionMatrix{ glm::perspective(70.0f,
             static_cast<float>(cameraViewport.width) / static_cast<float>(cameraViewport.height), 0.3f, 10000.0f) };
+        */
+        auto projectionMatrix{ glm::perspective(camera->fov, camera->aspect, camera->near, camera->far) };
         auto viewProjectionMatrix = projectionMatrix * viewMatrix;
 
         ShaderEnvironment cameraVariables{};
@@ -100,6 +108,7 @@ void MeshDrawingSystem::run(void*)
             [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,
                 const RenderLayer* layer) -> bool { return (*layer & camera->m_visibleLayers); });
 
+        /*
         glEnable(GL_CULL_FACE);
         glCullFace(GL_FRONT);
 
@@ -127,6 +136,7 @@ void MeshDrawingSystem::run(void*)
         }
 
         glCullFace(GL_BACK);
+        */
 
         for (auto& meshInfo : meshList) {
             auto mesh{ std::get<1>(meshInfo) };
@@ -160,6 +170,7 @@ void MeshDrawingSystem::run(void*)
 
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
 

@@ -1,6 +1,7 @@
 #include <visualizer/Framebuffer.hpp>
 
 #include <GLFW/glfw3.h>
+#include <iostream>
 #include <utility>
 
 namespace Visualizer {
@@ -156,6 +157,59 @@ void Framebuffer::unbind(FramebufferBinding binding) const
     }
 }
 
+void Framebuffer::copyTo(
+    Framebuffer& framebuffer, std::span<FramebufferCopyFlags> flags, FramebufferCopyFilter filter) const
+{
+    if (!isComplete() || !framebuffer.isComplete()) {
+        std::cerr << "The framebuffers are not complete" << std::endl;
+    }
+
+    auto srcPort{ viewport() };
+    auto dstPort{ framebuffer.viewport() };
+
+    if (srcPort.width > dstPort.width) {
+        srcPort.width = dstPort.width;
+    }
+    if (srcPort.height > dstPort.height) {
+        srcPort.height = dstPort.height;
+    }
+
+    GLbitfield glMask = 0;
+    GLenum glFilter = 0;
+
+    for (auto flag : flags) {
+        switch (flag) {
+        case FramebufferCopyFlags::Color:
+            glMask |= GL_COLOR_BUFFER_BIT;
+            break;
+        case FramebufferCopyFlags::Depth:
+            glMask |= GL_DEPTH_BUFFER_BIT;
+            break;
+        case FramebufferCopyFlags::Stencil:
+            glMask |= GL_STENCIL_BUFFER_BIT;
+            break;
+        }
+    }
+
+    switch (filter) {
+    case FramebufferCopyFilter::Nearest:
+        glFilter = GL_NEAREST;
+        break;
+    case FramebufferCopyFilter::Linear:
+        glFilter = GL_LINEAR;
+        break;
+    }
+
+    bind(FramebufferBinding::Read);
+    framebuffer.bind(FramebufferBinding::Write);
+
+    glBlitFramebuffer(srcPort.x, srcPort.y, srcPort.x + srcPort.width, srcPort.y + srcPort.height, dstPort.x, dstPort.y,
+        dstPort.x + dstPort.width, dstPort.y + dstPort.height, glMask, glFilter);
+
+    framebuffer.unbind(FramebufferBinding::Write);
+    unbind(FramebufferBinding::Read);
+}
+
 void Framebuffer::setViewport(GLint xCoord, GLint yCoord, GLsizei width, GLsizei height)
 {
     if (width == 0 || height == 0) {
@@ -206,8 +260,9 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
     case TextureType::Texture2D:
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentGl, GL_TEXTURE_2D, texture->id(), 0);
         break;
-    default:
-        return;
+    case TextureType::Texture2DMultisample:
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentGl, GL_TEXTURE_2D_MULTISAMPLE, texture->id(), 0);
+        break;
     }
 
     m_buffers.insert_or_assign(attachment, std::move(texture));
