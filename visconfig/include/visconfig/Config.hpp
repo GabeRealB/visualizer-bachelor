@@ -16,10 +16,12 @@ namespace Visconfig {
 struct Options {
     std::size_t screenWidth;
     std::size_t screenHeight;
+    std::size_t screenMSAASamples;
     bool screenFullscreen;
 
     static constexpr const char* screenWidthJson{ "screen_width" };
     static constexpr const char* screenHeightJson{ "screen_height" };
+    static constexpr const char* screenMSAASamplesJson{ "screen_msaa_samples" };
     static constexpr const char* screenFullscreenJson{ "screen_fullscreen" };
 };
 

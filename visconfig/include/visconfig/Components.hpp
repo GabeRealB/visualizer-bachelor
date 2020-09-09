@@ -26,7 +26,8 @@ enum class ComponentType {
     FreeFlyCamera,
     FixedCamera,
     CameraSwitcher,
-    Composition
+    Composition,
+    Copy,
 };
 
 struct ComponentData {
@@ -293,6 +294,35 @@ struct CompositionComponent : public ComponentData {
     static constexpr const char* operationsJson{ "operations" };
 };
 
+enum class CopyOperationFlag {
+    Color,
+    Depth,
+    Stencil,
+};
+
+enum class CopyOperationFilter {
+    Nearest,
+    Linear,
+};
+
+struct CopyOperation {
+    std::string source;
+    std::string destination;
+    std::vector<CopyOperationFlag> flags;
+    CopyOperationFilter filter;
+
+    static constexpr const char* sourceJson{ "source" };
+    static constexpr const char* destinationJson{ "destination" };
+    static constexpr const char* flagsJson{ "flags" };
+    static constexpr const char* filterJson{ "filter" };
+};
+
+struct CopyComponent : public ComponentData {
+    std::vector<CopyOperation> operations;
+
+    static constexpr const char* operationsJson{ "operations" };
+};
+
 /*Enums*/
 
 void to_json(nlohmann::json& j, const ComponentType& v);
@@ -303,6 +333,12 @@ void from_json(const nlohmann::json& j, MaterialAttributeType& v);
 
 void to_json(nlohmann::json& j, const IterationOrder& v);
 void from_json(const nlohmann::json& j, IterationOrder& v);
+
+void to_json(nlohmann::json& j, const CopyOperationFlag& v);
+void from_json(const nlohmann::json& j, CopyOperationFlag& v);
+
+void to_json(nlohmann::json& j, const CopyOperationFilter& v);
+void from_json(const nlohmann::json& j, CopyOperationFilter& v);
 
 /*Components*/
 
@@ -351,6 +387,9 @@ void from_json(const nlohmann::json& j, CameraSwitcherComponent& v);
 void to_json(nlohmann::json& j, const CompositionComponent& v);
 void from_json(const nlohmann::json& j, CompositionComponent& v);
 
+void to_json(nlohmann::json& j, const CopyComponent& v);
+void from_json(const nlohmann::json& j, CopyComponent& v);
+
 /*Internal Structs*/
 
 template <typename T> void to_json(nlohmann::json& j, const TMaterialAttribute<T>& v)
@@ -386,5 +425,8 @@ void from_json(const nlohmann::json& j, Sampler2DMaterialAttribute& v);
 
 void to_json(nlohmann::json& j, const CompositionOperation& v);
 void from_json(const nlohmann::json& j, CompositionOperation& v);
+
+void to_json(nlohmann::json& j, const CopyOperation& v);
+void from_json(const nlohmann::json& j, CopyOperation& v);
 
 }

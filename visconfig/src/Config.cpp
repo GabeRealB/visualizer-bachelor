@@ -53,6 +53,7 @@ void to_json(nlohmann::json& j, const Options& v)
 {
     j[Options::screenWidthJson] = v.screenWidth;
     j[Options::screenHeightJson] = v.screenHeight;
+    j[Options::screenMSAASamplesJson] = v.screenMSAASamples;
     j[Options::screenFullscreenJson] = v.screenFullscreen;
 }
 
@@ -60,6 +61,7 @@ void from_json(const nlohmann::json& j, Options& v)
 {
     j[Options::screenWidthJson].get_to(v.screenWidth);
     j[Options::screenHeightJson].get_to(v.screenHeight);
+    j[Options::screenMSAASamplesJson].get_to(v.screenMSAASamples);
     j[Options::screenFullscreenJson].get_to(v.screenFullscreen);
 }
 

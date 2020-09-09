@@ -17,6 +17,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<AssetData>& v, AssetType t
     case AssetType::TextureRaw:
         to_json(j, *std::static_pointer_cast<TextureRawAsset>(v));
         break;
+    case AssetType::TextureMultisampleRaw:
+        to_json(j, *std::static_pointer_cast<TextureMultisampleRawAsset>(v));
+        break;
     case AssetType::Renderbuffer:
         to_json(j, *std::static_pointer_cast<RenderbufferAsset>(v));
         break;
@@ -50,6 +53,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
         from_json(j, *ptr);
         v = std::static_pointer_cast<AssetData>(ptr);
     } break;
+    case AssetType::TextureMultisampleRaw: {
+        auto ptr{ std::make_shared<TextureMultisampleRawAsset>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<AssetData>(ptr);
+    } break;
     case AssetType::Renderbuffer: {
         auto ptr{ std::make_shared<RenderbufferAsset>() };
         from_json(j, *ptr);
@@ -79,6 +87,7 @@ std::unordered_map<AssetType, std::string> s_AssetTypeNames{
     { AssetType::Mesh, "mesh" },
     { AssetType::TextureFile, "texture_file" },
     { AssetType::TextureRaw, "texture_raw" },
+    { AssetType::TextureMultisampleRaw, "texture_multisample_raw" },
     { AssetType::Renderbuffer, "renderbuffer" },
     { AssetType::Shader, "shader" },
     { AssetType::Framebuffer, "framebuffer" },
@@ -176,6 +185,7 @@ void from_json(const nlohmann::json& j, RenderbufferFormat& v)
 
 std::unordered_map<FramebufferType, std::string> s_framebufferTypeNames{
     { FramebufferType::Texture, "texture" },
+    { FramebufferType::TextureMultisample, "texture_multisample" },
     { FramebufferType::Renderbuffer, "renderbuffer" },
 };
 
@@ -272,10 +282,29 @@ void from_json(const nlohmann::json& j, TextureRawAsset& v)
     j[TextureRawAsset::attributesJson].get_to(v.attributes);
 }
 
+void to_json(nlohmann::json& j, const TextureMultisampleRawAsset& v)
+{
+    j[TextureMultisampleRawAsset::widthJson] = v.width;
+    j[TextureMultisampleRawAsset::heightJson] = v.height;
+    j[TextureMultisampleRawAsset::samplesJson] = v.samples;
+    j[TextureMultisampleRawAsset::formatJson] = v.format;
+    j[TextureMultisampleRawAsset::attributesJson] = v.attributes;
+}
+
+void from_json(const nlohmann::json& j, TextureMultisampleRawAsset& v)
+{
+    j[TextureMultisampleRawAsset::widthJson].get_to(v.width);
+    j[TextureMultisampleRawAsset::heightJson].get_to(v.height);
+    j[TextureMultisampleRawAsset::samplesJson].get_to(v.samples);
+    j[TextureMultisampleRawAsset::formatJson].get_to(v.format);
+    j[TextureMultisampleRawAsset::attributesJson].get_to(v.attributes);
+}
+
 void to_json(nlohmann::json& j, const RenderbufferAsset& v)
 {
     j[RenderbufferAsset::widthJson] = v.width;
     j[RenderbufferAsset::heightJson] = v.height;
+    j[RenderbufferAsset::samplesJson] = v.samples;
     j[RenderbufferAsset::formatJson] = v.format;
 }
 
@@ -283,6 +312,7 @@ void from_json(const nlohmann::json& j, RenderbufferAsset& v)
 {
     j[RenderbufferAsset::widthJson].get_to(v.width);
     j[RenderbufferAsset::heightJson].get_to(v.height);
+    j[RenderbufferAsset::samplesJson].get_to(v.samples);
     j[RenderbufferAsset::formatJson].get_to(v.format);
 }
 

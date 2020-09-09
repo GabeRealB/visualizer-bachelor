@@ -50,6 +50,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::Composition:
         to_json(j, *std::static_pointer_cast<CompositionComponent>(v));
         break;
+    case ComponentType::Copy:
+        to_json(j, *std::static_pointer_cast<CopyComponent>(v));
+        break;
     }
 }
 
@@ -131,6 +134,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::Copy: {
+        auto ptr{ std::make_shared<CopyComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     }
 }
 
@@ -152,6 +160,7 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::FixedCamera, "fixed_camera" },
     { ComponentType::CameraSwitcher, "camera_switcher" },
     { ComponentType::Composition, "composition" },
+    { ComponentType::Copy, "copy" },
 };
 
 void to_json(nlohmann::json& j, const ComponentType& v) { j = sComponentTypeStringNameMap[v]; }
@@ -241,6 +250,55 @@ void from_json(const nlohmann::json& j, IterationOrder& v)
     } };
     if (auto pos{ std::find_if(sIterationOrderStringNameMap.begin(), sIterationOrderStringNameMap.end(), predicate) };
         pos != sIterationOrderStringNameMap.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
+    }
+}
+
+std::unordered_map<CopyOperationFlag, std::string> sCopyOperationFlagStringNameMap{
+    { CopyOperationFlag::Color, "color" },
+    { CopyOperationFlag::Depth, "depth" },
+    { CopyOperationFlag::Stencil, "stencil" },
+};
+
+void to_json(nlohmann::json& j, const CopyOperationFlag& v) { j = sCopyOperationFlagStringNameMap[v]; }
+
+void from_json(const nlohmann::json& j, CopyOperationFlag& v)
+{
+    std::string type{};
+    j.get_to(type);
+
+    auto predicate{ [&](const decltype(sCopyOperationFlagStringNameMap)::value_type& pair) {
+        return pair.second == type;
+    } };
+    if (auto pos{
+            std::find_if(sCopyOperationFlagStringNameMap.begin(), sCopyOperationFlagStringNameMap.end(), predicate) };
+        pos != sCopyOperationFlagStringNameMap.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
+    }
+}
+
+std::unordered_map<CopyOperationFilter, std::string> sCopyOperationFilterStringNameMap{
+    { CopyOperationFilter::Nearest, "nearest" },
+    { CopyOperationFilter::Linear, "linear" },
+};
+
+void to_json(nlohmann::json& j, const CopyOperationFilter& v) { j = sCopyOperationFilterStringNameMap[v]; }
+
+void from_json(const nlohmann::json& j, CopyOperationFilter& v)
+{
+    std::string type{};
+    j.get_to(type);
+
+    auto predicate{ [&](const decltype(sCopyOperationFilterStringNameMap)::value_type& pair) {
+        return pair.second == type;
+    } };
+    if (auto pos{ std::find_if(
+            sCopyOperationFilterStringNameMap.begin(), sCopyOperationFilterStringNameMap.end(), predicate) };
+        pos != sCopyOperationFilterStringNameMap.end()) {
         v = pos->first;
     } else {
         std::abort();
@@ -412,6 +470,10 @@ void from_json(const nlohmann::json& j, CompositionComponent& v)
 {
     j[CompositionComponent::operationsJson].get_to(v.operations);
 }
+
+void to_json(nlohmann::json& j, const CopyComponent& v) { j[CopyComponent::operationsJson] = v.operations; }
+
+void from_json(const nlohmann::json& j, CopyComponent& v) { j[CopyComponent::operationsJson].get_to(v.operations); }
 
 /*Internal Structs*/
 
@@ -933,6 +995,22 @@ void from_json(const nlohmann::json& j, CompositionOperation& v)
     j[CompositionOperation::sourceTextureJson].get_to(v.sourceTexture);
     j[CompositionOperation::targetJson].get_to(v.target);
     j[CompositionOperation::shaderJson].get_to(v.shader);
+}
+
+void to_json(nlohmann::json& j, const CopyOperation& v)
+{
+    j[CopyOperation::sourceJson] = v.source;
+    j[CopyOperation::destinationJson] = v.destination;
+    j[CopyOperation::flagsJson] = v.flags;
+    j[CopyOperation::filterJson] = v.filter;
+}
+
+void from_json(const nlohmann::json& j, CopyOperation& v)
+{
+    j[CopyOperation::sourceJson].get_to(v.source);
+    j[CopyOperation::destinationJson].get_to(v.destination);
+    j[CopyOperation::flagsJson].get_to(v.flags);
+    j[CopyOperation::filterJson].get_to(v.filter);
 }
 
 }

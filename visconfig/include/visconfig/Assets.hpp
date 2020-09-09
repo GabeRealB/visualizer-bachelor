@@ -13,6 +13,7 @@ enum class AssetType {
     Mesh,
     TextureFile,
     TextureRaw,
+    TextureMultisampleRaw,
     Renderbuffer,
     Shader,
     Framebuffer,
@@ -58,15 +59,31 @@ struct TextureRawAsset : public AssetData {
     static constexpr const char* attributesJson{ "attributes" };
 };
 
+struct TextureMultisampleRawAsset : public AssetData {
+    std::size_t width;
+    std::size_t height;
+    std::size_t samples;
+    TextureFormat format;
+    std::vector<TextureAttributes> attributes;
+
+    static constexpr const char* widthJson{ "width" };
+    static constexpr const char* heightJson{ "height" };
+    static constexpr const char* samplesJson{ "samples" };
+    static constexpr const char* formatJson{ "format" };
+    static constexpr const char* attributesJson{ "attributes" };
+};
+
 enum class RenderbufferFormat { Depth24 };
 
 struct RenderbufferAsset : public AssetData {
     std::size_t width;
     std::size_t height;
+    std::size_t samples;
     RenderbufferFormat format;
 
     static constexpr const char* widthJson{ "width" };
     static constexpr const char* heightJson{ "height" };
+    static constexpr const char* samplesJson{ "samples" };
     static constexpr const char* formatJson{ "format" };
 };
 
@@ -78,7 +95,7 @@ struct ShaderAsset : public AssetData {
     static constexpr const char* fragmentJson{ "fragment" };
 };
 
-enum class FramebufferType { Texture, Renderbuffer };
+enum class FramebufferType { Texture, TextureMultisample, Renderbuffer };
 enum class FramebufferDestination { Color0, Color1, Color2, Color3, Depth, Stencil, DepthStencil };
 
 struct FramebufferAttachment {
@@ -138,6 +155,9 @@ void from_json(const nlohmann::json& j, TextureFileAsset& v);
 
 void to_json(nlohmann::json& j, const TextureRawAsset& v);
 void from_json(const nlohmann::json& j, TextureRawAsset& v);
+
+void to_json(nlohmann::json& j, const TextureMultisampleRawAsset& v);
+void from_json(const nlohmann::json& j, TextureMultisampleRawAsset& v);
 
 void to_json(nlohmann::json& j, const RenderbufferAsset& v);
 void from_json(const nlohmann::json& j, RenderbufferAsset& v);
