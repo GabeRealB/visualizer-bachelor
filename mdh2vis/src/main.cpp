@@ -19,6 +19,10 @@ constexpr std::size_t screenHeight = 900;
 constexpr std::size_t screenMSAASamples = 16;
 constexpr bool screenFullscreen = false;
 
+constexpr std::size_t renderResolutionMultiplier{ 2 };
+constexpr std::size_t renderResolutionWidth{ screenWidth * renderResolutionMultiplier };
+constexpr std::size_t renderResolutionHeight{ screenHeight * renderResolutionMultiplier };
+
 constexpr float mainViewTextureBorderRelativeWidth{ 0.02f };
 constexpr float threadViewTextureBorderRelativeWidth{ 0.05f };
 constexpr float subViewTextureBorderRelativeWidth{ 0.4f };
@@ -471,6 +475,9 @@ void processSubView(ProcessedConfig& config, const std::string& name, const MDH2
         view.layers.push_back(SubViewLayerInfo{ 0, scale, scale, {} });
     }
 
+    std::size_t threadLayerSize = config.mainView.threads[0].absoluteScale[0]
+        * config.mainView.threads[0].absoluteScale[1] * config.mainView.threads[0].absoluteScale[2];
+
     for (auto pos{ view.layers.begin() }; pos != view.layers.end(); pos++) {
 
         auto index{ std::distance(view.layers.begin(), pos) };
@@ -480,6 +487,7 @@ void processSubView(ProcessedConfig& config, const std::string& name, const MDH2
 
         pos->iterationRate
             = mainViewLayer.absoluteScale[0] * mainViewLayer.absoluteScale[1] * mainViewLayer.absoluteScale[2];
+        pos->iterationRate /= threadLayerSize;
 
         if (pos == view.layers.begin()) {
             pos->positions = { { 0.0f, 0.0f, 0.0f } };
@@ -659,9 +667,11 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
     for (auto pos{ config.outputView.layers.rbegin() }; pos != config.outputView.layers.rend(); pos++) {
         if (pos == config.outputView.layers.rbegin()) {
             const auto& threadLayer{ config.mainView.threads.front() };
+            /*
             auto iterationRate{ static_cast<std::size_t>(threadDimensions[0])
                 * static_cast<std::size_t>(threadDimensions[1]) * static_cast<std::size_t>(threadDimensions[2]) };
-            computePositions.operator()(*pos, threadDimensions, threadLayer.numIterations, iterationRate);
+            */
+            computePositions.operator()(*pos, threadDimensions, threadLayer.numIterations, 1);
         } else {
             auto& layer{ *pos };
             const auto& previousLayer{ *(pos - 1) };
@@ -1150,6 +1160,8 @@ Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const M
 
         iteration.ticksPerIteration = view.layers[layerNumber].absoluteScale[0]
             * view.layers[layerNumber].absoluteScale[1] * view.layers[layerNumber].absoluteScale[2];
+        iteration.ticksPerIteration
+            /= view.threads[0].absoluteScale[0] * view.threads[0].absoluteScale[1] * view.threads[0].absoluteScale[2];
     }
 
     return entity;
@@ -1265,8 +1277,11 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
         iteration.numIterations[1] = view.threads[layerNumber].numIterations[1];
         iteration.numIterations[2] = view.threads[layerNumber].numIterations[2];
 
+        /*
         iteration.ticksPerIteration = view.threads[layerNumber].absoluteScale[0]
             * view.threads[layerNumber].absoluteScale[1] * view.threads[layerNumber].absoluteScale[2];
+        */
+        iteration.ticksPerIteration = 1;
     }
 
     return entity;
@@ -1706,38 +1721,32 @@ void generateMainViewConfig(
     constexpr auto framebufferName{ "framebuffer_0" };
 
     config.assets.push_back(generateRenderTextureAsset(
-        renderTextureName, screenWidth / 2, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(
-        depthBufferName, screenWidth / 2, screenHeight, 0, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth / 2, screenHeight,
-        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferName } }));
+        renderTextureName, renderResolutionWidth / 2, renderResolutionHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferName, renderResolutionWidth / 2,
+        renderResolutionHeight, 0, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferName, 0, 0, renderResolutionWidth / 2, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+                  renderTextureName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferName } }));
 
     constexpr auto renderTextureMultisampleName{ "render_texture_0_multisample" };
     constexpr auto depthBufferMultisampleName{ "renderbuffer_depth_0_multisample" };
     constexpr auto framebufferMultisampleName{ "framebuffer_0_multisample" };
 
-    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName, screenWidth / 2,
-        screenHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, screenWidth / 2, screenHeight,
-        screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferMultisampleName, 0, 0, screenWidth / 2, screenHeight,
-        { { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureMultisampleName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferMultisampleName } }));
+    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName,
+        renderResolutionWidth / 2, renderResolutionHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, renderResolutionWidth / 2,
+        renderResolutionHeight, screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferMultisampleName, 0, 0, renderResolutionWidth / 2, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::TextureMultisample,
+                  Visconfig::Assets::FramebufferDestination::Color0, renderTextureMultisampleName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferMultisampleName } }));
 
     auto focusEntity{ numEntities };
-
-    auto mainTextureBorderWidth = static_cast<std::size_t>(mainViewTextureBorderRelativeWidth
-        * std::pow(mdhConfig.mainView.layers.front().absoluteScale[0]
-                * mdhConfig.mainView.layers.front().absoluteScale[1]
-                * mdhConfig.mainView.layers.front().absoluteScale[2],
-            1.0f / 3.0f));
-
-    mainTextureBorderWidth = mainTextureBorderWidth == 0 ? 1 : mainTextureBorderWidth;
 
     auto threadTextureBorderWidth = static_cast<std::size_t>(threadViewTextureBorderRelativeWidth
         * std::pow(mdhConfig.mainView.threads.front().absoluteScale[0]
@@ -1749,6 +1758,11 @@ void generateMainViewConfig(
 
     for (auto layer{ mdhConfig.mainView.layers.begin() }; layer != mdhConfig.mainView.layers.end(); layer++) {
         auto index{ std::distance(mdhConfig.mainView.layers.begin(), layer) };
+
+        auto mainTextureBorderWidth = static_cast<std::size_t>(mainViewTextureBorderRelativeWidth
+            * std::pow(layer->absoluteScale[0] * layer->absoluteScale[1] * layer->absoluteScale[2], 1.0f / 3.0f));
+
+        mainTextureBorderWidth = mainTextureBorderWidth == 0 ? 1 : mainTextureBorderWidth;
 
         auto textureFrontName{ "view_0_cube_texture_" + std::to_string(index) + "_front" };
         auto textureSideName{ "view_0_cube_texture_" + std::to_string(index) + "_side" };
@@ -1899,28 +1913,30 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
     auto framebufferName{ "framebuffer_" + std::to_string(subview + 2) };
 
     config.assets.push_back(generateRenderTextureAsset(
-        renderTextureName, screenWidth, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(
-        depthBufferName, screenWidth, screenHeight, 0, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth, screenHeight,
-        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferName } }));
+        renderTextureName, renderResolutionWidth, renderResolutionHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferName, renderResolutionWidth, renderResolutionHeight, 0,
+        Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferName, 0, 0, renderResolutionWidth, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+                  renderTextureName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferName } }));
 
     auto renderTextureMultisampleName{ renderTextureName + "_multisample" };
     auto depthBufferMultisampleName{ depthBufferName + "_multisample" };
     auto framebufferMultisampleName{ framebufferName + "_multisample" };
 
-    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName, screenWidth,
-        screenHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, screenWidth, screenHeight,
-        screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferMultisampleName, 0, 0, screenWidth, screenHeight,
-        { { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureMultisampleName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferMultisampleName } }));
+    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName, renderResolutionWidth,
+        renderResolutionHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, renderResolutionWidth,
+        renderResolutionHeight, screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferMultisampleName, 0, 0, renderResolutionWidth, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::TextureMultisample,
+                  Visconfig::Assets::FramebufferDestination::Color0, renderTextureMultisampleName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferMultisampleName } }));
 
     auto textureBorderWidth = static_cast<std::size_t>(subViewTextureBorderRelativeWidth
         * std::pow(mdhConfig.subViews[subview].layers.front().absoluteScale[0]
@@ -2000,28 +2016,30 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     auto framebufferName{ "framebuffer_" + std::to_string(subview) };
 
     config.assets.push_back(generateRenderTextureAsset(
-        renderTextureName, screenWidth / 2, screenHeight, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(
-        depthBufferName, screenWidth / 2, screenHeight, 0, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferName, 0, 0, screenWidth / 2, screenHeight,
-        { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferName } }));
+        renderTextureName, renderResolutionWidth / 2, renderResolutionHeight, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferName, renderResolutionWidth / 2,
+        renderResolutionHeight, 0, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferName, 0, 0, renderResolutionWidth / 2, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::Texture, Visconfig::Assets::FramebufferDestination::Color0,
+                  renderTextureName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferName } }));
 
     auto renderTextureMultisampleName{ renderTextureName + "_multisample" };
     auto depthBufferMultisampleName{ depthBufferName + "_multisample" };
     auto framebufferMultisampleName{ framebufferName + "_multisample" };
 
-    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName, screenWidth / 2,
-        screenHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
-    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, screenWidth / 2, screenHeight,
-        screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
-    config.assets.push_back(generateFramebufferAsset(framebufferMultisampleName, 0, 0, screenWidth / 2, screenHeight,
-        { { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color0,
-              renderTextureMultisampleName },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depthBufferMultisampleName } }));
+    config.assets.push_back(generateMultisampleRenderTextureAsset(renderTextureMultisampleName,
+        renderResolutionWidth / 2, renderResolutionHeight, screenMSAASamples, Visconfig::Assets::TextureFormat::RGBA));
+    config.assets.push_back(generateRenderbufferAsset(depthBufferMultisampleName, renderResolutionWidth / 2,
+        renderResolutionHeight, screenMSAASamples, Visconfig::Assets::RenderbufferFormat::Depth24));
+    config.assets.push_back(
+        generateFramebufferAsset(framebufferMultisampleName, 0, 0, renderResolutionWidth / 2, renderResolutionHeight,
+            { { Visconfig::Assets::FramebufferType::TextureMultisample,
+                  Visconfig::Assets::FramebufferDestination::Color0, renderTextureMultisampleName },
+                { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
+                    depthBufferMultisampleName } }));
 
     auto textureBorderWidth = static_cast<std::size_t>(outputViewTextureBorderRelativeWidth
         * std::min({ mdhConfig.outputView.size[0], mdhConfig.outputView.size[1], mdhConfig.outputView.size[2] }));
