@@ -18,6 +18,7 @@ private:
     double m_accumulator;
     double m_currentTime;
     double m_tickInterval;
+    EntityQuery m_cubesQueryMesh;
     EntityQuery m_cubesQueryActivation;
     EntityQuery m_cubesQueryHomogeneous;
     EntityQuery m_cubesQueryHeterogeneous;

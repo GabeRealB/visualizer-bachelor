@@ -6,6 +6,7 @@
 
 #include <visualizer/ActiveCameraSwitcher.hpp>
 #include <visualizer/Camera.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
@@ -21,6 +22,10 @@ void CameraSwitchingSystem::terminate() { m_componentManager = nullptr; }
 
 void CameraSwitchingSystem::run(void*)
 {
+    if (isDetached()) {
+        return;
+    }
+
     auto window{ glfwGetCurrentContext() };
     auto tabKey{ glfwGetKey(window, GLFW_KEY_TAB) };
 

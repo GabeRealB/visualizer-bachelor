@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdlib>
 #include <vector>
 
@@ -15,6 +16,16 @@ struct HomogeneousIteration {
     std::size_t ticksPerIteration;
     std::size_t index;
     std::size_t tick;
+};
+
+struct MeshIteration {
+    std::vector<bool> grid;
+    std::vector<glm::u64vec3> positions;
+    std::array<std::size_t, 3> dimensions;
+    std::vector<std::size_t> ticksPerIteration;
+    std::size_t index;
+    std::size_t tick;
+    bool initialized;
 };
 
 struct EntityActivation {

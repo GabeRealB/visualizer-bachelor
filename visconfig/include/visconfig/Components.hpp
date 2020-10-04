@@ -21,6 +21,7 @@ enum class ComponentType {
     ImplicitIteration,
     ExplicitIteration,
     EntityActivation,
+    MeshIteration,
     ExplicitHeterogeneousIteration,
     Camera,
     FreeFlyCamera,
@@ -221,6 +222,16 @@ struct EntityActivationComponent : public ComponentData {
     static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
+struct MeshIterationComponent : public ComponentData {
+    std::array<std::size_t, 3> dimensions;
+    std::vector<std::size_t> ticksPerIteration;
+    std::vector<std::array<float, 3>> positions;
+
+    static constexpr const char* dimensionsJson{ "dimensions" };
+    static constexpr const char* positionsJson{ "positions" };
+    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
+};
+
 struct ExplicitHeterogeneousIterationComponent : public ComponentData {
     std::vector<std::size_t> ticksPerIteration;
     std::vector<std::array<float, 3>> scales;
@@ -234,19 +245,25 @@ struct ExplicitHeterogeneousIterationComponent : public ComponentData {
 struct CameraComponent : public ComponentData {
     bool active;
     bool fixed;
+    bool perspective;
     float fov;
     float far;
     float near;
     float aspect;
+    float orthographicWidth;
+    float orthographicHeight;
     std::bitset<64> layerMask;
     std::unordered_map<std::string, std::string> targets;
 
     static constexpr const char* activeJson{ "active" };
     static constexpr const char* fixedJson{ "fixed" };
+    static constexpr const char* perspectiveJson{ "perspective" };
     static constexpr const char* fovJson{ "fov" };
     static constexpr const char* farJson{ "far" };
     static constexpr const char* nearJson{ "near" };
     static constexpr const char* aspectJson{ "aspect" };
+    static constexpr const char* orthographicWidthJson{ "orthographic_width" };
+    static constexpr const char* orthographicHeightJson{ "orthographic_height" };
     static constexpr const char* layerMaskJson{ "layer_mask" };
     static constexpr const char* targetsJson{ "targets" };
 };
@@ -280,12 +297,16 @@ struct CompositionOperation {
     std::vector<std::string> sourceTexture;
     std::string target;
     std::string shader;
+    std::size_t id;
+    bool draggable;
 
     static constexpr const char* scaleJson{ "scale" };
     static constexpr const char* positionJson{ "position" };
     static constexpr const char* sourceTextureJson{ "source_texture" };
     static constexpr const char* targetJson{ "target" };
     static constexpr const char* shaderJson{ "shader" };
+    static constexpr const char* idJson{ "id" };
+    static constexpr const char* draggableJson{ "draggable" };
 };
 
 struct CompositionComponent : public ComponentData {
@@ -368,6 +389,9 @@ void from_json(const nlohmann::json& j, ExplicitIterationComponent& v);
 
 void to_json(nlohmann::json& j, const EntityActivationComponent& v);
 void from_json(const nlohmann::json& j, EntityActivationComponent& v);
+
+void to_json(nlohmann::json& j, const MeshIterationComponent& v);
+void from_json(const nlohmann::json& j, MeshIterationComponent& v);
 
 void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v);
 void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent& v);

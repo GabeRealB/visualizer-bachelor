@@ -28,7 +28,7 @@ void main() {
     outColor = textureColor * diffuseColor;
 
     if (textureColor == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
-        outColor.a = 1.0f;
+        outColor = vec4(0.6f, 0.6f, 0.6f, 1.0f);
     }
 
     if (outColor.a == 0.0f) {

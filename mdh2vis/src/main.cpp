@@ -26,7 +26,6 @@ constexpr std::size_t renderResolutionHeight{ screenHeight * renderResolutionMul
 constexpr float mainViewTextureBorderRelativeWidth{ 0.02f };
 constexpr float threadViewTextureBorderRelativeWidth{ 0.05f };
 constexpr float subViewTextureBorderRelativeWidth{ 0.4f };
-constexpr float outputViewTextureBorderRelativeWidth{ 0.4f };
 
 constexpr float cameraFOV{ 70.0f };
 constexpr float cameraAspect{ static_cast<float>(screenWidth) / static_cast<float>(screenHeight) };
@@ -86,6 +85,7 @@ struct OutputLayerInfo {
     std::vector<std::size_t> iterationRates;
     std::array<std::size_t, 3> numIterations;
     std::vector<std::array<float, 3>> positions;
+    std::vector<std::array<float, 3>> gridPositions;
     std::vector<std::array<float, 3>> absolutePositions;
 };
 
@@ -631,7 +631,7 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
             }
         } } };
 
-    auto computeRelativePositionAndSize{ Overload{ [](OutputLayerInfo& layer) {
+    auto computeRelativePositionAndSize{ Overload{ [](OutputLayerInfo& layer, std::array<float, 3> threadSize) {
                                                       layer.size = { 1.0f, 1.0f, 1.0f };
                                                       layer.numIterations = { 0, 0, 0 };
                                                       for (auto position : layer.absolutePositions) {
@@ -640,8 +640,14 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
                                                           position[2] /= layer.absoluteSize[2];
                                                           layer.positions.push_back(position);
                                                       }
+                                                      for (auto position : layer.absolutePositions) {
+                                                          position[0] /= threadSize[0];
+                                                          position[1] /= threadSize[1];
+                                                          position[2] /= threadSize[2];
+                                                          layer.gridPositions.push_back(position);
+                                                      }
                                                   },
-        [](OutputLayerInfo& layer, const OutputLayerInfo& previousLayer) {
+        [](OutputLayerInfo& layer, const OutputLayerInfo& previousLayer, std::array<float, 3> threadSize) {
             layer.size = {
                 layer.absoluteSize[0] / previousLayer.absoluteSize[0],
                 layer.absoluteSize[1] / previousLayer.absoluteSize[1],
@@ -657,6 +663,12 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
                 position[1] /= layer.absoluteSize[1];
                 position[2] /= layer.absoluteSize[2];
                 layer.positions.push_back(position);
+            }
+            for (auto position : layer.absolutePositions) {
+                position[0] /= threadSize[0];
+                position[1] /= threadSize[1];
+                position[2] /= threadSize[2];
+                layer.gridPositions.push_back(position);
             }
         } } };
 
@@ -685,9 +697,9 @@ void processOutputView(const MDH2Vis::MDHConfig&, ProcessedConfig& config)
 
     for (auto pos{ config.outputView.layers.begin() }; pos != config.outputView.layers.end(); pos++) {
         if (pos == config.outputView.layers.begin()) {
-            computeRelativePositionAndSize.operator()(*pos);
+            computeRelativePositionAndSize.operator()(*pos, threadDimensions);
         } else {
-            computeRelativePositionAndSize.operator()(*pos, *(pos - 1));
+            computeRelativePositionAndSize.operator()(*pos, *(pos - 1), threadDimensions);
         }
     }
 
@@ -802,6 +814,55 @@ void generateTextureFile(const std::string& name, std::size_t width, std::size_t
     }
 
     stbi_write_png(name.c_str(), textureWidth, textureHeight, 3, textureData.data(), textureRowStride);
+}
+
+Visconfig::Asset createSimpleCubeMeshAsset(const std::string& name)
+{
+    auto meshData{ std::make_shared<Visconfig::Assets::MeshAsset>() };
+    Visconfig::Asset asset{ name, Visconfig::Assets::AssetType::Mesh, meshData };
+
+    constexpr std::array<std::array<float, 4>, 8> vertices{
+        std::array<float, 4>{ 0.0f, -1.0f, 1.0f, 1.0f }, // lower-left-front
+        std::array<float, 4>{ 1.0f, -1.0f, 1.0f, 1.0f }, // lower-right-front
+        std::array<float, 4>{ 1.0f, 0.0f, 1.0f, 1.0f }, // top-right-front
+        std::array<float, 4>{ 0.0f, 0.0f, 1.0f, 1.0f }, // top-left-front
+
+        std::array<float, 4>{ 0.0f, -1.0f, 0.0f, 1.0f }, // lower-left-back
+        std::array<float, 4>{ 1.0f, -1.0f, 0.0f, 1.0f }, // lower-right-back
+        std::array<float, 4>{ 1.0f, 0.0f, 0.0f, 1.0f }, // top-right-back
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 1.0f }, // top-left-back
+    };
+
+    constexpr std::array<std::array<float, 4>, 8> texCoords{
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // lower-left-front
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // lower-right-front
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // top-right-front
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // top-left-front
+
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // lower-left-back
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // lower-right-back
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // top-right-back
+        std::array<float, 4>{ 0.0f, 0.0f, 0.0f, 0.0f }, // top-left-back
+    };
+
+    constexpr std::array<std::uint32_t, 36> indices{
+        0, 1, 2, 0, 2, 3, // front
+        5, 4, 7, 5, 7, 6, // back
+        4, 0, 3, 4, 3, 7, // left
+        1, 5, 6, 1, 6, 2, // right
+        3, 2, 6, 3, 6, 7, // top
+        4, 5, 1, 4, 1, 0, // bottom
+    };
+
+    meshData->indices.resize(indices.size());
+    meshData->vertices.resize(vertices.size());
+    meshData->texture_coords0.resize(texCoords.size());
+
+    std::copy(indices.begin(), indices.end(), meshData->indices.begin());
+    std::copy(vertices.begin(), vertices.end(), meshData->vertices.begin());
+    std::copy(texCoords.begin(), texCoords.end(), meshData->texture_coords0.begin());
+
+    return asset;
 }
 
 Visconfig::Asset createCubeMeshAsset()
@@ -1289,7 +1350,7 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
 
 Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float, 3> scale, std::array<float, 4> color,
     std::size_t entityId, std::size_t parentId, std::size_t layerId, bool hasParent, const std::string& frontTexture,
-    const std::string& sideTexture, const std::string& topTexture)
+    const std::string& sideTexture, const std::string& topTexture, const std::string& meshName)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -1324,7 +1385,7 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
     auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
         entity.components[transformIndex].data) };
 
-    mesh.asset = cubeMeshAsset;
+    mesh.asset = meshName;
 
     auto textureFront{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto textureSide{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
@@ -1384,15 +1445,13 @@ Visconfig::Entity generateCube(std ::array<float, 3> position, std::array<float,
 
 Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const ProcessedConfig& mdhConfig,
     const OutputViewInfo& view, std::size_t& entityId, std::size_t parentId, std::size_t viewNumber,
-    std::size_t layerNumber, const std::string& cubeTexture)
+    std::size_t layerNumber, const std::string& cubeTexture, const std::string& meshName)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
 
     entity.components.push_back({ Visconfig::Components::ComponentType::Transform,
         std::make_shared<Visconfig::Components::TransformComponent>() });
-    entity.components.push_back({ Visconfig::Components::ComponentType::EntityActivation,
-        std::make_shared<Visconfig::Components::EntityActivationComponent>() });
     entity.components.push_back(
         { Visconfig::Components::ComponentType::Parent, std::make_shared<Visconfig::Components::ParentComponent>() });
 
@@ -1402,14 +1461,11 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
     }
 
     constexpr auto transformIndex{ 0 };
-    constexpr auto entityActivationIndex{ 1 };
-    constexpr auto parentIndex{ 2 };
-    constexpr auto iterationIndex{ 3 };
+    constexpr auto parentIndex{ 1 };
+    constexpr auto iterationIndex{ 2 };
 
     auto& transform{ *std::static_pointer_cast<Visconfig::Components::TransformComponent>(
         entity.components[transformIndex].data) };
-    auto& entityActivation{ *std::static_pointer_cast<Visconfig::Components::EntityActivationComponent>(
-        entity.components[entityActivationIndex].data) };
     auto& parent{ *std::static_pointer_cast<Visconfig::Components::ParentComponent>(
         entity.components[parentIndex].data) };
 
@@ -1446,37 +1502,33 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         threadLayer.absoluteScale[2] / mdhConfig.outputView.layers[layerNumber].absoluteSize[2],
     };
 
-    std::array<float, 3> childHalfScale{
-        childScale[0] / 2.0f,
-        childScale[1] / 2.0f,
-        childScale[2] / 2.0f,
-    };
-
     std::array<float, 3> childStartPos{
-        -0.5f + childHalfScale[0],
-        0.5f - childHalfScale[1],
-        -0.5f + childHalfScale[2],
+        -0.5f,
+        0.5f,
+        -0.5f,
     };
 
     auto parentEntity{ entityId };
-    std::vector<std::size_t> children{};
-    for (auto pos : view.layers[layerNumber].positions) {
-        auto first{ entityId == parentEntity };
-        auto cubeLayer{ first ? 1llu << viewNumber : 0 };
-        entityId++;
 
-        pos[0] += childStartPos[0];
-        pos[1] += childStartPos[1];
-        pos[2] += childStartPos[2];
+    auto child{ generateCube(childStartPos, childScale, color, ++entityId, parentEntity, 1llu << viewNumber, true,
+        cubeTexture, cubeTexture, cubeTexture, meshName) };
+    child.components.push_back({ Visconfig::Components::ComponentType::MeshIteration,
+        std::make_shared<Visconfig::Components::MeshIterationComponent>() });
 
-        children.push_back(entityId);
-        world.entities.push_back(generateCube(
-            pos, childScale, color, entityId, parentEntity, cubeLayer, true, cubeTexture, cubeTexture, cubeTexture));
-    }
+    auto& childMeshIteration{ *std::static_pointer_cast<Visconfig::Components::MeshIterationComponent>(
+        child.components.back().data) };
+    childMeshIteration.dimensions = {
+        static_cast<std::size_t>(
+            std::abs(view.layers[layerNumber].absoluteSize[0] / mdhConfig.mainView.threads[0].absoluteScale[0])),
+        static_cast<std::size_t>(
+            std::abs(view.layers[layerNumber].absoluteSize[1] / mdhConfig.mainView.threads[0].absoluteScale[1])),
+        static_cast<std::size_t>(
+            std::abs(view.layers[layerNumber].absoluteSize[2] / mdhConfig.mainView.threads[0].absoluteScale[2])),
+    };
+    childMeshIteration.positions = view.layers[layerNumber].gridPositions;
+    childMeshIteration.ticksPerIteration = view.layers[layerNumber].iterationRates;
 
-    entityActivation.layer = 1llu << viewNumber;
-    entityActivation.entities = children;
-    entityActivation.ticksPerIteration = view.layers[layerNumber].iterationRates;
+    world.entities.push_back(child);
 
     parent.id = parentId;
 
@@ -1617,7 +1669,8 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
 }
 
 Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t focus, std::size_t viewIndex,
-    const std::string& framebufferName, float fov, float aspect, float near, float far, float distance)
+    const std::string& framebufferName, float fov, float aspect, float near, float far, float distance,
+    float orthographicWidth, float orthographicHeight, bool active, bool fixed, bool perspective)
 {
     Visconfig::Entity entity{};
     entity.id = entityId;
@@ -1632,12 +1685,15 @@ Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t focus, st
         std::make_shared<Visconfig::Components::FixedCameraComponent>() });
 
     auto camera{ std::static_pointer_cast<Visconfig::Components::CameraComponent>(entity.components[0].data) };
-    camera->active = false;
-    camera->fixed = true;
+    camera->active = active;
+    camera->fixed = fixed;
+    camera->perspective = perspective;
     camera->fov = fov;
     camera->aspect = aspect;
     camera->near = near;
     camera->far = far;
+    camera->orthographicWidth = orthographicWidth;
+    camera->orthographicHeight = orthographicHeight;
     camera->layerMask = 1ull << viewIndex;
     camera->targets.insert_or_assign("cube", framebufferName);
     camera->targets.insert_or_assign("text", framebufferName);
@@ -1662,11 +1718,6 @@ Visconfig::Entity generateViewCamera(std::size_t entityId, std::size_t focus, st
     fixedCamera->horizontalAngle = 0.0f;
     fixedCamera->verticalAngle = 0.0f;
 
-    if (viewIndex == 0) {
-        camera->active = true;
-        camera->fixed = false;
-    }
-
     return entity;
 }
 
@@ -1686,13 +1737,13 @@ Visconfig::Entity generateCoordinatorEntity(std::size_t entityId)
 }
 
 void extentComposition(Visconfig::World& world, std::array<float, 2> scale, std::array<float, 2> position,
-    std::vector<std::string> src, const std::string& target, const std::string& shader)
+    std::vector<std::string> src, const std::string& target, const std::string& shader, std::size_t id, bool draggable)
 {
     auto composition{ std::static_pointer_cast<Visconfig::Components::CompositionComponent>(
         world.entities[0].components[0].data) };
 
     composition->operations.push_back(Visconfig::Components::CompositionOperation{
-        { scale[0], scale[1] }, { position[0], position[1] }, std::move(src), target, shader });
+        { scale[0], scale[1] }, { position[0], position[1] }, std::move(src), target, shader, id, draggable });
 }
 
 void extendCameraSwitcher(Visconfig::World& world, std::size_t camera)
@@ -1894,14 +1945,19 @@ void generateMainViewConfig(
         * std::max({ mdhConfig.mainView.layers[0].absoluteScale[0], mdhConfig.mainView.layers[0].absoluteScale[1],
             mdhConfig.mainView.layers[0].absoluteScale[2] }) };
 
+    auto cameraWidth{ 1.2f
+        * std::max({ mdhConfig.mainView.layers[0].absoluteScale[0], mdhConfig.mainView.layers[0].absoluteScale[1] }) };
+    auto cameraHeight{ cameraWidth / cameraAspectSmall };
+
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, 0, framebufferMultisampleName, cameraFOV,
-        cameraAspectSmall, cameraNear, cameraFar, cameraDistance));
+        cameraAspectSmall, cameraNear, cameraFar, cameraDistance, cameraWidth, cameraHeight, true, false,
+        mdhConfig.mainView.layers[0].absoluteScale[2] != 1.0f));
     extendCopy(world, framebufferMultisampleName, framebufferName,
         { Visconfig::Components::CopyOperationFlag::Color, Visconfig::Components::CopyOperationFlag::Depth },
         Visconfig::Components::CopyOperationFilter::Nearest);
     extentComposition(world, { 0.5f, 1.0f }, { -0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
-        viewCompositionShaderAsset);
+        viewCompositionShaderAsset, 0, false);
     extendCameraSwitcher(world, cameraEntity);
 }
 
@@ -1950,11 +2006,11 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
     for (auto layer{ mdhConfig.config.begin() }; layer != mdhConfig.config.end(); layer++) {
         auto index{ std::distance(mdhConfig.config.begin(), layer) };
 
-        auto textureFrontName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+        auto textureFrontName{ "view_" + std::to_string(subview + 2) + "_cube_texture_" + std::to_string(index)
             + "_front" };
-        auto textureSideName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+        auto textureSideName{ "view_" + std::to_string(subview + 2) + "_cube_texture_" + std::to_string(index)
             + "_side" };
-        auto textureTopName{ "view_" + std::to_string(subview + 2) + " _cube_texture_" + std::to_string(index)
+        auto textureTopName{ "view_" + std::to_string(subview + 2) + "_cube_texture_" + std::to_string(index)
             + "_top" };
 
         auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
@@ -1997,14 +2053,20 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
             mdhConfig.subViews[subview].layers[0].absoluteScale[1],
             mdhConfig.subViews[subview].layers[0].absoluteScale[2] }) };
 
+    auto cameraWidth{ 1.2f
+        * std::max({ mdhConfig.subViews[subview].layers[0].absoluteScale[0],
+            mdhConfig.subViews[subview].layers[0].absoluteScale[1] }) };
+    auto cameraHeight{ cameraWidth / cameraAspect };
+
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview + 2, framebufferMultisampleName,
-        cameraFOV, cameraAspect, cameraNear, cameraFar, cameraDistance));
+        cameraFOV, cameraAspect, cameraNear, cameraFar, cameraDistance, cameraWidth, cameraHeight, false, true,
+        mdhConfig.subViews[subview].layers[0].absoluteScale[2] != 1.0f));
     extendCopy(world, framebufferMultisampleName, framebufferName,
         { Visconfig::Components::CopyOperationFlag::Color, Visconfig::Components::CopyOperationFlag::Depth },
         Visconfig::Components::CopyOperationFilter::Nearest);
     extentComposition(world, { 0.2f, 0.2f }, { 0.7f, (-0.7f + ((numSubViews - 1) * 0.5f)) - (subview * 0.5f) },
-        { renderTextureName }, defaultFramebufferAsset, viewCompositionShaderAsset);
+        { renderTextureName }, defaultFramebufferAsset, viewCompositionShaderAsset, subview + 2, true);
     extendCameraSwitcher(world, cameraEntity);
 }
 
@@ -2041,15 +2103,17 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
                 { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
                     depthBufferMultisampleName } }));
 
-    auto textureBorderWidth = static_cast<std::size_t>(outputViewTextureBorderRelativeWidth
-        * std::min({ mdhConfig.outputView.size[0], mdhConfig.outputView.size[1], mdhConfig.outputView.size[2] }));
+    auto textureBorderWidth = static_cast<std::size_t>(mainViewTextureBorderRelativeWidth
+        * std::pow(mdhConfig.mainView.layers[0].absoluteScale[0] * mdhConfig.mainView.layers[0].absoluteScale[1]
+                * mdhConfig.mainView.layers[0].absoluteScale[2],
+            1.0f / 3.0f));
 
     textureBorderWidth = textureBorderWidth == 0 ? 1 : textureBorderWidth;
 
-    auto textureFrontName{ "view_" + std::to_string(subview) + " _cube_texture_0_front" };
-    auto textureSideName{ "view_" + std::to_string(subview) + " _cube_texture_0_side" };
-    auto textureTopName{ "view_" + std::to_string(subview) + " _cube_texture_0_top" };
-    auto innerLayerTextureName{ "view_" + std::to_string(subview) + " _cube_texture_1" };
+    auto textureFrontName{ "view_" + std::to_string(subview) + "_cube_texture_0_front" };
+    auto textureSideName{ "view_" + std::to_string(subview) + "_cube_texture_0_side" };
+    auto textureTopName{ "view_" + std::to_string(subview) + "_cube_texture_0_top" };
+    auto innerLayerTextureName{ "view_" + std::to_string(subview) + "_cube_texture_1" };
 
     auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
     auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
@@ -2063,7 +2127,7 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     generateTextureFile(textureTopPath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
         static_cast<std::size_t>(mdhConfig.outputView.size[2]), 1, 1, textureBorderWidth);
     generateTextureFile(innerLayerTexturePath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
-        static_cast<std::size_t>(mdhConfig.outputView.size[2]), 1, 1, 0);
+        static_cast<std::size_t>(mdhConfig.outputView.size[1]), 1, 1, 0);
 
     config.assets.push_back(createTextureAsset(textureFrontName, textureFrontPath,
         { Visconfig::Assets::TextureAttributes::MagnificationLinear,
@@ -2084,31 +2148,37 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
 
     auto focusEntity{ numEntities };
     world.entities.push_back(generateCube({ 0, 0, 0 }, mdhConfig.outputView.size, { 0.0f, 0.0f, 0.0f, 0.0f },
-        numEntities++, 0, 1llu << subview, false, textureFrontName, textureSideName, textureTopName));
+        numEntities++, 0, 1llu << subview, false, textureFrontName, textureSideName, textureTopName, cubeMeshAsset));
 
-    /*
     auto parent{ focusEntity };
     for (auto layer{ mdhConfig.outputView.layers.begin() }; layer != mdhConfig.outputView.layers.end(); layer++) {
         auto index{ std::distance(mdhConfig.outputView.layers.begin(), layer) };
+
+        auto meshName{ "view_" + std::to_string(subview) + "_mesh_" + std::to_string(index) };
+        config.assets.push_back(createSimpleCubeMeshAsset(meshName));
+
         auto newParent{ numEntities };
-        world.entities.push_back(generateOutputViewCube(
-            world, mdhConfig, mdhConfig.outputView, numEntities, parent, subview, index, innerLayerTexturePath));
+        world.entities.push_back(generateOutputViewCube(world, mdhConfig, mdhConfig.outputView, numEntities, parent,
+            subview, index, innerLayerTextureName, meshName));
         parent = newParent;
         numEntities++;
     }
-    */
 
     auto cameraDistance{ 2.0f
         * std::max({ mdhConfig.outputView.size[0], mdhConfig.outputView.size[1], mdhConfig.outputView.size[2] }) };
 
+    auto cameraWidth{ 1.2f * std::max({ mdhConfig.outputView.size[0], mdhConfig.outputView.size[1] }) };
+    auto cameraHeight{ cameraWidth / cameraAspectSmall };
+
     auto cameraEntity{ numEntities++ };
     world.entities.push_back(generateViewCamera(cameraEntity, focusEntity, subview, framebufferMultisampleName,
-        cameraFOV, cameraAspectSmall, cameraNear, cameraFar, cameraDistance));
+        cameraFOV, cameraAspectSmall, cameraNear, cameraFar, cameraDistance, cameraWidth, cameraHeight, false, false,
+        mdhConfig.outputView.size[2] != 1.0f));
     extendCopy(world, framebufferMultisampleName, framebufferName,
         { Visconfig::Components::CopyOperationFlag::Color, Visconfig::Components::CopyOperationFlag::Depth },
         Visconfig::Components::CopyOperationFilter::Nearest);
     extentComposition(world, { 0.5f, 1.0f }, { 0.5f, 0.0f }, { renderTextureName }, defaultFramebufferAsset,
-        viewCompositionShaderAsset);
+        viewCompositionShaderAsset, subview, false);
     extendCameraSwitcher(world, cameraEntity);
 }
 

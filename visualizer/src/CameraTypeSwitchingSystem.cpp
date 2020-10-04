@@ -7,6 +7,7 @@
 #include <visualizer/Camera.hpp>
 #include <visualizer/FixedCamera.hpp>
 #include <visualizer/FreeFly.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
@@ -22,21 +23,39 @@ void CameraTypeSwitchingSystem::terminate() { m_componentManager = nullptr; }
 
 void CameraTypeSwitchingSystem::run(void*)
 {
-    auto window{ glfwGetCurrentContext() };
-    auto rKey{ glfwGetKey(window, GLFW_KEY_R) };
-
-    static bool rPressed = false;
-
-    if (rKey == GLFW_PRESS) {
-        rPressed = true;
+    if (isDetached()) {
+        return;
     }
 
-    if (rKey == GLFW_RELEASE && rPressed) {
-        rPressed = false;
+    auto window{ glfwGetCurrentContext() };
+    auto fKey{ glfwGetKey(window, GLFW_KEY_F) };
+    auto gKey{ glfwGetKey(window, GLFW_KEY_G) };
+
+    static bool fPressed = false;
+    static bool gPressed = false;
+
+    if (fKey == GLFW_PRESS) {
+        fPressed = true;
+    }
+
+    if (gKey == GLFW_PRESS) {
+        gPressed = true;
+    }
+
+    if (fKey == GLFW_RELEASE && fPressed) {
+        fPressed = false;
 
         m_cameraQuery.query(*m_componentManager)
             .filter<Camera>([](const Camera* camera) { return camera->m_active; })
             .forEach<Camera>([](Camera* camera) { camera->m_fixed = !camera->m_fixed; });
+    }
+
+    if (gKey == GLFW_RELEASE && gPressed) {
+        gPressed = false;
+
+        m_cameraQuery.query(*m_componentManager)
+            .filter<Camera>([](const Camera* camera) { return camera->m_active; })
+            .forEach<Camera>([](Camera* camera) { camera->perspective = !camera->perspective; });
     }
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include <visualizer/ComponentManager.hpp>
@@ -26,7 +27,9 @@ public:
 private:
     Mesh m_quad;
     EntityQuery m_copyEntityQuery;
+    EntityQuery m_draggableEntityQuery;
     EntityQuery m_compositionEntityQuery;
+    std::optional<std::size_t> m_selected;
     std::shared_ptr<ComponentManager> m_componentManager;
 };
 

@@ -7,6 +7,7 @@
 #include <visualizer/Camera.hpp>
 #include <visualizer/FreeFly.hpp>
 #include <visualizer/Transform.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
@@ -29,6 +30,10 @@ void FreeFlyCameraMovementSystem::terminate() { m_componentManager = nullptr; }
 
 void FreeFlyCameraMovementSystem::run(void*)
 {
+    if (isDetached()) {
+        return;
+    }
+
     auto window{ glfwGetCurrentContext() };
     auto wKey{ glfwGetKey(window, GLFW_KEY_W) };
     auto aKey{ glfwGetKey(window, GLFW_KEY_A) };
@@ -64,41 +69,79 @@ void FreeFlyCameraMovementSystem::run(void*)
 
     glm::vec3 mouseRotation{ m_rotationSpeed * mouseYOffset, m_rotationSpeed * mouseXOffset, 0.0 };
 
-    m_cameraQuery.query(*m_componentManager)
-        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_active && !camera->m_fixed; })
-        .forEach<Transform>([&](Transform* transform) {
-            auto localRight{ transform->rotation * right };
-            auto upRotation{ glm::angleAxis(mouseRotation.y, up) };
-            auto rightRotation{ glm::angleAxis(mouseRotation.x, localRight) };
+    auto activeFreeCameras{ m_cameraQuery.query(*m_componentManager).filter<Camera>([](const Camera* camera) -> bool {
+        return camera->m_active && !camera->m_fixed;
+    }) };
 
-            auto rotation{ upRotation * rightRotation * transform->rotation };
-            transform->rotation = rotation;
+    auto perspectiveCameras{ activeFreeCameras };
+    auto orthographicCameras{ activeFreeCameras };
+    perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
+    orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
 
-            auto rotatedForwards{ rotation * forward };
-            auto rotatedRight{ rotation * right };
-            auto rotatedUp{ rotation * up };
+    perspectiveCameras.forEach<Transform>([&](Transform* transform) {
+        auto localRight{ transform->rotation * right };
+        auto upRotation{ glm::angleAxis(mouseRotation.y, up) };
+        auto rightRotation{ glm::angleAxis(mouseRotation.x, localRight) };
 
-            if (wKey == GLFW_PRESS) {
-                transform->position -= movementSpeed * rotatedForwards;
-            }
-            if (sKey == GLFW_PRESS) {
-                transform->position += movementSpeed * rotatedForwards;
-            }
+        auto rotation{ upRotation * rightRotation * transform->rotation };
+        transform->rotation = rotation;
 
-            if (aKey == GLFW_PRESS) {
-                transform->position -= movementSpeed * rotatedRight;
-            }
-            if (dKey == GLFW_PRESS) {
-                transform->position += movementSpeed * rotatedRight;
-            }
+        auto rotatedForwards{ rotation * forward };
+        auto rotatedRight{ rotation * right };
+        auto rotatedUp{ rotation * up };
 
-            if (qKey == GLFW_PRESS) {
-                transform->position -= movementSpeed * rotatedUp;
-            }
-            if (eKey == GLFW_PRESS) {
-                transform->position += movementSpeed * rotatedUp;
-            }
-        });
+        if (wKey == GLFW_PRESS) {
+            transform->position -= movementSpeed * rotatedForwards;
+        }
+        if (sKey == GLFW_PRESS) {
+            transform->position += movementSpeed * rotatedForwards;
+        }
+
+        if (aKey == GLFW_PRESS) {
+            transform->position -= movementSpeed * rotatedRight;
+        }
+        if (dKey == GLFW_PRESS) {
+            transform->position += movementSpeed * rotatedRight;
+        }
+
+        if (qKey == GLFW_PRESS) {
+            transform->position -= movementSpeed * rotatedUp;
+        }
+        if (eKey == GLFW_PRESS) {
+            transform->position += movementSpeed * rotatedUp;
+        }
+    });
+
+    orthographicCameras.forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
+        transform->rotation = glm::identity<glm::quat>();
+
+        if (wKey == GLFW_PRESS) {
+            transform->position += movementSpeed * up;
+        }
+        if (sKey == GLFW_PRESS) {
+            transform->position -= movementSpeed * up;
+        }
+
+        if (aKey == GLFW_PRESS) {
+            transform->position -= movementSpeed * right;
+        }
+        if (dKey == GLFW_PRESS) {
+            transform->position += movementSpeed * right;
+        }
+
+        if (qKey == GLFW_PRESS) {
+            camera->orthographicWidth += movementSpeed;
+            camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
+        }
+        if (eKey == GLFW_PRESS) {
+            camera->orthographicWidth -= movementSpeed;
+            camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
+
+            camera->orthographicWidth = camera->orthographicWidth <= 5.0f ? 5.0f : camera->orthographicWidth;
+            camera->orthographicHeight = camera->orthographicHeight <= 5.0f ? 5.0f : camera->orthographicHeight;
+        }
+    });
+    ;
 }
 
 }

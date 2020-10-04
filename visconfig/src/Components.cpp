@@ -32,6 +32,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::EntityActivation:
         to_json(j, *std::static_pointer_cast<EntityActivationComponent>(v));
         break;
+    case ComponentType::MeshIteration:
+        to_json(j, *std::static_pointer_cast<MeshIterationComponent>(v));
+        break;
     case ComponentType::ExplicitHeterogeneousIteration:
         to_json(j, *std::static_pointer_cast<ExplicitHeterogeneousIterationComponent>(v));
         break;
@@ -104,6 +107,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::MeshIteration: {
+        auto ptr{ std::make_shared<MeshIterationComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     case ComponentType::ExplicitHeterogeneousIteration: {
         auto ptr{ std::make_shared<ExplicitHeterogeneousIterationComponent>() };
         from_json(j, *ptr);
@@ -154,6 +162,7 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::ImplicitIteration, "implicit_iteration" },
     { ComponentType::ExplicitIteration, "explicit_iteration" },
     { ComponentType::EntityActivation, "entity_activation" },
+    { ComponentType::MeshIteration, "mesh_iteration" },
     { ComponentType::ExplicitHeterogeneousIteration, "explicit_heterogeneous_iteration" },
     { ComponentType::Camera, "camera" },
     { ComponentType::FreeFlyCamera, "free_fly_camera" },
@@ -391,6 +400,20 @@ void from_json(const nlohmann::json& j, EntityActivationComponent& v)
     j[EntityActivationComponent::ticksPerIterationJson].get_to(v.ticksPerIteration);
 }
 
+void to_json(nlohmann::json& j, const MeshIterationComponent& v)
+{
+    j[MeshIterationComponent::dimensionsJson] = v.dimensions;
+    j[MeshIterationComponent::positionsJson] = v.positions;
+    j[MeshIterationComponent::ticksPerIterationJson] = v.ticksPerIteration;
+}
+
+void from_json(const nlohmann::json& j, MeshIterationComponent& v)
+{
+    j[MeshIterationComponent::dimensionsJson].get_to(v.dimensions);
+    j[MeshIterationComponent::positionsJson].get_to(v.positions);
+    j[MeshIterationComponent::ticksPerIterationJson].get_to(v.ticksPerIteration);
+}
+
 void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v)
 {
     j[ExplicitHeterogeneousIterationComponent::scalesJson] = v.scales;
@@ -409,10 +432,13 @@ void to_json(nlohmann::json& j, const CameraComponent& v)
 {
     j[CameraComponent::activeJson] = v.active;
     j[CameraComponent::fixedJson] = v.fixed;
+    j[CameraComponent::perspectiveJson] = v.perspective;
     j[CameraComponent::fovJson] = v.fov;
     j[CameraComponent::farJson] = v.far;
     j[CameraComponent::nearJson] = v.near;
     j[CameraComponent::aspectJson] = v.aspect;
+    j[CameraComponent::orthographicWidthJson] = v.orthographicWidth;
+    j[CameraComponent::orthographicHeightJson] = v.orthographicHeight;
     j[CameraComponent::layerMaskJson] = v.layerMask.to_string();
     j[CameraComponent::targetsJson] = v.targets;
 }
@@ -421,10 +447,13 @@ void from_json(const nlohmann::json& j, CameraComponent& v)
 {
     j[CameraComponent::activeJson].get_to(v.active);
     j[CameraComponent::fixedJson].get_to(v.fixed);
+    j[CameraComponent::perspectiveJson].get_to(v.perspective);
     j[CameraComponent::fovJson].get_to(v.fov);
     j[CameraComponent::farJson].get_to(v.far);
     j[CameraComponent::nearJson].get_to(v.near);
     j[CameraComponent::aspectJson].get_to(v.aspect);
+    j[CameraComponent::orthographicWidthJson].get_to(v.orthographicWidth);
+    j[CameraComponent::orthographicHeightJson].get_to(v.orthographicHeight);
     v.layerMask = std::bitset<64>{ j[CameraComponent::layerMaskJson].get<std::string>() };
     j[CameraComponent::targetsJson].get_to(v.targets);
 }
@@ -986,6 +1015,8 @@ void to_json(nlohmann::json& j, const CompositionOperation& v)
     j[CompositionOperation::sourceTextureJson] = v.sourceTexture;
     j[CompositionOperation::targetJson] = v.target;
     j[CompositionOperation::shaderJson] = v.shader;
+    j[CompositionOperation::idJson] = v.id;
+    j[CompositionOperation::draggableJson] = v.draggable;
 }
 
 void from_json(const nlohmann::json& j, CompositionOperation& v)
@@ -995,6 +1026,8 @@ void from_json(const nlohmann::json& j, CompositionOperation& v)
     j[CompositionOperation::sourceTextureJson].get_to(v.sourceTexture);
     j[CompositionOperation::targetJson].get_to(v.target);
     j[CompositionOperation::shaderJson].get_to(v.shader);
+    j[CompositionOperation::idJson].get_to(v.id);
+    j[CompositionOperation::draggableJson].get_to(v.draggable);
 }
 
 void to_json(nlohmann::json& j, const CopyOperation& v)

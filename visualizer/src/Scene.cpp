@@ -344,6 +344,9 @@ void addEntity(
         case Visconfig::Components::ComponentType::EntityActivation:
             archetype = EntityArchetype::with<EntityActivation>(archetype);
             break;
+        case Visconfig::Components::ComponentType::MeshIteration:
+            archetype = EntityArchetype::with<MeshIteration>(archetype);
+            break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
             archetype = EntityArchetype::with<HeterogeneousIteration>(archetype);
             break;
@@ -360,7 +363,7 @@ void addEntity(
             archetype = EntityArchetype::with<ActiveCameraSwitcher>(archetype);
             break;
         case Visconfig::Components::ComponentType::Composition:
-            archetype = EntityArchetype::with<Composition>(archetype);
+            archetype = EntityArchetype::with<Composition, Draggable>(archetype);
             break;
         case Visconfig::Components::ComponentType::Copy:
             archetype = EntityArchetype::with<Copy>(archetype);
@@ -1125,6 +1128,42 @@ void initializeComponent(ComponentManager& manager, Entity entity,
     entityActivation.tick = 0;
 }
 
+void initializeComponent(
+    ComponentManager& manager, Entity entity, const Visconfig::Components::MeshIterationComponent& component)
+{
+    std::vector<glm::u64vec3> positions{};
+    positions.reserve(component.positions.size());
+
+    for (auto& pos : component.positions) {
+        positions.push_back({
+            static_cast<uint64_t>(glm::abs(pos[0])),
+            static_cast<uint64_t>(glm::abs(pos[1])),
+            static_cast<uint64_t>(glm::abs(pos[2])),
+        });
+    }
+
+    std::vector<std::size_t> ticks{};
+    ticks.reserve(component.ticksPerIteration.size());
+
+    for (auto tick : component.ticksPerIteration) {
+        ticks.push_back(tick);
+    }
+
+    std::vector<bool> grid{};
+    grid.resize(component.dimensions[0] * component.dimensions[1] * component.dimensions[2], false);
+    grid[0] = true;
+
+    auto& meshIteration{ *static_cast<MeshIteration*>(
+        manager.getEntityComponentPointer(entity, getTypeId<MeshIteration>())) };
+    meshIteration.dimensions = component.dimensions;
+    meshIteration.grid = std::move(grid);
+    meshIteration.positions = std::move(positions);
+    meshIteration.ticksPerIteration = std::move(ticks);
+    meshIteration.index = 0;
+    meshIteration.tick = 0;
+    meshIteration.initialized = false;
+}
+
 void initializeComponent(ComponentManager& manager, Entity entity,
     const Visconfig::Components::ExplicitHeterogeneousIterationComponent& component)
 {
@@ -1162,7 +1201,8 @@ void initializeComponent(
     }
 
     *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>()))
-        = Camera{ component.active, component.fixed, component.fov, component.far, component.near, component.aspect,
+        = Camera{ component.active, component.fixed, component.perspective, component.fov, component.far,
+              component.near, component.aspect, component.orthographicWidth, component.orthographicHeight,
               RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
 }
 
@@ -1205,8 +1245,10 @@ void initializeComponent(
     std::vector<CompositionOperation> operations{};
     operations.reserve(component.operations.size());
 
-    for (auto& operation : component.operations) {
+    std::vector<BoundingBox> boxes{};
+    boxes.reserve(component.operations.size());
 
+    for (auto& operation : component.operations) {
         auto position{ glm::make_vec2(operation.position) };
         auto scale{ glm::make_vec2(operation.scale) };
 
@@ -1226,13 +1268,21 @@ void initializeComponent(
         auto framebufferAsset{ std::static_pointer_cast<Framebuffer>(
             std::const_pointer_cast<void>(AssetDatabase::getAsset(operation.target).data)) };
 
-        operations.push_back({ std::move(material),
+        operations.push_back({ operation.id, std::move(material),
             Transform{ glm::identity<glm::quat>(), glm::vec3{ position, 0 }, glm::vec3{ scale, 0 } },
             std::move(sources), std::move(framebufferAsset) });
+
+        if (operation.draggable) {
+            boxes.push_back({ operation.id, position.x - scale.x, position.y + scale.y, position.x + scale.x,
+                position.y - scale.y });
+        }
     }
 
     *static_cast<Composition*>(manager.getEntityComponentPointer(entity, getTypeId<Composition>()))
         = Composition{ std::move(operations) };
+
+    *static_cast<Draggable*>(manager.getEntityComponentPointer(entity, getTypeId<Draggable>()))
+        = Draggable{ std::move(boxes) };
 }
 
 void initializeComponent(
@@ -1323,6 +1373,10 @@ void initializeEntity(ComponentManager& manager, const std::unordered_map<std::s
             initializeComponent(manager, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::EntityActivationComponent>(component.data),
                 entityIdMap);
+            break;
+        case Visconfig::Components::ComponentType::MeshIteration:
+            initializeComponent(manager, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::MeshIterationComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
             initializeComponent(manager, ecs_entity,

@@ -8,6 +8,7 @@
 #include <visualizer/FixedCamera.hpp>
 #include <visualizer/Parent.hpp>
 #include <visualizer/Transform.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
@@ -46,6 +47,10 @@ glm::quat safeQuatLookAt(
 
 void FixedCameraMovementSystem::run(void*)
 {
+    if (isDetached()) {
+        return;
+    }
+
     auto window{ glfwGetCurrentContext() };
     auto wKey{ glfwGetKey(window, GLFW_KEY_W) };
     auto aKey{ glfwGetKey(window, GLFW_KEY_A) };
@@ -67,10 +72,17 @@ void FixedCameraMovementSystem::run(void*)
         movementSpeed *= 10;
     }
 
-    m_cameraQuery.query(*m_componentManager)
-        .filter<Camera>([](const Camera* camera) -> bool { return camera->m_fixed; })
-        .forEach<Camera, FixedCamera, Transform>([&](const Camera* camera, FixedCamera* fixedCamera,
-                                                     Transform* transform) {
+    auto fixedCameras{ m_cameraQuery.query(*m_componentManager).filter<Camera>([](const Camera* camera) -> bool {
+        return camera->m_fixed;
+    }) };
+
+    auto perspectiveCameras{ fixedCameras };
+    auto orthographicCameras{ fixedCameras };
+    perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
+    orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
+
+    perspectiveCameras.forEach<Camera, FixedCamera, Transform>(
+        [&](const Camera* camera, FixedCamera* fixedCamera, Transform* transform) {
             if (camera->m_active) {
                 if (wKey == GLFW_PRESS) {
                     fixedCamera->verticalAngle -= movementSpeed;
@@ -101,14 +113,14 @@ void FixedCameraMovementSystem::run(void*)
                 }
 
                 if (qKey == GLFW_PRESS) {
+                    fixedCamera->distance += movementSpeed;
+                }
+
+                if (eKey == GLFW_PRESS) {
                     fixedCamera->distance -= movementSpeed;
                     if (fixedCamera->distance <= 0.0005f) {
                         fixedCamera->distance = 0.0005f;
                     }
-                }
-
-                if (eKey == GLFW_PRESS) {
-                    fixedCamera->distance += movementSpeed;
                 }
             }
 
@@ -141,6 +153,52 @@ void FixedCameraMovementSystem::run(void*)
 
             transform->position = cameraPosition;
             transform->rotation = rotation;
+        });
+
+    orthographicCameras.forEach<Camera, FixedCamera, Transform>(
+        [&](Camera* camera, FixedCamera* fixedCamera, Transform* transform) {
+            if (camera->m_active) {
+                fixedCamera->horizontalAngle = 0.0f;
+                fixedCamera->verticalAngle = glm::pi<float>() / 2;
+
+                if (qKey == GLFW_PRESS) {
+                    fixedCamera->distance += movementSpeed;
+                }
+
+                if (eKey == GLFW_PRESS) {
+                    fixedCamera->distance -= movementSpeed;
+                    if (fixedCamera->distance <= 0.0005f) {
+                        fixedCamera->distance = 0.0005f;
+                    }
+                }
+            }
+
+            auto parent{ static_cast<const Parent*>(
+                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Parent>())) };
+            auto modelMatrix{ getModelMatrix(*static_cast<const Transform*>(
+                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Transform>()))) };
+
+            while (parent != nullptr) {
+                auto parentTransform{ static_cast<const Transform*>(
+                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
+                modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
+                parent = static_cast<const Parent*>(
+                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+            }
+
+            glm::vec4 position{ glm::sin(fixedCamera->verticalAngle) * glm::sin(fixedCamera->horizontalAngle)
+                    * fixedCamera->distance,
+                glm::cos(fixedCamera->verticalAngle) * fixedCamera->distance,
+                glm::sin(fixedCamera->verticalAngle) * glm::cos(fixedCamera->horizontalAngle) * fixedCamera->distance,
+                1.0f };
+
+            auto cameraPosition{ modelMatrix * position };
+
+            transform->position = cameraPosition;
+            transform->rotation = glm::identity<glm::quat>();
+
+            camera->orthographicWidth = fixedCamera->distance;
+            camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
         });
 }
 

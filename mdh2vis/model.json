@@ -6,7 +6,7 @@
     "colors": {
       "tile":                 [  0, 255,   0, 128],
       "memory":               [  0, 255,   0, 192],
-      "thread":               [255, 255, 255, 192],
+      "thread":               [128,   0,   0, 192],
       "tile_out_of_border":   [255,   0,   0, 192],
       "thread_out_of_border": [255,   0,   0, 192]
     }
@@ -18,7 +18,7 @@
     "colors": {
       "tile":                 [  0,   0, 255, 128],
       "memory":               [  0,   0, 255, 192],
-      "thread":               [192, 192, 192, 192],
+      "thread":               [  0, 128,   0, 192],
       "tile_out_of_border":   [255,   0,   0, 192],
       "thread_out_of_border": [255,   0,   0, 192]
     }
@@ -30,7 +30,7 @@
     "colors": {
       "tile":                 [255,   0,   0, 128],
       "memory":               [255,   0,   0, 192],
-      "thread":               [128, 128, 128, 192],
+      "thread":               [  0,   0, 128, 192],
       "tile_out_of_border":   [255,   0,   0, 192],
       "thread_out_of_border": [255,   0,   0, 192]
     }

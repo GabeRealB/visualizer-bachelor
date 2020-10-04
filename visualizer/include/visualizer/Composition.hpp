@@ -9,6 +9,7 @@
 namespace Visualizer {
 
 struct CompositionOperation {
+    std::size_t id;
     Material material;
     Transform transform;
     std::vector<std::shared_ptr<Texture2D>> source;
@@ -28,6 +29,18 @@ struct CopyOperation {
 
 struct Copy {
     std::vector<CopyOperation> operations;
+};
+
+struct BoundingBox {
+    std::size_t id;
+    double xStart;
+    double yStart;
+    double xEnd;
+    double yEnd;
+};
+
+struct Draggable {
+    std::vector<BoundingBox> boxes;
 };
 
 }
