@@ -3,6 +3,7 @@
 \RequirePackage{hyphenat} % Hyphenation of words containing analphabetic characters
 \RequirePackage[babel=true,tracking=true]{microtype} % Micro-typographic refinements
 \RequirePackage{listings} % Source code
+\usepackage{xcolor,colortbl} % Colors
 
 % Default settings
 \lstset{
@@ -32,8 +33,12 @@
 \usetheme{Madrid}
 \usecolortheme{beaver}
 
+\definecolor{red}{rgb}{0.8,0,0}
+\definecolor{green}{rgb}{0,0.8,0}
+\definecolor{blue}{rgb}{0,0,0.8}
+
 % Information
-\title{MDH Visualisierung}
+\title{Code-Generierung und -Optimierung für Deep-Learning-Anwendungen auf modernen Prozessoren}
 \author{Gabriel Borrelli}
 \date{\today}
 
