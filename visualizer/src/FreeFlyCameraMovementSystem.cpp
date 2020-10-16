@@ -1,6 +1,10 @@
 #include <visualizer/FreeFlyCameraMovementSystem.hpp>
 
+#if __has_include(<glad\glad.h>)
 #include <glad\glad.h>
+#else
+#include <glad.h>
+#endif
 
 #include <GLFW/glfw3.h>
 
