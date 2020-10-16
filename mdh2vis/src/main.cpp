@@ -1163,7 +1163,7 @@ Visconfig::Entity generateMainViewCube(const ProcessedConfig& mdhConfig, const M
     diffuseColor->value[1] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[1]) / 255.0f;
     diffuseColor->value[2] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f;
     diffuseColor->value[3] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[3]) / 255.0f;
-    diffuseColor->value[3] = interpolateLinear(
+    diffuseColor->value[3] = interpolateLinear<std::size_t>(
         minTransparency, maxTransparency, 0ull, view.layers.size() + view.threads.size() - 1, layerNumber);
 
     material.asset = cubeShaderAsset;
@@ -1290,7 +1290,7 @@ Visconfig::Entity generateMainViewThreadCube(const ProcessedConfig& mdhConfig, c
     diffuseColor->value[1] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[1]) / 255.0f;
     diffuseColor->value[2] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[2]) / 255.0f;
     diffuseColor->value[3] = static_cast<float>(mdhConfig.config[layerNumber].model.colors.thread[3]) / 255.0f;
-    diffuseColor->value[3] = interpolateLinear(minTransparency, maxTransparency, 0ull,
+    diffuseColor->value[3] = interpolateLinear<std::size_t>(minTransparency, maxTransparency, 0ull,
         view.layers.size() + view.threads.size() - 1, view.layers.size() + layerNumber);
 
     material.asset = cubeShaderAsset;
@@ -1491,7 +1491,7 @@ Visconfig::Entity generateOutputViewCube(Visconfig::World& world, const Processe
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[0]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[1]) / 255.0f,
         static_cast<float>(mdhConfig.config[layerNumber].model.colors.tile[2]) / 255.0f,
-        interpolateLinear(minTransparency, maxTransparency, 0ull,
+        interpolateLinear<std::size_t>(minTransparency, maxTransparency, 0ull,
             mdhConfig.mainView.layers.size() + mdhConfig.mainView.threads.size() - 1, layerNumber),
     };
 
@@ -1616,8 +1616,8 @@ Visconfig::Entity generateSubViewCube(const ProcessedConfig& mdhConfig, const Su
     diffuseColor->value[2] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[2]) / 255.0f;
     diffuseColor->value[3] = static_cast<float>(mdhConfig.config[colorLayer].model.colors.memory[3]) / 255.0f;
     diffuseColor->value[3]
-        = interpolateLinear(minTransparency, maxTransparency, 0ull, view.layers.size() - 1, layerNumber);
-    diffuseColor->value[3] = interpolateLinear(minTransparency, maxTransparency, 0ull,
+        = interpolateLinear<std::size_t>(minTransparency, maxTransparency, 0ull, view.layers.size() - 1, layerNumber);
+    diffuseColor->value[3] = interpolateLinear<std::size_t>(minTransparency, maxTransparency, 0ull,
         mdhConfig.mainView.layers.size() + mdhConfig.mainView.threads.size() - 1, layerNumber);
 
     material.asset = cubeShaderAsset;
