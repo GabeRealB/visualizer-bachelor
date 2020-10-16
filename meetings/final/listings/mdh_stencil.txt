@@ -1,0 +1,18 @@
+// MDH
+mdh_hom( f, (++, ++) ) 
+    !$\circ$! view( in )( i,j )( in[i,j+1], in[i+1,j], in[i+1,j+1], in[i+1,j+2], in[i+2,j+1] )
+
+// JSON
+{
+  "MDH": {
+    "combine operators": ["CC", "CC"]
+  },
+  "views": {
+    "input": {
+      "in": [ ["i1","i2+1",0], ["i1+1","i2",0], ["i1+1","i2+1",0], ["i1+1","i2+2",0], ["i1+2","i2+1",0] ]
+    },
+    "output": {
+      "out": [ ["i1","i2",0] ]
+    }
+  }
+}

@@ -1,0 +1,18 @@
+// MDH
+md_hom( *, (++, ++, +) ) !$\circ$! view( A, B )( i,j,k )( A[i,k], B[k,j] )
+
+// JSON
+{
+  "MDH": {
+    "combine operators": ["CC", "CC", "CB"]
+  },
+  "views": {
+    "input": {
+      "A": [ ["i1","i3",0] ],
+      "B": [ ["i3","i2",0] ]
+    },
+    "output": {
+      "C": [ ["i1","i2",0] ]
+    }
+  }
+}

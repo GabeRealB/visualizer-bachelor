@@ -4,9 +4,12 @@
 \RequirePackage[babel=true,tracking=true]{microtype} % Micro-typographic refinements
 \RequirePackage{listings} % Source code
 \usepackage{xcolor,colortbl} % Colors
+\usepackage{media9, multimedia} % Media
 
 % Default settings
 \lstset{
+    escapeinside={(*@}{@*)},
+    escapechar=!,
     numberstyle = \tiny\color{Gray0},
     numbersep = 1em,
     tabsize = 4,

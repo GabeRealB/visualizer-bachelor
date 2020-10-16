@@ -1,0 +1,21 @@
+{
+  "layer 0": {
+    !\textcolor{blue}{"SIG\_array\_to\_OCL": [2, 0, 1]}!,
+    !\textcolor{blue}{"SIG\_mdh-do": [0, 1, 2]}!,
+    !\textcolor{blue}{"SIG\_buffer-do": \{ 
+      "A": [ 0, 1, 2 ],
+      "B": [ 0, 1, 2 ] \}
+    }!,
+    "TILE_SIZE": [ 32, 32, 32 ],
+    "NUM_THREADS": [ 1, 1, 1 ],
+    "MEM_REGION_INP": {
+      "A": 0,
+      "B": 0
+    },
+    "MEM_REGION_RES": {
+      "C": 0
+    },
+    !\textcolor{blue}{"CMB\_RES": false}!
+  },
+  ...
+}

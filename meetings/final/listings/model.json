@@ -1,0 +1,15 @@
+{
+  "layer 0": {
+    !\textcolor{blue}{"name": "global layer"}!,
+    !\textcolor{blue}{"name\_threads": "DEV"}!,
+    !\textcolor{blue}{"name\_memory":  "GM"}!,
+    "colors": {
+      "tile": [0, 255, 0, 128],
+      "memory": [0, 255, 0, 192],
+      "thread": [128, 0, 0, 192],
+      !\textcolor{blue}{"tile\_out\_of\_border": [255, 0, 0, 192]}!,
+      !\textcolor{blue}{"thread\_out\_of\_border": [255, 0, 0, 192]}!
+    }
+  },
+  ...
+}

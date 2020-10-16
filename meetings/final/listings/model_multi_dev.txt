@@ -1,0 +1,27 @@
+// JSON Multi-Dev
+{
+    "layer 0": {
+        "name": "global layer",
+        "name_threads": "",
+        "name_memory":  "",
+        "colors": {
+            "tile":                 [  0, 255,   0, 128],
+            "memory":               [  0, 255,   0, 192],
+            "thread":               [128,   0,   0, 192],
+            "tile_out_of_border":   [255,   0,   0, 192],
+            "thread_out_of_border": [255,   0,   0, 192]
+        }
+    },
+    "layer 1": {
+        "name": "local layer",
+        "name_threads": "DEV",
+        "name_memory":  "DEV",
+        "colors": {
+            "tile":                 [  0, 255,   0, 128],
+            "memory":               [  0, 255,   0, 192],
+            "thread":               [128,   0,   0, 192],
+            "tile_out_of_border":   [255,   0,   0, 192],
+            "thread_out_of_border": [255,   0,   0, 192]
+        }
+    }
+}

@@ -1,0 +1,29 @@
+// JSON Cuda
+{
+    "layer 0": {
+        "name": "global layer",
+        "name_threads": "GPU",
+        "name_memory":  "DM",
+        "colors": {
+            "tile":                 [  0, 255,   0, 128],
+            "memory":               [  0, 255,   0, 192],
+            "thread":               [128,   0,   0, 192],
+            "tile_out_of_border":   [255,   0,   0, 192],
+            "thread_out_of_border": [255,   0,   0, 192]
+        }
+    },
+    "layer 1": {
+        "name": "shared layer",
+        "name_threads": "SMX",
+        "name_memory":  "SM",
+        "colors": {
+            "tile":                 [  0, 255,   0, 128],
+            "memory":               [  0, 255,   0, 192],
+            "thread":               [128,   0,   0, 192],
+            "tile_out_of_border":   [255,   0,   0, 192],
+            "thread_out_of_border": [255,   0,   0, 192]
+        }
+    },
+    "layer 2": { ... },
+    "layer 3": { ... }
+}
