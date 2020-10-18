@@ -1,26 +1,17 @@
-## Toolchain
+## Requirements
 
-- C++-Standard: ISO-C++ 17
-- Compiler Flags: `-Werror -Wall -Wextra -Wpedantic -O2`
-- Build: CMake
-- Style guide: [Webkit](https://webkit.org/code-style-guidelines/)
-    - Umsetzung mit `clang-format`/`clang-tidy`
-- Dokumentation: javadoc
-- Tests: [doctest](https://github.com/onqtam/doctest)
-- Git:
-    - [Repo]
-    - Gitflow Workflow
-    - Rebase statt Mergen
+- C++20 support (GCC-10, Clang-10)
+- CMake 3.13
+- Python 3
 
-## Repo-Aufbau
+## Building
 
-- extern/
-- include/
-- src/
-- test/
-
-## Todo
-
-- Externe Builds aus CMake entfernen, falls möglich
-- S. Präsentation 28.4.
-- `tiling` durch `tiling_size` oder ähnliches ersetzen
+```bash
+git submodule update --init --recurse
+./vcpkg/bootstrap-vcpkg.sh
+./vcpkg/vcpkg install --feature-flags=manifests
+echo "gemm_mdh.json" > ./mdh2vis/mdh_path.txt
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
+cmake --build .
+```
