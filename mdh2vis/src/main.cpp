@@ -182,6 +182,7 @@ int main(int argc, char* argv[])
     auto config{ processConfig(*mdhConfig) };
     printConfigInfo(config);
 
+    generateAssetsDirectory(workingDir);
     auto visConfig{ generateConfig(config) };
     Visconfig::to_file(workingDir / "visconfig.json", visConfig);
 }
@@ -741,14 +742,17 @@ template <typename T> float interpolateLinear(float startValue, float endValue, 
     }
 }
 
-void generateAssetsDirectory()
+void generateAssetsDirectory(const std::filesystem::path& workingDir)
 {
-    if (std::filesystem::exists(assetsDirectory)) {
-        std::filesystem::remove_all(assetsDirectory);
+    auto assetPath{ workingDir / assetsDirectory };
+    auto assetTexturePath{ workingDir / assetsTextureDirectory };
+
+    if (std::filesystem::exists(assetPath)) {
+        std::filesystem::remove_all(assetPath);
     }
 
-    std::filesystem::create_directory(assetsDirectory);
-    std::filesystem::create_directory(assetsTextureDirectory);
+    std::filesystem::create_directories(assetPath);
+    std::filesystem::create_directory(assetTexturePath);
 }
 
 void generateTextureFile(const std::string& name, std::size_t width, std::size_t height, std::size_t subdivisionsX,
@@ -2206,8 +2210,6 @@ Visconfig::Config generateConfig(const ProcessedConfig& config)
     visconfig.options.screenWidth = screenWidth;
     visconfig.options.screenMSAASamples = screenMSAASamples;
     visconfig.options.screenFullscreen = screenFullscreen;
-
-    generateAssetsDirectory();
 
     visconfig.assets.push_back(createCubeMeshAsset());
     visconfig.assets.push_back(createCubeTextureAsset());
