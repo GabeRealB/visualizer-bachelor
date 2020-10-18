@@ -117,6 +117,8 @@ ProcessedConfig processConfig(const MDH2Vis::MDHConfig& config);
 
 Visconfig::Config generateConfig(const ProcessedConfig& config);
 
+void generateAssetsDirectory(const std::filesystem::path& workingDir);
+
 int main(int argc, char* argv[])
 {
     if (argc != 5 && argc != 7) {
@@ -183,7 +185,7 @@ int main(int argc, char* argv[])
     printConfigInfo(config);
 
     generateAssetsDirectory(workingDir);
-    auto visConfig{ generateConfig(config) };
+    auto visConfig{ generateConfig(config, workingDir) };
     Visconfig::to_file(workingDir / "visconfig.json", visConfig);
 }
 
@@ -1768,8 +1770,8 @@ void extendCopy(Visconfig::World& world, const std::string& source, const std::s
     copyComponent->operations.push_back(Visconfig::Components::CopyOperation{ source, destination, flags, filter });
 }
 
-void generateMainViewConfig(
-    Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world, std::size_t& numEntities)
+void generateMainViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
+    std::size_t& numEntities, const std::filesystem::path& workingDir)
 {
     constexpr auto renderTextureName{ "render_texture_0" };
     constexpr auto depthBufferName{ "renderbuffer_depth_0" };
@@ -1823,9 +1825,12 @@ void generateMainViewConfig(
         auto textureSideName{ "view_0_cube_texture_" + std::to_string(index) + "_side" };
         auto textureTopName{ "view_0_cube_texture_" + std::to_string(index) + "_top" };
 
-        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
-        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
-        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+        auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
+            + ".png" };
+        auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
+            + ".png" };
+        auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName
+            + ".png" };
 
         if (static_cast<std::size_t>(index) == mdhConfig.mainView.layers.size() - 1) {
             generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
@@ -1966,7 +1971,7 @@ void generateMainViewConfig(
 }
 
 void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
-    std::size_t& numEntities, std::size_t subview, std::size_t numSubViews)
+    std::size_t& numEntities, std::size_t subview, std::size_t numSubViews, const std::filesystem::path& workingDir)
 {
     auto renderTextureName{ "render_texture_" + std::to_string(subview + 2) };
     auto depthBufferName{ "renderbuffer_depth_" + std::to_string(subview + 2) };
@@ -2017,9 +2022,12 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
         auto textureTopName{ "view_" + std::to_string(subview + 2) + "_cube_texture_" + std::to_string(index)
             + "_top" };
 
-        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
-        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
-        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+        auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
+            + ".png" };
+        auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
+            + ".png" };
+        auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName
+            + ".png" };
 
         generateTextureFile(textureFrontPath,
             static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[0]),
@@ -2075,7 +2083,7 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
 }
 
 void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& mdhConfig, Visconfig::World& world,
-    std::size_t& numEntities, std::size_t subview)
+    std::size_t& numEntities, std::size_t subview, const std::filesystem::path& workingDir)
 {
     auto renderTextureName{ "render_texture_" + std::to_string(subview) };
     auto depthBufferName{ "renderbuffer_depth_" + std::to_string(subview) };
@@ -2119,10 +2127,13 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     auto textureTopName{ "view_" + std::to_string(subview) + "_cube_texture_0_top" };
     auto innerLayerTextureName{ "view_" + std::to_string(subview) + "_cube_texture_1" };
 
-    auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
-    auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
-    auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
-    auto innerLayerTexturePath{ std::string{ assetsTextureDirectory } + "/" + innerLayerTextureName + ".png" };
+    auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
+        + ".png" };
+    auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
+        + ".png" };
+    auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+    auto innerLayerTexturePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/"
+        + innerLayerTextureName + ".png" };
 
     generateTextureFile(textureFrontPath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
         static_cast<std::size_t>(mdhConfig.outputView.size[1]), 1, 1, textureBorderWidth);
@@ -2186,23 +2197,23 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     extendCameraSwitcher(world, cameraEntity);
 }
 
-void generateWorld(Visconfig::Config& config, const ProcessedConfig& mdhConfig)
+void generateWorld(Visconfig::Config& config, const ProcessedConfig& mdhConfig, const std::filesystem::path& workingDir)
 {
     Visconfig::World world{};
 
     std::size_t numEntities{ 0 };
     world.entities.push_back(generateCoordinatorEntity(numEntities++));
-    generateMainViewConfig(config, mdhConfig, world, numEntities);
-    generateOutputViewConfig(config, mdhConfig, world, numEntities, 1);
+    generateMainViewConfig(config, mdhConfig, world, numEntities, workingDir);
+    generateOutputViewConfig(config, mdhConfig, world, numEntities, 1, workingDir);
 
     for (auto pos{ mdhConfig.subViews.begin() }; pos != mdhConfig.subViews.end(); pos++) {
         auto index{ std::distance(mdhConfig.subViews.begin(), pos) };
-        generateSubViewConfig(config, mdhConfig, world, numEntities, index, mdhConfig.subViews.size());
+        generateSubViewConfig(config, mdhConfig, world, numEntities, index, mdhConfig.subViews.size(), workingDir);
     }
     config.worlds.push_back(world);
 }
 
-Visconfig::Config generateConfig(const ProcessedConfig& config)
+Visconfig::Config generateConfig(const ProcessedConfig& config, const std::filesystem::path& workingDir)
 {
     Visconfig::Config visconfig{};
 
@@ -2219,7 +2230,7 @@ Visconfig::Config generateConfig(const ProcessedConfig& config)
         viewCompositionShaderVertexPath, viewCompositionShaderFragmentPath, viewCompositionShaderAsset));
     visconfig.assets.push_back(createDefaultFramebufferAsset());
 
-    generateWorld(visconfig, config);
+    generateWorld(visconfig, config, workingDir);
 
     return visconfig;
 }
