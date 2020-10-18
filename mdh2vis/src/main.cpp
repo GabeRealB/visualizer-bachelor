@@ -115,7 +115,7 @@ void printConfigInfo(const ProcessedConfig& config);
 
 ProcessedConfig processConfig(const MDH2Vis::MDHConfig& config);
 
-Visconfig::Config generateConfig(const ProcessedConfig& config);
+Visconfig::Config generateConfig(const ProcessedConfig& config, const std::filesystem::path& workingDir);
 
 void generateAssetsDirectory(const std::filesystem::path& workingDir);
 
