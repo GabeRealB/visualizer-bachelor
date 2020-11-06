@@ -1825,12 +1825,15 @@ void generateMainViewConfig(Visconfig::Config& config, const ProcessedConfig& md
         auto textureSideName{ "view_0_cube_texture_" + std::to_string(index) + "_side" };
         auto textureTopName{ "view_0_cube_texture_" + std::to_string(index) + "_top" };
 
-        auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
-            + ".png" };
-        auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
-            + ".png" };
-        auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName
-            + ".png" };
+        auto textureFrontPath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" })
+                                   .string() };
+        auto textureSidePath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" })
+                                  .string() };
+        auto textureTopPath{ (
+            workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" })
+                                 .string() };
 
         if (static_cast<std::size_t>(index) == mdhConfig.mainView.layers.size() - 1) {
             generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
@@ -1891,9 +1894,15 @@ void generateMainViewConfig(Visconfig::Config& config, const ProcessedConfig& md
         auto textureTopName{ "view_0_cube_texture_" + std::to_string(index + mdhConfig.mainView.layers.size())
             + "_top" };
 
-        auto textureFrontPath{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" };
-        auto textureSidePath{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" };
-        auto textureTopPath{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
+        auto textureFrontPath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" }
+                  .string()) };
+        auto textureSidePath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" }
+                  .string()) };
+        auto textureTopPath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" }
+                  .string()) };
 
         if (static_cast<std::size_t>(index) == mdhConfig.mainView.threads.size() - 1) {
             generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
@@ -2022,12 +2031,15 @@ void generateSubViewConfig(Visconfig::Config& config, const ProcessedConfig& mdh
         auto textureTopName{ "view_" + std::to_string(subview + 2) + "_cube_texture_" + std::to_string(index)
             + "_top" };
 
-        auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
-            + ".png" };
-        auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
-            + ".png" };
-        auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName
-            + ".png" };
+        auto textureFrontPath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" })
+                                   .string() };
+        auto textureSidePath{ (workingDir
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" })
+                                  .string() };
+        auto textureTopPath{ (
+            workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" })
+                                 .string() };
 
         generateTextureFile(textureFrontPath,
             static_cast<std::size_t>(mdhConfig.subViews[subview].layers[index].absoluteScale[0]),
@@ -2127,13 +2139,18 @@ void generateOutputViewConfig(Visconfig::Config& config, const ProcessedConfig& 
     auto textureTopName{ "view_" + std::to_string(subview) + "_cube_texture_0_top" };
     auto innerLayerTextureName{ "view_" + std::to_string(subview) + "_cube_texture_1" };
 
-    auto textureFrontPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureFrontName
-        + ".png" };
-    auto textureSidePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureSideName
-        + ".png" };
-    auto textureTopPath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" };
-    auto innerLayerTexturePath{ workingDir.string() + std::string{ assetsTextureDirectory } + "/"
-        + innerLayerTextureName + ".png" };
+    auto textureFrontPath{ (
+        workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" })
+                               .string() };
+    auto textureSidePath{ (
+        workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" })
+                              .string() };
+    auto textureTopPath{ (
+        workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" })
+                             .string() };
+    auto innerLayerTexturePath{ (workingDir
+        / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + innerLayerTextureName + ".png" })
+                                    .string() };
 
     generateTextureFile(textureFrontPath, static_cast<std::size_t>(mdhConfig.outputView.size[0]),
         static_cast<std::size_t>(mdhConfig.outputView.size[1]), 1, 1, textureBorderWidth);
