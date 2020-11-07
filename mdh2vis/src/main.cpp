@@ -1895,14 +1895,14 @@ void generateMainViewConfig(Visconfig::Config& config, const ProcessedConfig& md
             + "_top" };
 
         auto textureFrontPath{ (workingDir
-            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" }
-                  .string()) };
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureFrontName + ".png" })
+                                   .string() };
         auto textureSidePath{ (workingDir
-            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" }
-                  .string()) };
-        auto textureTopPath{ (workingDir
-            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" }
-                  .string()) };
+            / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureSideName + ".png" })
+                                  .string() };
+        auto textureTopPath{ (
+            workingDir / std::filesystem::path{ std::string{ assetsTextureDirectory } + "/" + textureTopName + ".png" })
+                                 .string() };
 
         if (static_cast<std::size_t>(index) == mdhConfig.mainView.threads.size() - 1) {
             generateTextureFile(textureFrontPath, static_cast<std::size_t>(layer->absoluteScale[0]),
