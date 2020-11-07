@@ -94,8 +94,13 @@ int run(const std::filesystem::path& configurationPath)
         return 1;
     }
 
+    glfwSetErrorCallback(
+        [](int code, const char* desc) { std::cerr << "Error: " << code << ". Description: " << desc << std::endl; });
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_SAMPLES, config.options.screenMSAASamples);
     g_window = createWindow(config);
     if (!g_window) {
