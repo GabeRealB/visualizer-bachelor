@@ -62,7 +62,15 @@ std::size_t EntityComponentLayoutMap::size() const
 
 std::size_t EntityComponentLayoutMap::count() const { return m_layoutInfos.size(); }
 
-std::size_t EntityComponentLayoutMap::stride() const { return size() % alignment(); }
+std::size_t EntityComponentLayoutMap::stride() const
+{
+    const auto rest{ size() % alignment() };
+    if (rest != 0) {
+        return alignment() - rest;
+    } else {
+        return 0;
+    }
+}
 
 std::size_t EntityComponentLayoutMap::alignment() const { return m_layoutInfos.front().alignment; }
 
@@ -103,6 +111,7 @@ EntityComponentMap::EntityComponentMap(const EntityArchetype& archetype)
     m_entities.assign(10, { 0, 0 });
     m_componentsSpan = { m_componentsData.get(), m_componentLayoutMap.paddedSize() * 10 };
     m_entityMap.reserve(10);
+    assert(m_componentsData.get() != nullptr);
     assert(reinterpret_cast<std::uintptr_t>(m_componentsData.get()) % m_componentLayoutMap[0].value().alignment == 0);
 }
 

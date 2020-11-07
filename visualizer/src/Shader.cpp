@@ -256,6 +256,7 @@ ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier 
 
     m_parameterData
         = { AlignedDeleter<unsigned char>::allocate(m_dataAlignment, m_dataSize), AlignedDeleter<unsigned char>{} };
+    assert(m_parameterData.get() != nullptr);
     std::memset(m_parameterData.get(), 0, m_dataSize);
 }
 
