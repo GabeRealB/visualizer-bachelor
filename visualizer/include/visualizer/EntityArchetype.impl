@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <new>
 
 namespace Visualizer {
 
@@ -112,6 +113,8 @@ template <typename T> requires NoCVRefs<T> constexpr EntityComponentData EntityA
                 *static_cast<T*>(dst) = std::move(*static_cast<const T*>(src));
             }
         },
+        [](const void* src, void* dst) { new (static_cast<T*>(dst)) T{ *static_cast<const T*>(src) }; },
+        [](void* src, void* dst) { new (static_cast<T*>(dst)) T{ std::move(*static_cast<T*>(src)) }; },
         [](const void* p) { static_cast<const T*>(p)->~T(); } };
 }
 
