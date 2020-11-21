@@ -17,10 +17,12 @@ struct EntityComponentData {
     TypeId id;
     std::size_t size;
     std::size_t alignment;
-    void (*createFunc)(void*);
-    void (*copyFunc)(const void*, void*);
-    void (*moveFunc)(void*, void*);
-    void (*destructorFunc)(const void*);
+    void (*createFunc)(void* ptr);
+    void (*copyFunc)(const void* src, void* dst);
+    void (*moveFunc)(void* src, void* dst);
+    void (*copyUninitializedFunc)(const void* src, void* dst);
+    void (*moveUninitializedFunc)(void* src, void* dst);
+    void (*destructorFunc)(const void* ptr);
 
     bool operator==(const EntityComponentData& other);
 };
