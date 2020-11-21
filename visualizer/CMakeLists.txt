@@ -49,7 +49,7 @@ set(VISUALIZER_INCLUDES
         include/visualizer/TextDrawingSystem.hpp
         include/visualizer/FixedCamera.hpp
         include/visualizer/ActiveCameraSwitcher.hpp
-        include/visualizer/CameraSwitchingSystem.hpp include/visualizer/CameraTypeSwitchingSystem.hpp include/visualizer/FixedCameraMovementSystem.hpp)
+        include/visualizer/CameraSwitchingSystem.hpp include/visualizer/CameraTypeSwitchingSystem.hpp include/visualizer/FixedCameraMovementSystem.hpp include/visualizer/EntityContainer.hpp)
 
 set(VISUALIZER_SRC
         src/FreeFlyCameraMovementSystem.cpp
@@ -77,7 +77,7 @@ set(VISUALIZER_SRC
         src/World.cpp
         src/TextDrawingSystem.cpp
         src/AssetDatabase.cpp
-        src/CameraSwitchingSystem.cpp src/CameraTypeSwitchingSystem.cpp src/FixedCameraMovementSystem.cpp)
+        src/CameraSwitchingSystem.cpp src/CameraTypeSwitchingSystem.cpp src/FixedCameraMovementSystem.cpp src/EntityContainer.cpp)
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})
