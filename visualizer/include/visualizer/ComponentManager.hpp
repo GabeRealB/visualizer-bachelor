@@ -12,6 +12,7 @@
 #include <visualizer/Entity.hpp>
 #include <visualizer/EntityArchetype.hpp>
 #include <visualizer/EntityComponentMap.hpp>
+#include <visualizer/EntityContainer.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/TypeId.hpp>
 #include <visualizer/World.hpp>
@@ -50,7 +51,10 @@ public:
     bool changeEntityArchetypes(std::span<const Entity> entities, EntityArchetypeId archetypeId);
     void removeEntities(std::span<const Entity> entities);
 
-    void* getEntityComponentPointer(Entity entity, TypeId typeId) const;
+    bool has_component(Entity entity, TypeId component_type) const;
+
+    void* getEntityComponentPointer(Entity entity, TypeId typeId);
+    const void* getEntityComponentPointer(Entity entity, TypeId typeId) const;
 
     EntityQueryResult query(const EntityQuery& query) const;
 
@@ -60,8 +64,8 @@ private:
     EntityArchetypeId m_lastId;
     std::vector<EntityArchetypeId> m_freeIds;
 
+    std::unordered_map<EntityArchetypeId, EntityContainer> m_chunks;
     std::unordered_map<Entity, EntityArchetypeId, EntityHasher> m_entities;
-    std::unordered_map<EntityArchetypeId, EntityComponentMap> m_chunks;
     std::unordered_map<TypeId, std::unordered_set<EntityArchetypeId>> m_typeAssociations;
     std::unordered_map<EntityArchetype, EntityArchetypeId, EntityArchetypeHasher> m_archetypeMap;
 };

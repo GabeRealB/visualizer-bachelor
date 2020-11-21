@@ -101,11 +101,11 @@ bool ComponentManager::removeArchetype(EntityArchetypeId archetypeId)
         return true;
     }
 
-    if (!chunkPos->second.empty()) {
+    if (chunkPos->second.size() != 0) {
         return false;
     }
 
-    auto& archetype{ chunkPos->second.archetype() };
+    auto archetype{ chunkPos->second.archetype() };
     m_chunks.erase(chunkPos);
 
     for (auto type : archetype.types()) {
@@ -134,7 +134,7 @@ bool ComponentManager::addEntity(Entity entity, EntityArchetypeId archetypeId)
     }
 
     m_entities.insert({ entity, archetypeId });
-    chunkPos->second.insert(entity);
+    chunkPos->second.init(entity);
     return true;
 }
 
@@ -157,8 +157,7 @@ bool ComponentManager::changeEntityArchetype(Entity entity, EntityArchetypeId ar
     auto& srcChunk{ m_chunks.at(entityPos->second) };
     auto& dstChunk{ dstChunkPos->second };
 
-    dstChunk.moveComponents(srcChunk, entity);
-    // dstChunk.copyEntityFrom(entity, srcChunk.archetype, srcChunk.getEntityPtr(entity));
+    dstChunk.init_move(entity, srcChunk, srcChunk.entity_location(entity));
     return true;
 }
 
@@ -170,7 +169,7 @@ void ComponentManager::removeEntity(Entity entity)
     }
 
     auto& chunk{ m_chunks.at(entityPos->second) };
-    chunk.erase(entity);
+    chunk.erase(chunk.entity_location(entity));
 }
 
 bool ComponentManager::addEntities(std::span<const Entity> entities, EntityArchetypeId archetypeId)
@@ -187,8 +186,8 @@ bool ComponentManager::addEntities(std::span<const Entity> entities, EntityArche
         }
     }
 
-    chunkPos->second.insert(entities);
     for (auto entity : entities) {
+        chunkPos->second.init(entity);
         m_entities.insert({ entity, archetypeId });
     }
 
@@ -212,13 +211,40 @@ void ComponentManager::removeEntities(std::span<const Entity> entities)
     }
 }
 
-void* ComponentManager::getEntityComponentPointer(Entity entity, TypeId typeId) const
+bool ComponentManager::has_component(Entity entity, TypeId component_type) const
+{
+    auto entityPos{ m_entities.find(entity) };
+    if (entityPos == m_entities.end()) {
+        return false;
+    } else {
+        auto& chunk{ m_chunks.at(entityPos->second) };
+        return chunk.has_component(component_type);
+    }
+}
+
+void* ComponentManager::getEntityComponentPointer(Entity entity, TypeId typeId)
 {
     auto entityPos{ m_entities.find(entity) };
     if (entityPos == m_entities.end()) {
         return nullptr;
     } else {
-        return m_chunks.at(entityPos->second).component(entity, typeId);
+        auto& chunk{ m_chunks.at(entityPos->second) };
+        auto entity_location{ chunk.entity_location(entity) };
+        auto component_idx{ chunk.component_idx(typeId) };
+        return chunk.fetch_unchecked(entity_location, component_idx);
+    }
+}
+
+const void* ComponentManager::getEntityComponentPointer(Entity entity, TypeId typeId) const
+{
+    auto entityPos{ m_entities.find(entity) };
+    if (entityPos == m_entities.end()) {
+        return nullptr;
+    } else {
+        auto& chunk{ m_chunks.at(entityPos->second) };
+        auto entity_location{ chunk.entity_location(entity) };
+        auto component_idx{ chunk.component_idx(typeId) };
+        return chunk.fetch_unchecked(entity_location, component_idx);
     }
 }
 
@@ -268,11 +294,13 @@ EntityQueryResult ComponentManager::query(const EntityQuery& query) const
     for (auto archetypeId : withIds) {
         auto& chunk{ m_chunks.at(archetypeId) };
 
-        for (auto& entity : chunk.entities()) {
-            if (chunk.hasEntity(entity)) {
+        for (auto& entity_chunk : chunk.entity_chunks()) {
+            for (auto& entity : entity_chunk.entities()) {
                 entities.push_back(entity);
+                auto entity_idx{ entity_chunk.entity_idx(entity) };
                 for (auto type : withTypes) {
-                    components.push_back(chunk.component(entity, type));
+                    auto component_idx{ entity_chunk.component_idx(type) };
+                    components.push_back(const_cast<void*>(entity_chunk.fetch_unchecked(entity_idx, component_idx)));
                 }
             }
         }

@@ -186,8 +186,13 @@ void FixedCameraMovementSystem::run(void*)
                 auto parentTransform{ static_cast<const Transform*>(
                     m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
                 modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
-                parent = static_cast<const Parent*>(
-                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+
+                if (m_componentManager->has_component(parent->m_parent, getTypeId<Parent>())) {
+                    parent = static_cast<const Parent*>(
+                        m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+                } else {
+                    parent = nullptr;
+                }
             }
 
             glm::vec4 position{ glm::sin(fixedCamera->verticalAngle) * glm::sin(fixedCamera->horizontalAngle)

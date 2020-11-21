@@ -68,15 +68,25 @@ void MeshDrawingSystem::run(void*)
             [&](Entity entity, const std::shared_ptr<Mesh>* mesh, const Material* material, const Transform* transform,
                 const RenderLayer*) {
                 auto modelMatrix{ getModelMatrix(*transform) };
-                auto parent{ static_cast<const Parent*>(
-                    m_componentManager->getEntityComponentPointer(entity, getTypeId<Parent>())) };
+
+                const Parent* parent;
+                if (m_componentManager->has_component(entity, getTypeId<Parent>())) {
+                    parent = static_cast<const Parent*>(
+                        m_componentManager->getEntityComponentPointer(entity, getTypeId<Parent>()));
+                } else {
+                    parent = nullptr;
+                }
 
                 while (parent != nullptr) {
                     auto parentTransform{ static_cast<const Transform*>(
                         m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
                     modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
-                    parent = static_cast<const Parent*>(
-                        m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+                    if (m_componentManager->has_component(parent->m_parent, getTypeId<Parent>())) {
+                        parent = static_cast<const Parent*>(
+                            m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+                    } else {
+                        parent = nullptr;
+                    }
                 }
 
                 meshList.insert(
