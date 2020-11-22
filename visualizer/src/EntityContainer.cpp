@@ -271,25 +271,26 @@ std::size_t EntityChunk::init_move(Entity entity, EntityContainer& entity_contai
 {
     assert(!has_entity(entity));
 
-    for (auto component_desc : m_layout.get().component_descriptors()) {
-        assert(entity_container.has_component(component_desc.id));
-    }
-
     auto entity_idx{ phantom_init(entity) };
 
     auto& foreign_entity_chunk{ entity_container.entity_chunk(entity_location.chunk_idx) };
 
     for (std::size_t component_idx{ 0 }; component_idx < m_layout.get().size(); ++component_idx) {
         auto component_type{ m_layout.get().component_desc(component_idx).id };
-        auto foreign_component_idx{ entity_container.component_idx(component_type) };
-        auto foreign_component_ptr{ entity_container.fetch_unchecked(entity_location, foreign_component_idx) };
 
-        // Move the component.
-        m_component_chunks[component_idx].init_move(foreign_component_ptr);
+        if (entity_container.has_component(component_type)) {
+            auto foreign_component_idx{ entity_container.component_idx(component_type) };
+            auto foreign_component_ptr{ entity_container.fetch_unchecked(entity_location, foreign_component_idx) };
 
-        // Reinitialize the component to allow destructor calls.
-        foreign_entity_chunk.m_component_chunks[foreign_component_idx].write_uninitialized_init(
-            entity_location.entity_idx);
+            // Move the component.
+            m_component_chunks[component_idx].init_move(foreign_component_ptr);
+
+            // Reinitialize the component to allow destructor calls.
+            foreign_entity_chunk.m_component_chunks[foreign_component_idx].write_uninitialized_init(
+                entity_location.entity_idx);
+        } else {
+            m_component_chunks[component_idx].init();
+        }
     }
 
     entity_container.erase(entity_location);
@@ -302,19 +303,20 @@ std::size_t EntityChunk::init_copy(
 {
     assert(!has_entity(entity));
 
-    for (auto component_desc : m_layout.get().component_descriptors()) {
-        assert(entity_container.has_component(component_desc.id));
-    }
-
     auto entity_idx{ phantom_init(entity) };
 
     for (std::size_t component_idx{ 0 }; component_idx < m_layout.get().size(); ++component_idx) {
         auto component_type{ m_layout.get().component_desc(component_idx).id };
-        auto foreign_component_idx{ entity_container.component_idx(component_type) };
-        auto foreign_component_ptr{ entity_container.fetch_unchecked(entity_location, foreign_component_idx) };
 
-        // Move the component.
-        m_component_chunks[component_idx].init_copy(foreign_component_ptr);
+        if (entity_container.has_component(component_type)) {
+            auto foreign_component_idx{ entity_container.component_idx(component_type) };
+            auto foreign_component_ptr{ entity_container.fetch_unchecked(entity_location, foreign_component_idx) };
+
+            // Copy the component.
+            m_component_chunks[component_idx].init_copy(foreign_component_ptr);
+        } else {
+            m_component_chunks[component_idx].init();
+        }
     }
 
     return entity_idx;
