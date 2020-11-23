@@ -72,6 +72,13 @@ EntityQueryResult EntityQuery::query(World& world)
 
 EntityQueryResult EntityQuery::query(ComponentManager& componentManager) { return componentManager.query(*this); }
 
+EntityQueryResult EntityQuery::query(EntityDatabaseContext& database_context) { return database_context.query(*this); }
+
+EntityQueryResult EntityQuery::query(EntityDatabaseLazyContext& database_context)
+{
+    return database_context.query(*this);
+}
+
 EntityQueryResult::EntityQueryResult(
     std::vector<Entity> entities, std::vector<void*> components, const std::vector<TypeId>& types)
     : m_entities{ std::move(entities) }
