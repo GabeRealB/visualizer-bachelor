@@ -1,6 +1,6 @@
 #pragma once
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/System.hpp>
 

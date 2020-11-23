@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 
 namespace Visualizer {
 

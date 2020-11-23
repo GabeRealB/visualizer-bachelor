@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Scene.hpp>

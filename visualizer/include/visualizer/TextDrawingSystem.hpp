@@ -7,7 +7,7 @@
 #include FT_FREETYPE_H
 #include <glm/glm.hpp>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/Framebuffer.hpp>
 #include <visualizer/Mesh.hpp>
@@ -36,11 +36,11 @@ private:
     EntityQuery m_textQuery;
     EntityQuery m_cameraQuery;
 
-    Mesh m_bitmapMesh;
-    Material m_bitmapMaterial;
+    Mesh m_bitmap_mesh;
+    Material m_bitmap_material;
 
     std::array<CharacterInfo, 128> m_characters;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }

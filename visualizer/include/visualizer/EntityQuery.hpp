@@ -17,14 +17,13 @@
 namespace Visualizer {
 
 class EntityQueryResult;
-class ComponentManager;
 class EntityDatabaseContext;
 class EntityDatabaseLazyContext;
 
 class EntityQuery {
 public:
     EntityQuery() = default;
-    EntityQuery(const EntityArchetype& archetype);
+    EntityQuery(const EntityArchetype2& archetype);
 
     std::span<const TypeId> withTypes() const;
     std::span<const TypeId> withoutTypes() const;
@@ -35,8 +34,6 @@ public:
     EntityQuery& with(std::span<const TypeId> types);
     EntityQuery& without(std::span<const TypeId> types);
 
-    EntityQueryResult query(World& world);
-    EntityQueryResult query(ComponentManager& componentManager);
     EntityQueryResult query(EntityDatabaseContext& database_context);
     EntityQueryResult query(EntityDatabaseLazyContext& database_context);
 

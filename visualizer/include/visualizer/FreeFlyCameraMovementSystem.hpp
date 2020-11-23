@@ -4,7 +4,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <memory>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/Scene.hpp>
 #include <visualizer/System.hpp>

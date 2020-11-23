@@ -9,10 +9,10 @@ namespace Visualizer {
 TextDrawingSystem::TextDrawingSystem()
     : m_textQuery{ EntityQuery{}.with<UIText, Transform>() }
     , m_cameraQuery{ EntityQuery{}.with<Camera>() }
-    , m_bitmapMesh{}
-    , m_bitmapMaterial{}
+    , m_bitmap_mesh{}
+    , m_bitmap_material{}
     , m_characters{}
-    , m_componentManager{}
+    , m_entity_database{}
 {
     FT_Library freeType;
     FT_Init_FreeType(&freeType);
@@ -44,24 +44,26 @@ TextDrawingSystem::TextDrawingSystem()
     FT_Done_FreeType(freeType);
 }
 
-void TextDrawingSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void TextDrawingSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void TextDrawingSystem::terminate() { m_componentManager = nullptr; }
+void TextDrawingSystem::terminate() { m_entity_database = nullptr; }
 
 void TextDrawingSystem::run(void*)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    auto textUIs{ m_textQuery.query(*m_componentManager) };
+    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context){
+        auto textUIs{ m_textQuery.query(database_context) };
 
-    m_cameraQuery.query(*m_componentManager).forEach<const Camera>([&](const Camera* camera) {
-        camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
-        auto cameraViewport{ camera->m_renderTarget->viewport() };
+        m_cameraQuery.query(database_context).forEach<const Camera>([&](const Camera* camera) {
+            camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
+            auto cameraViewport{ camera->m_renderTarget->viewport() };
 
-        auto projectionMatrix{ glm::ortho(
-            0.0f, static_cast<float>(cameraViewport.width), 0.0f, static_cast<float>(cameraViewport.height)) };
-        (void)projectionMatrix;
+            auto projectionMatrix{ glm::ortho(
+                0.0f, static_cast<float>(cameraViewport.width), 0.0f, static_cast<float>(cameraViewport.height)) };
+            (void)projectionMatrix;
+        });
     });
 }
 

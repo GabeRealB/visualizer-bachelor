@@ -9,7 +9,7 @@ set(VISUALIZER_INCLUDES
         include/visualizer/AssetDatabase.hpp
         include/visualizer/Camera.hpp
         include/visualizer/FreeFlyCameraMovementSystem.hpp
-        include/visualizer/ComponentManager.hpp
+        include/visualizer/EntityDatabase.hpp
         include/visualizer/CompositingSystem.hpp
         include/visualizer/Composition.hpp
         include/visualizer/Cube.hpp
@@ -17,9 +17,6 @@ set(VISUALIZER_INCLUDES
         include/visualizer/Entity.hpp
         include/visualizer/EntityArchetype.hpp
         include/visualizer/EntityArchetype.impl
-        include/visualizer/EntityComponentMap.hpp
-        include/visualizer/EntityComponentMap.impl
-        include/visualizer/EntityManager.hpp
         include/visualizer/EntityQuery.hpp
         include/visualizer/EntityQuery.impl
         include/visualizer/Framebuffer.hpp
@@ -57,13 +54,11 @@ set(VISUALIZER_INCLUDES
 
 set(VISUALIZER_SRC
         src/FreeFlyCameraMovementSystem.cpp
-        src/ComponentManager.cpp
+        src/EntityDatabase.cpp
         src/CompositingSystem.cpp
         src/CubeMovementSystem.cpp
         src/Entity.cpp
         src/EntityArchetype.cpp
-        src/EntityComponentMap.cpp
-        src/EntityManager.cpp
         src/EntityQuery.cpp
         src/Framebuffer.cpp
         src/GenericBuffer.cpp

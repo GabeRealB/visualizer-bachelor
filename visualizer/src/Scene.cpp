@@ -15,7 +15,6 @@
 #include <visualizer/Composition.hpp>
 #include <visualizer/Cube.hpp>
 #include <visualizer/CubeMovementSystem.hpp>
-#include <visualizer/EntityManager.hpp>
 #include <visualizer/FixedCamera.hpp>
 #include <visualizer/FixedCameraMovementSystem.hpp>
 #include <visualizer/FreeFly.hpp>
@@ -1429,10 +1428,6 @@ World initialize_world(const Visconfig::World& world)
     World ecs_world{};
 
     std::unordered_map<std::size_t, Entity> entity_id_map{};
-
-    /// TODO: Remove old front end
-    [[maybe_unused]] auto componentManager{ ecs_world.addManager<ComponentManager>() };
-    [[maybe_unused]] auto entityManager{ ecs_world.addManager<EntityManager>() };
     auto entity_database{ ecs_world.addManager<EntityDatabase>() };
 
     entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
