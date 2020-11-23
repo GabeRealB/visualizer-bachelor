@@ -27,7 +27,7 @@
 
 namespace Visualizer {
 
-std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
+std::shared_ptr<Visualizer::ShaderProgram> create_shader_program(
     const std::filesystem::path& vs, const std::filesystem::path& fs)
 {
     auto vertexShader{ Visualizer::Shader::create(vs, Visualizer::ShaderType::VertexShader) };
@@ -43,7 +43,7 @@ std::shared_ptr<Visualizer::ShaderProgram> createShaderProgram(
     return Visualizer::ShaderProgram::create(*vertexShader, *fragmentShader);
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::MeshAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsset& asset)
 {
     auto mesh{ std::make_shared<Mesh>() };
 
@@ -74,7 +74,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::MeshAsset
     AssetDatabase::setAsset(name, { getTypeId<Mesh>(), std::move(mesh) });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::TextureFileAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::TextureFileAsset& asset)
 {
     auto texture{ Texture2D::fromFile(asset.path) };
     for (auto attribute : asset.attributes) {
@@ -93,7 +93,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureFi
     AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), std::move(texture) });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRawAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::TextureRawAsset& asset)
 {
     auto texture{ std::make_shared<Texture2D>() };
 
@@ -145,7 +145,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureRa
     AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), texture });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::TextureMultisampleRawAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::TextureMultisampleRawAsset& asset)
 {
     auto texture{ std::make_shared<Texture2DMultisample>() };
 
@@ -197,7 +197,7 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::TextureMu
     AssetDatabase::setAsset(name, { getTypeId<Texture2DMultisample>(), texture });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::RenderbufferAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::RenderbufferAsset& asset)
 {
     auto renderbuffer{ std::make_shared<Renderbuffer>() };
 
@@ -213,13 +213,13 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::Renderbuf
     AssetDatabase::setAsset(name, { getTypeId<Renderbuffer>(), renderbuffer });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::ShaderAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::ShaderAsset& asset)
 {
-    auto shader{ createShaderProgram(asset.vertex, asset.fragment) };
+    auto shader{ create_shader_program(asset.vertex, asset.fragment) };
     AssetDatabase::setAsset(name, { getTypeId<ShaderProgram>(), shader });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::FramebufferAsset& asset)
+void initialize_asset(const std::string& name, const Visconfig::Assets::FramebufferAsset& asset)
 {
     auto framebuffer{ std::make_shared<Framebuffer>() };
 
@@ -274,140 +274,159 @@ void initializeAsset(const std::string& name, const Visconfig::Assets::Framebuff
     AssetDatabase::setAsset(name, { getTypeId<Framebuffer>(), framebuffer });
 }
 
-void initializeAsset(const std::string& name, const Visconfig::Assets::DefaultFramebufferAsset&)
+void initialize_asset(const std::string& name, const Visconfig::Assets::DefaultFramebufferAsset&)
 {
     AssetDatabase::setAsset(name, { getTypeId<Framebuffer>(), Framebuffer::defaultFramebufferPtr() });
 }
 
-void initializeAsset(const Visconfig::Asset& asset)
+void initialize_asset(const Visconfig::Asset& asset)
 {
     switch (asset.type) {
     case Visconfig::Assets::AssetType::Mesh:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::MeshAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::MeshAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::TextureFile:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureFileAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureFileAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::TextureRaw:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureRawAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureRawAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::TextureMultisampleRaw:
-        initializeAsset(
+        initialize_asset(
             asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureMultisampleRawAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::Renderbuffer:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::RenderbufferAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::RenderbufferAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::Shader:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::ShaderAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::ShaderAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::Framebuffer:
-        initializeAsset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::FramebufferAsset>(asset.data));
+        initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::FramebufferAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::DefaultFramebuffer:
-        initializeAsset(
+        initialize_asset(
             asset.name, *std::static_pointer_cast<const Visconfig::Assets::DefaultFramebufferAsset>(asset.data));
         break;
     }
 }
 
-void addEntity(
-    EntityManager& entityManager, std::unordered_map<std::size_t, Entity>& entityIdMap, const Visconfig::Entity& entity)
+void register_component_descriptors(EntityDatabaseContext& database_context)
 {
-    EntityArchetype archetype{};
+    database_context.register_component_desc<Cube>();
+    database_context.register_component_desc<std::shared_ptr<Mesh>>();
+    database_context.register_component_desc<Parent>();
+    database_context.register_component_desc<Material>();
+    database_context.register_component_desc<RenderLayer>();
+    database_context.register_component_desc<Transform>();
+    database_context.register_component_desc<HomogeneousIteration>();
+    database_context.register_component_desc<EntityActivation>();
+    database_context.register_component_desc<MeshIteration>();
+    database_context.register_component_desc<HeterogeneousIteration>();
+    database_context.register_component_desc<Camera>();
+    database_context.register_component_desc<FreeFly>();
+    database_context.register_component_desc<FixedCamera>();
+    database_context.register_component_desc<ActiveCameraSwitcher>();
+    database_context.register_component_desc<Composition>();
+    database_context.register_component_desc<Draggable>();
+    database_context.register_component_desc<Copy>();
+}
+
+void add_entity(EntityDatabaseContext& database_context, std::unordered_map<std::size_t, Entity>& entity_id_map,
+    const Visconfig::Entity& entity)
+{
+    EntityArchetype2 archetype{};
     for (auto& component : entity.components) {
         switch (component.type) {
         case Visconfig::Components::ComponentType::Cube:
-            archetype = EntityArchetype::with<Cube>(archetype);
+            archetype = archetype.with<Cube>();
             break;
         case Visconfig::Components::ComponentType::Mesh:
-            archetype = EntityArchetype::with<std::shared_ptr<Mesh>>(archetype);
+            archetype = archetype.with<std::shared_ptr<Mesh>>();
             break;
         case Visconfig::Components::ComponentType::Parent:
-            archetype = EntityArchetype::with<Parent>(archetype);
+            archetype = archetype.with<Parent>();
             break;
         case Visconfig::Components::ComponentType::Material:
-            archetype = EntityArchetype::with<Material>(archetype);
+            archetype = archetype.with<Material>();
             break;
         case Visconfig::Components::ComponentType::Layer:
-            archetype = EntityArchetype::with<RenderLayer>(archetype);
+            archetype = archetype.with<RenderLayer>();
             break;
         case Visconfig::Components::ComponentType::Transform:
-            archetype = EntityArchetype::with<Transform>(archetype);
+            archetype = archetype.with<Transform>();
             break;
         case Visconfig::Components::ComponentType::ImplicitIteration:
-            archetype = EntityArchetype::with<HomogeneousIteration>(archetype);
+            archetype = archetype.with<HomogeneousIteration>();
             break;
         case Visconfig::Components::ComponentType::ExplicitIteration:
-            archetype = EntityArchetype::with<HomogeneousIteration>(archetype);
+            archetype = archetype.with<HomogeneousIteration>();
             break;
         case Visconfig::Components::ComponentType::EntityActivation:
-            archetype = EntityArchetype::with<EntityActivation>(archetype);
+            archetype = archetype.with<EntityActivation>();
             break;
         case Visconfig::Components::ComponentType::MeshIteration:
-            archetype = EntityArchetype::with<MeshIteration>(archetype);
+            archetype = archetype.with<MeshIteration>();
             break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
-            archetype = EntityArchetype::with<HeterogeneousIteration>(archetype);
+            archetype = archetype.with<HeterogeneousIteration>();
             break;
         case Visconfig::Components::ComponentType::Camera:
-            archetype = EntityArchetype::with<Camera>(archetype);
+            archetype = archetype.with<Camera>();
             break;
         case Visconfig::Components::ComponentType::FreeFlyCamera:
-            archetype = EntityArchetype::with<FreeFly>(archetype);
+            archetype = archetype.with<FreeFly>();
             break;
         case Visconfig::Components::ComponentType::FixedCamera:
-            archetype = EntityArchetype::with<FixedCamera>(archetype);
+            archetype = archetype.with<FixedCamera>();
             break;
         case Visconfig::Components::ComponentType::CameraSwitcher:
-            archetype = EntityArchetype::with<ActiveCameraSwitcher>(archetype);
+            archetype = archetype.with<ActiveCameraSwitcher>();
             break;
         case Visconfig::Components::ComponentType::Composition:
-            archetype = EntityArchetype::with<Composition, Draggable>(archetype);
+            archetype = archetype.with<Composition, Draggable>();
             break;
         case Visconfig::Components::ComponentType::Copy:
-            archetype = EntityArchetype::with<Copy>(archetype);
+            archetype = archetype.with<Copy>();
             break;
         }
     }
 
-    const auto [it, success] = entityIdMap.insert({ entity.id, entityManager.addEntity(archetype) });
+    const auto [it, success] = entity_id_map.insert({ entity.id, database_context.init_entity(archetype) });
     if (!success) {
         std::cerr << "Unable to insert into entity map" << std::endl;
     }
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::CubeComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CubeComponent& component)
 {
     (void)component;
-    *static_cast<Cube*>(manager.getEntityComponentPointer(entity, getTypeId<Cube>())) = {};
+    database_context.write_component(entity, Cube{});
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::MeshComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::MeshComponent& component)
 {
     auto meshAsset{ std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset(component.asset).data)) };
-    auto& mesh{ *static_cast<std::shared_ptr<Mesh>*>(
-        manager.getEntityComponentPointer(entity, getTypeId<std::shared_ptr<Mesh>>())) };
-    mesh = std::move(meshAsset);
+    database_context.write_component(entity, std::move(meshAsset));
 }
 
-void initializeComponent(ComponentManager& manager, Entity entity,
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::ParentComponent& component, const std::unordered_map<std::size_t, Entity>& entityIdMap)
 {
     auto parent{ entityIdMap.at(component.id) };
-    *static_cast<Parent*>(manager.getEntityComponentPointer(entity, getTypeId<Parent>())) = Parent{ parent };
+    database_context.write_component(entity, Parent{ parent });
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::BoolMaterialAttribute& attribute)
 {
     env.set(name, static_cast<GLboolean>(attribute.value));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::BoolArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -415,13 +434,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::IntMaterialAttribute& attribute)
 {
     env.set(name, static_cast<GLint>(attribute.value));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::IntArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -429,13 +448,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::UIntMaterialAttribute& attribute)
 {
     env.set(name, static_cast<GLuint>(attribute.value));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::UIntArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -443,13 +462,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::FloatMaterialAttribute& attribute)
 {
     env.set(name, static_cast<GLfloat>(attribute.value));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::FloatArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -457,13 +476,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::BVec2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec2(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::BVec2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -471,13 +490,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::BVec3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec3(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::BVec3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -485,13 +504,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::BVec4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec4(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::BVec4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -499,13 +518,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::IVec2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec2(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::IVec2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -513,13 +532,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::IVec3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec3(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::IVec3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -527,13 +546,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::IVec4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec4(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::IVec4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -541,13 +560,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::UVec2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec2(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::UVec2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -555,13 +574,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::UVec3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec3(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::UVec3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -569,13 +588,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::UVec4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec4(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::UVec4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -583,13 +602,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec2(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -597,13 +616,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec3(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -611,13 +630,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_vec4(attribute.value.data()));
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Vec4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -625,13 +644,13 @@ void initializeMaterialAttribute(
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat2x2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat2x2(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat2x2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -639,13 +658,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat2x3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat2x3(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat2x3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -653,13 +672,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat2x4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat2x4(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat2x4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -667,13 +686,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat3x2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat3x2(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat3x2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -681,13 +700,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat3x3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat3x3(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat3x3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -695,13 +714,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat3x4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat3x4(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat3x4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -709,13 +728,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat4x2MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat4x2(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat4x2ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -723,13 +742,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat4x3MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat4x3(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat4x3ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -737,13 +756,13 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Mat4x4MaterialAttribute& attribute)
 {
     env.set(name, glm::make_mat4x4(attribute.value[0].data()));
 }
 
-void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name,
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
     const Visconfig::Components::Mat4x4ArrayMaterialAttribute& attribute)
 {
     for (std::size_t i{ 0 }; i < attribute.value.size(); ++i) {
@@ -751,7 +770,7 @@ void initializeMaterialAttribute(ShaderEnvironment& env, const std::string& name
     }
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Sampler2DMaterialAttribute& attribute)
 {
     auto textureAsset{ std::static_pointer_cast<Texture2D>(
@@ -762,244 +781,244 @@ void initializeMaterialAttribute(
     env.set(name, sampler);
 }
 
-void initializeMaterialAttribute(
+void initialize_material_attribute(
     Material& material, const std::string& name, const Visconfig::Components::MaterialAttribute& attribute)
 {
     switch (attribute.type) {
     case Visconfig::Components::MaterialAttributeType::Bool:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BoolMaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BoolArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Int:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IntMaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IntArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UInt:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UIntMaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UIntArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Float:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::FloatMaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::FloatArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::BVec4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::BVec4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::IVec4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::IVec4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::UVec4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::UVec4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Vec4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Vec4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat2x4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat2x4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat3x4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat3x4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x2:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x2MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x2ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x3:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x3MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x3ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Mat4x4:
         if (!attribute.isArray) {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x4MaterialAttribute>(attribute.data));
         } else {
-            initializeMaterialAttribute(material.m_materialVariables, name,
+            initialize_material_attribute(material.m_materialVariables, name,
                 *std::static_pointer_cast<const Visconfig::Components::Mat4x4ArrayMaterialAttribute>(attribute.data));
         }
         break;
     case Visconfig::Components::MaterialAttributeType::Sampler2D:
-        initializeMaterialAttribute(material.m_materialVariables, name,
+        initialize_material_attribute(material.m_materialVariables, name,
             *std::static_pointer_cast<const Visconfig::Components::Sampler2DMaterialAttribute>(attribute.data));
         break;
     }
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::MaterialComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::MaterialComponent& component)
 {
     auto shaderAsset{ std::static_pointer_cast<ShaderProgram>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset(component.asset).data)) };
@@ -1007,31 +1026,31 @@ void initializeComponent(
         ShaderEnvironment{ *shaderAsset, ParameterQualifier::Material }, std::move(shaderAsset) } };
 
     for (auto& attribute : component.attributes) {
-        initializeMaterialAttribute(material, attribute.first, attribute.second);
+        initialize_material_attribute(material, attribute.first, attribute.second);
     }
 
-    *static_cast<Material*>(manager.getEntityComponentPointer(entity, getTypeId<Material>())) = std::move(material);
+    database_context.write_component(entity, std::move(material));
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::LayerComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::LayerComponent& component)
 {
-    *static_cast<RenderLayer*>(manager.getEntityComponentPointer(entity, getTypeId<RenderLayer>()))
-        = RenderLayer{ component.mask };
+    database_context.write_component(entity, RenderLayer{ component.mask });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::TransformComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::TransformComponent& component)
 {
-    *static_cast<Transform*>(manager.getEntityComponentPointer(entity, getTypeId<Transform>())) = Transform{
-        glm::quat{ glm::make_vec3(component.rotation) },
-        glm::make_vec3(component.position),
-        glm::make_vec3(component.scale),
-    };
+    database_context.write_component(entity,
+        Transform{
+            glm::quat{ glm::make_vec3(component.rotation) },
+            glm::make_vec3(component.position),
+            glm::make_vec3(component.scale),
+        });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::ImplicitIterationComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::ImplicitIterationComponent& component)
 {
     std::vector<glm::vec3> positions{};
     positions.reserve(component.numIterations[0] * component.numIterations[1] * component.numIterations[2]);
@@ -1083,12 +1102,12 @@ void initializeComponent(
         positions.push_back(position);
     }
 
-    *static_cast<HomogeneousIteration*>(manager.getEntityComponentPointer(entity, getTypeId<HomogeneousIteration>()))
-        = HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
+    database_context.write_component(
+        entity, HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::ExplicitIterationComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::ExplicitIterationComponent& component)
 {
     std::vector<glm::vec3> positions{};
     positions.reserve(component.positions.size());
@@ -1097,11 +1116,11 @@ void initializeComponent(
         positions.push_back(glm::make_vec3(pos.data()));
     }
 
-    *static_cast<HomogeneousIteration*>(manager.getEntityComponentPointer(entity, getTypeId<HomogeneousIteration>()))
-        = HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 };
+    database_context.write_component(
+        entity, HomogeneousIteration{ std::move(positions), component.ticksPerIteration, 0, 0 });
 }
 
-void initializeComponent(ComponentManager& manager, Entity entity,
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::EntityActivationComponent& component,
     const std::unordered_map<std::size_t, Entity>& entityIdMap)
 {
@@ -1119,17 +1138,16 @@ void initializeComponent(ComponentManager& manager, Entity entity,
         ticks.push_back(tick);
     }
 
-    auto& entityActivation{ *static_cast<EntityActivation*>(
-        manager.getEntityComponentPointer(entity, getTypeId<EntityActivation>())) };
-    entityActivation.entities = entities;
-    entityActivation.ticksPerIteration = ticks;
-    entityActivation.layer.m_layerMask = component.layer;
-    entityActivation.index = 0;
-    entityActivation.tick = 0;
+    auto& entity_activation{ database_context.fetch_component_unchecked<EntityActivation>(entity) };
+    entity_activation.entities = entities;
+    entity_activation.ticksPerIteration = ticks;
+    entity_activation.layer.m_layerMask = component.layer;
+    entity_activation.index = 0;
+    entity_activation.tick = 0;
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::MeshIterationComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::MeshIterationComponent& component)
 {
     std::vector<glm::u64vec3> positions{};
     positions.reserve(component.positions.size());
@@ -1153,18 +1171,17 @@ void initializeComponent(
     grid.resize(component.dimensions[0] * component.dimensions[1] * component.dimensions[2], false);
     grid[0] = true;
 
-    auto& meshIteration{ *static_cast<MeshIteration*>(
-        manager.getEntityComponentPointer(entity, getTypeId<MeshIteration>())) };
-    meshIteration.dimensions = component.dimensions;
-    meshIteration.grid = std::move(grid);
-    meshIteration.positions = std::move(positions);
-    meshIteration.ticksPerIteration = std::move(ticks);
-    meshIteration.index = 0;
-    meshIteration.tick = 0;
-    meshIteration.initialized = false;
+    auto& mesh_iteration{ database_context.fetch_component_unchecked<MeshIteration>(entity) };
+    mesh_iteration.dimensions = component.dimensions;
+    mesh_iteration.grid = std::move(grid);
+    mesh_iteration.positions = std::move(positions);
+    mesh_iteration.ticksPerIteration = std::move(ticks);
+    mesh_iteration.index = 0;
+    mesh_iteration.tick = 0;
+    mesh_iteration.initialized = false;
 }
 
-void initializeComponent(ComponentManager& manager, Entity entity,
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::ExplicitHeterogeneousIterationComponent& component)
 {
     std::vector<glm::vec3> scales{};
@@ -1184,13 +1201,12 @@ void initializeComponent(ComponentManager& manager, Entity entity,
         ticksPerIteration.push_back(ticks);
     }
 
-    *static_cast<HeterogeneousIteration*>(
-        manager.getEntityComponentPointer(entity, getTypeId<HeterogeneousIteration>()))
-        = HeterogeneousIteration{ std::move(scales), std::move(positions), std::move(ticksPerIteration), 0, 0 };
+    database_context.write_component(
+        entity, HeterogeneousIteration{ std::move(scales), std::move(positions), std::move(ticksPerIteration), 0, 0 });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::CameraComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CameraComponent& component)
 {
     std::unordered_map<std::string, std::shared_ptr<Framebuffer>> targets{};
 
@@ -1200,37 +1216,35 @@ void initializeComponent(
         targets.insert_or_assign(target.first, std::move(framebufferAsset));
     }
 
-    *static_cast<Camera*>(manager.getEntityComponentPointer(entity, getTypeId<Camera>()))
-        = Camera{ component.active, component.fixed, component.perspective, component.fov, component.far,
-              component.near, component.aspect, component.orthographicWidth, component.orthographicHeight,
-              RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) };
+    database_context.write_component(entity,
+        Camera{ component.active, component.fixed, component.perspective, component.fov, component.far, component.near,
+            component.aspect, component.orthographicWidth, component.orthographicHeight,
+            RenderLayer{ component.layerMask.to_ullong() }, nullptr, std::move(targets) });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::FreeFlyCameraComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::FreeFlyCameraComponent& component)
 {
     (void)component;
-    *static_cast<FreeFly*>(manager.getEntityComponentPointer(entity, getTypeId<FreeFly>())) = {};
+    database_context.write_component(entity, FreeFly{});
 }
 
-void initializeComponent(ComponentManager& manager, Entity entity,
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::FixedCameraComponent& component,
     const std::unordered_map<std::size_t, Entity>& entityIdMap)
 {
-    auto& camera{ *static_cast<FixedCamera*>(manager.getEntityComponentPointer(entity, getTypeId<FixedCamera>())) };
-
+    auto& camera{ database_context.fetch_component_unchecked<FixedCamera>(entity) };
     camera.focus = entityIdMap.at(component.focus);
     camera.distance = component.distance;
     camera.horizontalAngle = component.horizontalAngle;
     camera.verticalAngle = camera.verticalAngle + (glm::pi<float>() / 2);
 }
 
-void initializeComponent(ComponentManager& manager, Entity entity,
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::CameraSwitcherComponent& component,
     const std::unordered_map<std::size_t, Entity>& entityIdMap)
 {
-    auto& switcher{ *static_cast<ActiveCameraSwitcher*>(
-        manager.getEntityComponentPointer(entity, getTypeId<ActiveCameraSwitcher>())) };
+    auto& switcher{ database_context.fetch_component_unchecked<ActiveCameraSwitcher>(entity) };
 
     for (auto id : component.cameras) {
         switcher.cameras.push_back(entityIdMap.at(id));
@@ -1239,8 +1253,8 @@ void initializeComponent(ComponentManager& manager, Entity entity,
     switcher.current = component.active;
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::CompositionComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::CompositionComponent& component)
 {
     std::vector<CompositionOperation> operations{};
     operations.reserve(component.operations.size());
@@ -1278,15 +1292,12 @@ void initializeComponent(
         }
     }
 
-    *static_cast<Composition*>(manager.getEntityComponentPointer(entity, getTypeId<Composition>()))
-        = Composition{ std::move(operations) };
-
-    *static_cast<Draggable*>(manager.getEntityComponentPointer(entity, getTypeId<Draggable>()))
-        = Draggable{ std::move(boxes) };
+    database_context.write_component(entity, Composition{ std::move(operations) });
+    database_context.write_component(entity, Draggable{ std::move(boxes) });
 }
 
-void initializeComponent(
-    ComponentManager& manager, Entity entity, const Visconfig::Components::CopyComponent& component)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CopyComponent& component)
 {
     std::vector<CopyOperation> operations{};
     operations.reserve(component.operations.size());
@@ -1327,110 +1338,115 @@ void initializeComponent(
         operations.push_back(CopyOperation{ sourceAsset, destinationAsset, std::move(flags), filter });
     }
 
-    *static_cast<Copy*>(manager.getEntityComponentPointer(entity, getTypeId<Copy>())) = Copy{ std::move(operations) };
+    database_context.write_component(entity, Copy{ std::move(operations) });
 }
 
-void initializeEntity(ComponentManager& manager, const std::unordered_map<std::size_t, Entity>& entityIdMap,
-    const Visconfig::Entity& entity)
+void initialize_entity(EntityDatabaseContext& database_context,
+    const std::unordered_map<std::size_t, Entity>& entityIdMap, const Visconfig::Entity& entity)
 {
     auto ecs_entity{ entityIdMap.at(entity.id) };
 
     for (auto& component : entity.components) {
         switch (component.type) {
         case Visconfig::Components::ComponentType::Cube:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CubeComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::Mesh:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::MeshComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::Parent:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ParentComponent>(component.data), entityIdMap);
             break;
         case Visconfig::Components::ComponentType::Material:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::MaterialComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::Layer:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::LayerComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::Transform:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::TransformComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::ImplicitIteration:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ImplicitIterationComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::ExplicitIteration:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ExplicitIterationComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::EntityActivation:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::EntityActivationComponent>(component.data),
                 entityIdMap);
             break;
         case Visconfig::Components::ComponentType::MeshIteration:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::MeshIterationComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::ExplicitHeterogeneousIterationComponent>(
                     component.data));
             break;
         case Visconfig::Components::ComponentType::Camera:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CameraComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::FreeFlyCamera:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::FreeFlyCameraComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::FixedCamera:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::FixedCameraComponent>(component.data),
                 entityIdMap);
             break;
         case Visconfig::Components::ComponentType::CameraSwitcher:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CameraSwitcherComponent>(component.data),
                 entityIdMap);
             break;
         case Visconfig::Components::ComponentType::Composition:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CompositionComponent>(component.data));
             break;
         case Visconfig::Components::ComponentType::Copy:
-            initializeComponent(manager, ecs_entity,
+            initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CopyComponent>(component.data));
             break;
         }
     }
 }
 
-World initializeWorld(const Visconfig::World& world)
+World initialize_world(const Visconfig::World& world)
 {
-    World ecsWorld{};
+    World ecs_world{};
 
-    std::unordered_map<std::size_t, Entity> entityIdMap{};
+    std::unordered_map<std::size_t, Entity> entity_id_map{};
 
-    auto componentManager{ ecsWorld.addManager<ComponentManager>() };
-    auto entityManager{ ecsWorld.addManager<EntityManager>() };
+    /// TODO: Remove old front end
+    [[maybe_unused]] auto componentManager{ ecs_world.addManager<ComponentManager>() };
+    [[maybe_unused]] auto entityManager{ ecs_world.addManager<EntityManager>() };
+    auto entity_database{ ecs_world.addManager<EntityDatabase>() };
 
-    for (auto& entity : world.entities) {
-        addEntity(*entityManager, entityIdMap, entity);
-    }
+    entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+        register_component_descriptors(database_context);
+        for (auto& entity : world.entities) {
+            add_entity(database_context, entity_id_map, entity);
+        }
 
-    for (auto& entity : world.entities) {
-        initializeEntity(*componentManager, entityIdMap, entity);
-    }
+        for (auto& entity : world.entities) {
+            initialize_entity(database_context, entity_id_map, entity);
+        }
+    });
 
-    auto systemManager{ ecsWorld.addManager<SystemManager>() };
+    auto systemManager{ ecs_world.addManager<SystemManager>() };
 
     systemManager->addSystem<CubeMovementSystem>("tick"sv);
     systemManager->addSystem<CameraSwitchingSystem>("tick"sv);
@@ -1441,20 +1457,20 @@ World initializeWorld(const Visconfig::World& world)
     systemManager->addSystem<MeshDrawingSystem>("draw"sv);
     systemManager->addSystem<CompositingSystem>("composite"sv);
 
-    return ecsWorld;
+    return ecs_world;
 }
 
-Scene initializeScene(const Visconfig::Config& config)
+Scene initialize_scene(const Visconfig::Config& config)
 {
     for (auto& asset : config.assets) {
-        initializeAsset(asset);
+        initialize_asset(asset);
     }
 
     Scene scene{};
     scene.activeWorld = 0;
 
     for (auto& world : config.worlds) {
-        scene.worlds.push_back(initializeWorld(world));
+        scene.worlds.push_back(initialize_world(world));
     }
 
     return scene;
@@ -1465,8 +1481,8 @@ void tick(Scene& scene)
     using namespace std::literals;
 
     for (auto& world : scene.worlds) {
-        auto systemManager{ world.getManager<SystemManager>() };
-        systemManager->run("tick"sv);
+        auto system_manager{ world.getManager<SystemManager>() };
+        system_manager->run("tick"sv);
     }
 }
 
@@ -1475,14 +1491,14 @@ void draw(const Scene& scene)
     using namespace std::literals;
 
     for (auto& world : scene.worlds) {
-        auto systemManager{ world.getManager<SystemManager>() };
-        systemManager->run("draw"sv);
-        systemManager->run("post-process"sv);
+        auto system_manager{ world.getManager<SystemManager>() };
+        system_manager->run("draw"sv);
+        system_manager->run("post-process"sv);
     }
 
     for (auto& world : scene.worlds) {
-        auto systemManager{ world.getManager<SystemManager>() };
-        systemManager->run("composite"sv);
+        auto system_manager{ world.getManager<SystemManager>() };
+        system_manager->run("composite"sv);
     }
 }
 

@@ -132,7 +132,7 @@ int run(const std::filesystem::path& configurationPath)
     glDebugMessageCallback(MessageCallback, 0);
 #endif // DEBUG_OPENGL
 
-    auto scene{ initializeScene(config) };
+    auto scene{ initialize_scene(config) };
 
     while (!shouldQuit()) {
         tick(scene);
