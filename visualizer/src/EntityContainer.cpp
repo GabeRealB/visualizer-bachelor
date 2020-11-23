@@ -3,25 +3,29 @@
 #include <algorithm>
 #include <cassert>
 
+#include <visualizer/ComponentManager.hpp>
+
 namespace Visualizer {
 
 /**************************************************************************************************
  **************************************** ComponentLayout ****************************************
  **************************************************************************************************/
 
-ComponentLayout::ComponentLayout(const EntityArchetype& archetype)
-    : m_component_descriptors{}
+ComponentLayout::ComponentLayout(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database)
+    : m_archetype{ archetype }
+    , m_component_descriptors{}
 {
-    std::vector<TypeId> components{};
-    components.reserve(archetype.size());
+    std::vector<TypeId> component_types{};
+    component_types.reserve(archetype.size());
     m_component_descriptors.reserve(archetype.size());
 
-    for (const auto component : archetype.types()) {
-        components.insert(std::upper_bound(components.begin(), components.end(), component), component);
+    for (const auto component_type : archetype.component_types()) {
+        component_types.insert(
+            std::upper_bound(component_types.begin(), component_types.end(), component_type), component_type);
     }
 
-    for (const auto component : components) {
-        m_component_descriptors.push_back(archetype.componentInfo(component).value());
+    for (const auto component_type : component_types) {
+        m_component_descriptors.push_back(entity_database.fetch_component_desc(component_type));
     }
 }
 
@@ -53,11 +57,7 @@ std::span<const EntityComponentData> ComponentLayout::component_descriptors() co
     return std::span<const EntityComponentData>{ m_component_descriptors.data(), size() };
 }
 
-EntityArchetype ComponentLayout::archetype() const
-{
-    /// TODO: Implement to archetype
-    return EntityArchetype{};
-}
+EntityArchetype2 ComponentLayout::archetype() const { return m_archetype; }
 
 /**************************************************************************************************
  ***************************************** ComponentChunk *****************************************
@@ -374,7 +374,7 @@ const void* EntityChunk::fetch_unchecked(std::size_t entity_idx, std::size_t com
 
 std::span<const Entity> EntityChunk::entities() const { return std::span<const Entity>{ m_entities.begin(), size() }; }
 
-EntityArchetype EntityChunk::archetype() const { return m_layout.get().archetype(); }
+EntityArchetype2 EntityChunk::archetype() const { return m_layout.get().archetype(); }
 
 std::size_t EntityChunk::phantom_init(Entity entity)
 {
@@ -387,12 +387,12 @@ std::size_t EntityChunk::phantom_init(Entity entity)
  **************************************** EntityContainer ****************************************
  **************************************************************************************************/
 
-EntityContainer::EntityContainer(const EntityArchetype& archetype)
+EntityContainer::EntityContainer(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database)
     : m_size{ 0 }
     , m_capacity{ ENTITY_CHUNK_SIZE }
     , m_empty_chunks{ 1 }
     , m_filled_chunks{ 0 }
-    , m_layout{ archetype }
+    , m_layout{ archetype, entity_database }
     , m_entity_chunks{}
     , m_capacity_map{}
     , m_entity_map{}
@@ -557,7 +557,7 @@ const EntityChunk& EntityContainer::entity_chunk(std::size_t chunk_idx) const
     return m_entity_chunks[chunk_idx];
 }
 
-EntityArchetype EntityContainer::archetype() const { return m_layout.archetype(); }
+EntityArchetype2 EntityContainer::archetype() const { return m_layout.archetype(); }
 
 std::span<EntityChunk> EntityContainer::entity_chunks()
 {

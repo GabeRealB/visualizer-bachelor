@@ -17,6 +17,7 @@ constexpr std::size_t ENTITY_CHUNK_SIZE{ 32 };
 constexpr std::size_t ENTITY_CHUNK_ALLOCATION_BUFFER{ 2 };
 
 class EntityContainer;
+class EntityDatabaseImpl;
 
 struct EntityLocation {
     std::size_t chunk_idx;
@@ -25,7 +26,7 @@ struct EntityLocation {
 
 class ComponentLayout {
 public:
-    ComponentLayout(const EntityArchetype& archetype);
+    ComponentLayout(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database);
 
     std::size_t size() const;
 
@@ -35,9 +36,10 @@ public:
 
     std::span<const EntityComponentData> component_descriptors() const;
 
-    EntityArchetype archetype() const;
+    EntityArchetype2 archetype() const;
 
 private:
+    EntityArchetype2 m_archetype;
     std::vector<EntityComponentData> m_component_descriptors;
 };
 
@@ -112,7 +114,7 @@ public:
 
     std::span<const Entity> entities() const;
 
-    EntityArchetype archetype() const;
+    EntityArchetype2 archetype() const;
 
 private:
     std::size_t phantom_init(Entity entity);
@@ -125,7 +127,7 @@ private:
 
 class EntityContainer {
 public:
-    EntityContainer(const EntityArchetype& archetype);
+    EntityContainer(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database);
 
     std::size_t size() const;
     std::size_t capacity() const;
@@ -155,7 +157,7 @@ public:
     std::span<EntityChunk> entity_chunks();
     std::span<const EntityChunk> entity_chunks() const;
 
-    EntityArchetype archetype() const;
+    EntityArchetype2 archetype() const;
 
 private:
     struct ChunkCapacity {
