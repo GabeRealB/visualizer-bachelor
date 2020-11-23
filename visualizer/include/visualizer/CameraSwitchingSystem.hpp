@@ -15,8 +15,8 @@ public:
     void terminate() final;
 
 private:
-    EntityQuery m_cameraSwitcherQuery;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    EntityQuery m_camera_switcher_query;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }

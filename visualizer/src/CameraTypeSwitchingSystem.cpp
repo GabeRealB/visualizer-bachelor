@@ -16,14 +16,14 @@
 namespace Visualizer {
 
 CameraTypeSwitchingSystem::CameraTypeSwitchingSystem()
-    : m_cameraQuery{ EntityQuery{}.with<Camera, FreeFly, FixedCamera>() }
-    , m_componentManager{}
+    : m_camera_query{ EntityQuery{}.with<Camera, FreeFly, FixedCamera>() }
+    , m_entity_database{}
 {
 }
 
-void CameraTypeSwitchingSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void CameraTypeSwitchingSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void CameraTypeSwitchingSystem::terminate() { m_componentManager = nullptr; }
+void CameraTypeSwitchingSystem::terminate() { m_entity_database = nullptr; }
 
 void CameraTypeSwitchingSystem::run(void*)
 {
@@ -46,21 +46,23 @@ void CameraTypeSwitchingSystem::run(void*)
         gPressed = true;
     }
 
-    if (fKey == GLFW_RELEASE && fPressed) {
-        fPressed = false;
+    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+        if (fKey == GLFW_RELEASE && fPressed) {
+            fPressed = false;
 
-        m_cameraQuery.query(*m_componentManager)
-            .filter<Camera>([](const Camera* camera) { return camera->m_active; })
-            .forEach<Camera>([](Camera* camera) { camera->m_fixed = !camera->m_fixed; });
-    }
+            m_camera_query.query(database_context)
+                .filter<Camera>([](const Camera* camera) { return camera->m_active; })
+                .forEach<Camera>([](Camera* camera) { camera->m_fixed = !camera->m_fixed; });
+        }
 
-    if (gKey == GLFW_RELEASE && gPressed) {
-        gPressed = false;
+        if (gKey == GLFW_RELEASE && gPressed) {
+            gPressed = false;
 
-        m_cameraQuery.query(*m_componentManager)
-            .filter<Camera>([](const Camera* camera) { return camera->m_active; })
-            .forEach<Camera>([](Camera* camera) { camera->perspective = !camera->perspective; });
-    }
+            m_camera_query.query(database_context)
+                .filter<Camera>([](const Camera* camera) { return camera->m_active; })
+                .forEach<Camera>([](Camera* camera) { camera->perspective = !camera->perspective; });
+        }
+    });
 }
 
 }

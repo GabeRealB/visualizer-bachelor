@@ -20,14 +20,14 @@ public:
     void terminate() final;
 
 private:
-    double m_mouseX;
-    double m_mouseY;
-    double m_currentTime;
-    float m_movementSpeed;
-    float m_rotationSpeed;
-    float m_movementMultiplier;
-    EntityQuery m_cameraQuery;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    double m_mouse_x;
+    double m_mouse_y;
+    double m_current_time;
+    float m_movement_speed;
+    float m_rotation_speed;
+    float m_movement_multiplier;
+    EntityQuery m_camera_query;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }

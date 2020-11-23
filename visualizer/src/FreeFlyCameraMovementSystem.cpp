@@ -16,21 +16,21 @@
 namespace Visualizer {
 
 FreeFlyCameraMovementSystem::FreeFlyCameraMovementSystem()
-    : m_mouseX{ 0.0 }
-    , m_mouseY{ 0.0 }
-    , m_currentTime{ glfwGetTime() }
-    , m_movementSpeed{ 10.0f }
-    , m_rotationSpeed{ 0.005f }
-    , m_movementMultiplier{ 1.5f }
-    , m_cameraQuery{ EntityQuery{}.with<Camera, FreeFly, Transform>() }
-    , m_componentManager{}
+    : m_mouse_x{ 0.0 }
+    , m_mouse_y{ 0.0 }
+    , m_current_time{ glfwGetTime() }
+    , m_movement_speed{ 10.0f }
+    , m_rotation_speed{ 0.005f }
+    , m_movement_multiplier{ 1.5f }
+    , m_camera_query{ EntityQuery{}.with<Camera, FreeFly, Transform>() }
+    , m_entity_database{}
 {
-    glfwGetCursorPos(glfwGetCurrentContext(), &m_mouseX, &m_mouseY);
+    glfwGetCursorPos(glfwGetCurrentContext(), &m_mouse_x, &m_mouse_y);
 }
 
-void FreeFlyCameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void FreeFlyCameraMovementSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void FreeFlyCameraMovementSystem::terminate() { m_componentManager = nullptr; }
+void FreeFlyCameraMovementSystem::terminate() { m_entity_database = nullptr; }
 
 void FreeFlyCameraMovementSystem::run(void*)
 {
@@ -39,113 +39,114 @@ void FreeFlyCameraMovementSystem::run(void*)
     }
 
     auto window{ glfwGetCurrentContext() };
-    auto wKey{ glfwGetKey(window, GLFW_KEY_W) };
-    auto aKey{ glfwGetKey(window, GLFW_KEY_A) };
-    auto sKey{ glfwGetKey(window, GLFW_KEY_S) };
-    auto dKey{ glfwGetKey(window, GLFW_KEY_D) };
-    auto qKey{ glfwGetKey(window, GLFW_KEY_Q) };
-    auto eKey{ glfwGetKey(window, GLFW_KEY_E) };
+    auto w_key{ glfwGetKey(window, GLFW_KEY_W) };
+    auto a_key{ glfwGetKey(window, GLFW_KEY_A) };
+    auto s_key{ glfwGetKey(window, GLFW_KEY_S) };
+    auto d_key{ glfwGetKey(window, GLFW_KEY_D) };
+    auto q_key{ glfwGetKey(window, GLFW_KEY_Q) };
+    auto e_key{ glfwGetKey(window, GLFW_KEY_E) };
 
-    auto shiftKey{ glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) };
-    auto ctrlKey{ glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) };
-    auto newTime{ glfwGetTime() };
-    auto deltaTime{ static_cast<float>(newTime - m_currentTime) };
-    m_currentTime = newTime;
+    auto shift_key{ glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) };
+    auto ctrl_key{ glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) };
+    auto new_time{ glfwGetTime() };
+    auto delta_time{ static_cast<float>(new_time - m_current_time) };
+    m_current_time = new_time;
 
-    auto movementSpeed{ m_movementSpeed * deltaTime };
-    if (shiftKey == GLFW_PRESS) {
-        movementSpeed *= m_movementMultiplier * 10.0f;
-    } else if (ctrlKey) {
-        movementSpeed *= m_movementMultiplier;
+    auto movement_speed{ m_movement_speed * delta_time };
+    if (shift_key == GLFW_PRESS) {
+        movement_speed *= m_movement_multiplier * 10.0f;
+    } else if (ctrl_key) {
+        movement_speed *= m_movement_multiplier;
     }
 
-    double mouseX{ 0.0 };
-    double mouseY{ 0.0 };
-    glfwGetCursorPos(window, &mouseX, &mouseY);
-    double mouseXOffset{ m_mouseX - mouseX };
-    double mouseYOffset{ m_mouseY - mouseY };
-    m_mouseX = mouseX;
-    m_mouseY = mouseY;
+    double mouse_x{ 0.0 };
+    double mouse_y{ 0.0 };
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    double mouse_x_offset{ m_mouse_x - mouse_x };
+    double mouse_y_offset{ m_mouse_y - mouse_y };
+    m_mouse_x = mouse_x;
+    m_mouse_y = mouse_y;
 
     constexpr glm::vec3 forward{ 0.0f, 0.0f, 1.0f };
     constexpr glm::vec3 right{ 1.0f, 0.0f, 0.0f };
     constexpr glm::vec3 up{ 0.0f, 1.0f, 0.0f };
 
-    glm::vec3 mouseRotation{ m_rotationSpeed * mouseYOffset, m_rotationSpeed * mouseXOffset, 0.0 };
+    glm::vec3 mouse_rotation{ m_rotation_speed * mouse_y_offset, m_rotation_speed * mouse_x_offset, 0.0 };
 
-    auto activeFreeCameras{ m_cameraQuery.query(*m_componentManager).filter<Camera>([](const Camera* camera) -> bool {
-        return camera->m_active && !camera->m_fixed;
-    }) };
+    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+        auto activeFreeCameras{ m_camera_query.query(database_context).filter<Camera>([](const Camera* camera) -> bool {
+            return camera->m_active && !camera->m_fixed;
+        }) };
 
-    auto perspectiveCameras{ activeFreeCameras };
-    auto orthographicCameras{ activeFreeCameras };
-    perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
-    orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
+        auto perspectiveCameras{ activeFreeCameras };
+        auto orthographicCameras{ activeFreeCameras };
+        perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
+        orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
 
-    perspectiveCameras.forEach<Transform>([&](Transform* transform) {
-        auto localRight{ transform->rotation * right };
-        auto upRotation{ glm::angleAxis(mouseRotation.y, up) };
-        auto rightRotation{ glm::angleAxis(mouseRotation.x, localRight) };
+        perspectiveCameras.forEach<Transform>([&](Transform* transform) {
+            auto localRight{ transform->rotation * right };
+            auto upRotation{ glm::angleAxis(mouse_rotation.y, up) };
+            auto rightRotation{ glm::angleAxis(mouse_rotation.x, localRight) };
 
-        auto rotation{ upRotation * rightRotation * transform->rotation };
-        transform->rotation = rotation;
+            auto rotation{ upRotation * rightRotation * transform->rotation };
+            transform->rotation = rotation;
 
-        auto rotatedForwards{ rotation * forward };
-        auto rotatedRight{ rotation * right };
-        auto rotatedUp{ rotation * up };
+            auto rotatedForwards{ rotation * forward };
+            auto rotatedRight{ rotation * right };
+            auto rotatedUp{ rotation * up };
 
-        if (wKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedForwards;
-        }
-        if (sKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedForwards;
-        }
+            if (w_key == GLFW_PRESS) {
+                transform->position -= movement_speed * rotatedForwards;
+            }
+            if (s_key == GLFW_PRESS) {
+                transform->position += movement_speed * rotatedForwards;
+            }
 
-        if (aKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedRight;
-        }
-        if (dKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedRight;
-        }
+            if (a_key == GLFW_PRESS) {
+                transform->position -= movement_speed * rotatedRight;
+            }
+            if (d_key == GLFW_PRESS) {
+                transform->position += movement_speed * rotatedRight;
+            }
 
-        if (qKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * rotatedUp;
-        }
-        if (eKey == GLFW_PRESS) {
-            transform->position += movementSpeed * rotatedUp;
-        }
+            if (q_key == GLFW_PRESS) {
+                transform->position -= movement_speed * rotatedUp;
+            }
+            if (e_key == GLFW_PRESS) {
+                transform->position += movement_speed * rotatedUp;
+            }
+        });
+
+        orthographicCameras.forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
+            transform->rotation = glm::identity<glm::quat>();
+
+            if (w_key == GLFW_PRESS) {
+                transform->position += movement_speed * up;
+            }
+            if (s_key == GLFW_PRESS) {
+                transform->position -= movement_speed * up;
+            }
+
+            if (a_key == GLFW_PRESS) {
+                transform->position -= movement_speed * right;
+            }
+            if (d_key == GLFW_PRESS) {
+                transform->position += movement_speed * right;
+            }
+
+            if (q_key == GLFW_PRESS) {
+                camera->orthographicWidth += movement_speed;
+                camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
+            }
+            if (e_key == GLFW_PRESS) {
+                camera->orthographicWidth -= movement_speed;
+                camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
+
+                camera->orthographicWidth = camera->orthographicWidth <= 5.0f ? 5.0f : camera->orthographicWidth;
+                camera->orthographicHeight = camera->orthographicHeight <= 5.0f ? 5.0f : camera->orthographicHeight;
+            }
+        });
     });
-
-    orthographicCameras.forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
-        transform->rotation = glm::identity<glm::quat>();
-
-        if (wKey == GLFW_PRESS) {
-            transform->position += movementSpeed * up;
-        }
-        if (sKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * up;
-        }
-
-        if (aKey == GLFW_PRESS) {
-            transform->position -= movementSpeed * right;
-        }
-        if (dKey == GLFW_PRESS) {
-            transform->position += movementSpeed * right;
-        }
-
-        if (qKey == GLFW_PRESS) {
-            camera->orthographicWidth += movementSpeed;
-            camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
-        }
-        if (eKey == GLFW_PRESS) {
-            camera->orthographicWidth -= movementSpeed;
-            camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
-
-            camera->orthographicWidth = camera->orthographicWidth <= 5.0f ? 5.0f : camera->orthographicWidth;
-            camera->orthographicHeight = camera->orthographicHeight <= 5.0f ? 5.0f : camera->orthographicHeight;
-        }
-    });
-    ;
 }
 
 }
