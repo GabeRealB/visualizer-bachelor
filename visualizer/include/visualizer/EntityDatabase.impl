@@ -37,4 +37,67 @@ template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f) cons
     std::invoke(f, database_context);
 }
 
+/**************************************************************************************************
+ ************************************* EntityDatabaseContext *************************************
+ **************************************************************************************************/
+
+template <typename T> requires NoCVRefs<T> ComponentType EntityDatabaseContext::register_component_desc()
+{
+    return register_component_desc(getTypeId<T>(), EntityComponentData::create_desc<T>());
+}
+
+template <typename T> requires NoCVRefs<T> bool EntityDatabaseContext::entity_has_component(Entity entity) const
+{
+    return entity_has_component(entity, getTypeId<T>());
+}
+
+template <typename T> requires NoCVRefs<T> void EntityDatabaseContext::add_component(Entity entity)
+{
+    add_component(entity, getTypeId<T>());
+}
+
+template <typename T> requires NoCVRefs<T> void EntityDatabaseContext::add_component(Entity entity, T&& component)
+{
+    add_component_move(entity, getTypeId<T>(), &component);
+}
+
+template <typename T> requires NoCVRefs<T> void EntityDatabaseContext::add_component(Entity entity, const T& component)
+{
+    add_component_copy(entity, getTypeId<T>(), &component);
+}
+
+template <typename T> requires NoCVRefs<T> void EntityDatabaseContext::remove_component(Entity entity)
+{
+    remove_component(entity, getTypeId<T>());
+}
+
+template <typename T> requires NoCVRefs<T> T EntityDatabaseContext::read_component(Entity entity) const
+{
+    T component;
+    read_component(entity, getTypeId<T>(), &component);
+    return component;
+}
+
+template <typename T> requires NoCVRefs<T> void EntityDatabaseContext::write_component(Entity entity, T&& component)
+{
+    write_component_move(entity, getTypeId<T>(), &component);
+}
+
+template <typename T>
+requires NoCVRefs<T> void EntityDatabaseContext::write_component(Entity entity, const T& component)
+{
+    write_component_copy(entity, getTypeId<T>(), &component);
+}
+
+template <typename T> requires NoCVRefs<T> T& EntityDatabaseContext::fetch_component_unchecked(Entity entity)
+{
+    return *static_cast<T*>(fetch_component_unchecked(entity, getTypeId<T>()));
+}
+
+template <typename T>
+requires NoCVRefs<T> const T& EntityDatabaseContext::fetch_component_unchecked(Entity entity) const
+{
+    return *static_cast<const T*>(fetch_component_unchecked(entity, getTypeId<T>()));
+}
+
 }

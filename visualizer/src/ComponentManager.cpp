@@ -312,8 +312,12 @@ const EntityComponentData& EntityDatabaseImpl::fetch_component_desc(ComponentTyp
 
 Entity EntityDatabaseImpl::init_entity(const EntityArchetype2& archetype)
 {
+    for (auto component_type : archetype.component_types()) {
+        assert(has_component(component_type));
+    }
     auto entity{ generate_new_entity() };
     auto& entity_container{ fetch_or_init_entity_container(archetype) };
+    m_entities.emplace(entity, m_archetype_map.at(archetype));
     entity_container.init(entity);
     return entity;
 }
@@ -337,10 +341,14 @@ Entity EntityDatabaseImpl::init_entity(const EntityBuilder& entity_builder)
 Entity EntityDatabaseImpl::init_entity_copy(Entity entity, const EntityArchetype2& archetype)
 {
     assert(has_entity(entity));
+    for (auto component_type : archetype.component_types()) {
+        assert(has_component(component_type));
+    }
     auto new_entity{ generate_new_entity() };
     auto& entity_container{ fetch_or_init_entity_container(archetype) };
     const auto& src_entity_container{ fetch_entity_container(entity) };
     auto src_entity_location{ src_entity_container.entity_location(entity) };
+    m_entities.emplace(new_entity, m_archetype_map.at(archetype));
     entity_container.init_copy(new_entity, src_entity_container, src_entity_location);
     return new_entity;
 }
@@ -370,6 +378,9 @@ void EntityDatabaseImpl::erase_entity(Entity entity)
 void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype2& archetype)
 {
     assert(has_entity(entity));
+    for (auto component_type : archetype.component_types()) {
+        assert(has_component(component_type));
+    }
     auto& dst_entity_container{ fetch_or_init_entity_container(archetype) };
     auto& src_entity_container{ fetch_entity_container(entity) };
     if (&dst_entity_container != &src_entity_container) {
@@ -386,6 +397,8 @@ void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype2& arch
             }
             m_free_container_ids.push_back(src_entity_container_id);
         }
+
+        m_entities.at(entity) = m_archetype_map.at(archetype);
     }
 }
 
@@ -601,7 +614,7 @@ EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const Entity
         assert(res);
         m_archetype_map.emplace(archetype, container_id);
         for (auto component_type : archetype.component_types()) {
-            m_type_associations.at(component_type).emplace(container_id);
+            m_type_associations.try_emplace(component_type).first->second.emplace(container_id);
         }
         return pos->second;
     }
