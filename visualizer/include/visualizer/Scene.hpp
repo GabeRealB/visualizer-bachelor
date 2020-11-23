@@ -16,7 +16,7 @@ struct Scene {
     std::vector<World> worlds;
 };
 
-Scene initializeScene(const Visconfig::Config& config);
+Scene initialize_scene(const Visconfig::Config& config);
 
 void tick(Scene& scene);
 void draw(const Scene& scene);
