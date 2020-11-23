@@ -613,40 +613,6 @@ EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const Entity
 
 EntityDatabase::~EntityDatabase() noexcept { std::scoped_lock lock{ m_context_mutex }; }
 
-void EntityDatabase::enter_secure_context(EntityDatabaseCallback f)
-{
-    assert(f != nullptr);
-    std::scoped_lock lock{ m_context_mutex };
-    EntityDatabaseContext database_context{ m_database_impl };
-    f(database_context);
-}
-
-void EntityDatabase::enter_secure_context(EntityDatabaseConstCallback f) const
-{
-    assert(f != nullptr);
-    std::scoped_lock lock{ m_context_mutex };
-    EntityDatabaseContext database_context{ m_database_impl };
-    f(database_context);
-}
-
-void EntityDatabase::enter_secure_lazy_context(EntityDatabaseLazyCallback f)
-{
-    assert(f != nullptr);
-    /// TODO: Allow multiple lazy contexts
-    std::scoped_lock lock{ m_context_mutex };
-    EntityDatabaseLazyContext database_context{ m_database_impl };
-    f(database_context);
-}
-
-void EntityDatabase::enter_secure_lazy_context(EntityDatabaseLazyConstCallback f) const
-{
-    assert(f != nullptr);
-    /// TODO: Allow multiple lazy contexts
-    std::scoped_lock lock{ m_context_mutex };
-    EntityDatabaseLazyContext database_context{ m_database_impl };
-    f(database_context);
-}
-
 /**************************************************************************************************
  ************************************* EntityDatabaseContext *************************************
  **************************************************************************************************/

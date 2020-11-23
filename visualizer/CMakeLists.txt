@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(visualizer  VERSION 1.0
+project(visualizer VERSION 1.0
         DESCRIPTION ""
         LANGUAGES CXX)
 
@@ -49,7 +49,11 @@ set(VISUALIZER_INCLUDES
         include/visualizer/TextDrawingSystem.hpp
         include/visualizer/FixedCamera.hpp
         include/visualizer/ActiveCameraSwitcher.hpp
-        include/visualizer/CameraSwitchingSystem.hpp include/visualizer/CameraTypeSwitchingSystem.hpp include/visualizer/FixedCameraMovementSystem.hpp include/visualizer/EntityContainer.hpp)
+        include/visualizer/CameraSwitchingSystem.hpp
+        include/visualizer/CameraTypeSwitchingSystem.hpp
+        include/visualizer/FixedCameraMovementSystem.hpp
+        include/visualizer/EntityContainer.hpp
+        include/visualizer/EntityDatabase.impl)
 
 set(VISUALIZER_SRC
         src/FreeFlyCameraMovementSystem.cpp
@@ -92,6 +96,6 @@ add_custom_command(TARGET visualizer POST_BUILD
 add_executable(visualizer_main src/main.cpp)
 target_link_libraries(visualizer_main PRIVATE visualizer)
 
-if(BUILD_TESTS)
+if (BUILD_TESTS)
     add_subdirectory(test)
-endif()
+endif ()

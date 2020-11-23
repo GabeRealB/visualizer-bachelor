@@ -1,0 +1,40 @@
+#include <cassert>
+#include <functional>
+
+/**************************************************************************************************
+ ***************************************** EntityDatabase *****************************************
+ **************************************************************************************************/
+
+namespace Visualizer {
+
+template <typename F> void EntityDatabase::enter_secure_context(F&& f)
+{
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseContext database_context{ m_database_impl };
+    std::invoke(f, database_context);
+}
+
+template <typename F> void EntityDatabase::enter_secure_context(F&& f) const
+{
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseContext database_context{ m_database_impl };
+    std::invoke(f, database_context);
+}
+
+template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f)
+{
+    /// TODO: Allow multiple lazy contexts
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseLazyContext database_context{ m_database_impl };
+    std::invoke(f, database_context);
+}
+
+template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f) const
+{
+    /// TODO: Allow multiple lazy contexts
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseLazyContext database_context{ m_database_impl };
+    std::invoke(f, database_context);
+}
+
+}

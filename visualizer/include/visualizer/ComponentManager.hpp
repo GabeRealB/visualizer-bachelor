@@ -152,11 +152,11 @@ public:
     EntityDatabase& operator=(const EntityDatabase& other) = delete;
     EntityDatabase& operator=(EntityDatabase&& other) noexcept = delete;
 
-    void enter_secure_context(EntityDatabaseCallback f);
-    void enter_secure_context(EntityDatabaseConstCallback f) const;
+    template <typename F> void enter_secure_context(F&& f);
+    template <typename F> void enter_secure_context(F&& f) const;
 
-    void enter_secure_lazy_context(EntityDatabaseLazyCallback f);
-    void enter_secure_lazy_context(EntityDatabaseLazyConstCallback f) const;
+    template <typename F> void enter_secure_lazy_context(F&& f);
+    template <typename F> void enter_secure_lazy_context(F&& f) const;
 
 private:
     mutable std::shared_mutex m_context_mutex;
@@ -241,3 +241,5 @@ private:
 };
 
 }
+
+#include <visualizer/EntityDatabase.impl>
