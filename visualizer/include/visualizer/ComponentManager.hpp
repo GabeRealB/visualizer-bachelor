@@ -207,6 +207,22 @@ public:
 
     EntityQueryResult query(const EntityQuery& query);
 
+    template <typename T> requires NoCVRefs<T> ComponentType register_component_desc();
+
+    template <typename T> requires NoCVRefs<T> bool entity_has_component(Entity entity) const;
+
+    template <typename T> requires NoCVRefs<T> void add_component(Entity entity);
+    template <typename T> requires NoCVRefs<T> void add_component(Entity entity, T&& component);
+    template <typename T> requires NoCVRefs<T> void add_component(Entity entity, const T& component);
+    template <typename T> requires NoCVRefs<T> void remove_component(Entity entity);
+
+    template <typename T> requires NoCVRefs<T> T read_component(Entity entity) const;
+    template <typename T> requires NoCVRefs<T> void write_component(Entity entity, T&& component);
+    template <typename T> requires NoCVRefs<T> void write_component(Entity entity, const T& component);
+
+    template <typename T> requires NoCVRefs<T> T& fetch_component_unchecked(Entity entity);
+    template <typename T> requires NoCVRefs<T> const T& fetch_component_unchecked(Entity entity) const;
+
 private:
     EntityDatabaseImpl& m_database;
 };
