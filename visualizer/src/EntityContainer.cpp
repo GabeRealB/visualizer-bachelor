@@ -142,7 +142,7 @@ void ComponentChunk::read(std::size_t idx, void* dst) const
     assert(size() > idx);
     assert(dst != nullptr);
     auto component_ptr{ fetch_unchecked(idx) };
-    m_component_data.copyFunc(component_ptr, dst);
+    m_component_data.copyUninitializedFunc(component_ptr, dst);
 }
 
 void ComponentChunk::write_move(std::size_t idx, void* src)
