@@ -6,10 +6,10 @@
 namespace Visualizer {
 
 /**************************************************************************************************
- ************************************** EntityComponentData **************************************
+ ************************************** ComponentDescriptor **************************************
  **************************************************************************************************/
 
-template <typename T> requires NoCVRefs<T> EntityComponentData EntityComponentData::create_desc()
+template <typename T> requires NoCVRefs<T> ComponentDescriptor ComponentDescriptor::create_desc()
 {
     return { getTypeId<T>(), sizeof(T), alignof(T), [](void* p) { new (p) T{}; },
         [](const void* src, void* dst) { *static_cast<T*>(dst) = *static_cast<const T*>(src); },
@@ -26,17 +26,17 @@ template <typename T> requires NoCVRefs<T> EntityComponentData EntityComponentDa
 }
 
 /**************************************************************************************************
- **************************************** EntityArchetype2 ****************************************
+ **************************************** EntityArchetype ****************************************
  **************************************************************************************************/
 
-template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 EntityArchetype2::with() const
+template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype EntityArchetype::with() const
 {
     auto component_types{ getTypeIds<Ts...>() };
     return with(component_types);
 }
 
 template <typename... Ts>
-requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 EntityArchetype2::without() const
+requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype EntityArchetype::without() const
 {
     auto component_types{ getTypeIds<Ts...>() };
     return without(component_types);

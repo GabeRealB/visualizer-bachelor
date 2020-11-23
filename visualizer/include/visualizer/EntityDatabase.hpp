@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <concepts>
 #include <functional>
 #include <optional>
 #include <shared_mutex>
@@ -20,18 +21,11 @@
 
 namespace Visualizer {
 
-using EntityArchetypeId = std::size_t;
-
 class EntityBuilder;
 class EntityDatabaseContext;
 class EntityDatabaseLazyContext;
 
 using ComponentType = TypeId;
-
-using EntityDatabaseCallback = void (*)(EntityDatabaseContext& context);
-using EntityDatabaseConstCallback = void (*)(const EntityDatabaseContext& context);
-using EntityDatabaseLazyCallback = void (*)(EntityDatabaseLazyContext& context);
-using EntityDatabaseLazyConstCallback = void (*)(const EntityDatabaseLazyContext& context);
 
 class EntityDatabaseImpl {
 public:
@@ -47,16 +41,16 @@ public:
     bool has_component(ComponentType component_type) const;
     bool entity_has_component(Entity entity, ComponentType component_type) const;
 
-    ComponentType register_component_desc(ComponentType component_type, EntityComponentData component_desc);
-    const EntityComponentData& fetch_component_desc(ComponentType component_type) const;
+    ComponentType register_component_desc(ComponentType component_type, ComponentDescriptor component_desc);
+    const ComponentDescriptor& fetch_component_desc(ComponentType component_type) const;
 
-    Entity init_entity(const EntityArchetype2& archetype);
+    Entity init_entity(const EntityArchetype& archetype);
     Entity init_entity(EntityBuilder&& entity_builder);
     Entity init_entity(const EntityBuilder& entity_builder);
-    Entity init_entity_copy(Entity entity, const EntityArchetype2& archetype);
+    Entity init_entity_copy(Entity entity, const EntityArchetype& archetype);
     void erase_entity(Entity entity);
 
-    void move_entity(Entity entity, const EntityArchetype2& archetype);
+    void move_entity(Entity entity, const EntityArchetype& archetype);
 
     void add_component(Entity entity, ComponentType component_type);
     void add_component_move(Entity entity, ComponentType component_type, void* src);
@@ -73,7 +67,7 @@ public:
     EntityContainer& fetch_entity_container(Entity entity);
     const EntityContainer& fetch_entity_container(Entity entity) const;
 
-    EntityArchetype2 fetch_entity_archetype(Entity entity) const;
+    EntityArchetype fetch_entity_archetype(Entity entity) const;
 
     EntityQueryResult query(const EntityQuery& query);
 
@@ -81,7 +75,7 @@ private:
     using EntityContainerId = std::size_t;
 
     Entity generate_new_entity();
-    EntityContainer& fetch_or_init_entity_container(const EntityArchetype2& archetype);
+    EntityContainer& fetch_or_init_entity_container(const EntityArchetype& archetype);
 
     Entity m_last_entity;
     EntityContainerId m_last_container_id;
@@ -90,10 +84,10 @@ private:
     std::vector<EntityContainerId> m_free_container_ids;
 
     std::unordered_map<Entity, EntityContainerId, EntityHasher> m_entities;
-    std::unordered_map<TypeId, EntityComponentData> m_component_descriptors;
+    std::unordered_map<TypeId, ComponentDescriptor> m_component_descriptors;
     std::unordered_map<EntityContainerId, EntityContainer> m_entity_containers;
     std::unordered_map<TypeId, std::unordered_set<EntityContainerId>> m_type_associations;
-    std::unordered_map<EntityArchetype2, EntityContainerId, EntityArchetype2Hasher> m_archetype_map;
+    std::unordered_map<EntityArchetype, EntityContainerId, EntityArchetypeHasher> m_archetype_map;
 };
 
 class EntityDatabase : public GenericManager {
@@ -106,11 +100,13 @@ public:
     EntityDatabase& operator=(const EntityDatabase& other) = delete;
     EntityDatabase& operator=(EntityDatabase&& other) noexcept = delete;
 
-    template <typename F> void enter_secure_context(F&& f);
-    template <typename F> void enter_secure_context(F&& f) const;
+    template <typename F> requires std::invocable<F, EntityDatabaseContext&> void enter_secure_context(F&& f);
+    template <typename F>
+    requires std::invocable<F, const EntityDatabaseContext&> void enter_secure_context(F&& f) const;
 
-    template <typename F> void enter_secure_lazy_context(F&& f);
-    template <typename F> void enter_secure_lazy_context(F&& f) const;
+    template <typename F> requires std::invocable<F, EntityDatabaseLazyContext&> void enter_secure_lazy_context(F&& f);
+    template <typename F>
+    requires std::invocable<F, const EntityDatabaseLazyContext&> void enter_secure_lazy_context(F&& f) const;
 
 private:
     mutable std::shared_mutex m_context_mutex;
@@ -131,16 +127,16 @@ public:
     bool has_component(ComponentType component_type) const;
     bool entity_has_component(Entity entity, ComponentType component_type) const;
 
-    ComponentType register_component_desc(ComponentType component_type, EntityComponentData component_desc);
-    const EntityComponentData& fetch_component_desc(ComponentType component_type) const;
+    ComponentType register_component_desc(ComponentType component_type, ComponentDescriptor component_desc);
+    const ComponentDescriptor& fetch_component_desc(ComponentType component_type) const;
 
-    Entity init_entity(const EntityArchetype2& archetype);
+    Entity init_entity(const EntityArchetype& archetype);
     Entity init_entity(EntityBuilder&& entity_builder);
     Entity init_entity(const EntityBuilder& entity_builder);
-    Entity init_entity_copy(Entity entity, const EntityArchetype2& archetype);
+    Entity init_entity_copy(Entity entity, const EntityArchetype& archetype);
     void erase_entity(Entity entity);
 
-    void move_entity(Entity entity, const EntityArchetype2& archetype);
+    void move_entity(Entity entity, const EntityArchetype& archetype);
 
     void add_component(Entity entity, ComponentType component_type);
     void add_component_move(Entity entity, ComponentType component_type, void* src);
@@ -157,7 +153,7 @@ public:
     EntityContainer& fetch_entity_container(Entity entity);
     const EntityContainer& fetch_entity_container(Entity entity) const;
 
-    EntityArchetype2 fetch_entity_archetype(Entity entity) const;
+    EntityArchetype fetch_entity_archetype(Entity entity) const;
 
     EntityQueryResult query(const EntityQuery& query);
 
@@ -202,7 +198,7 @@ public:
     void* fetch_component_unchecked(Entity entity, ComponentType component_type);
     const void* fetch_component_unchecked(Entity entity, ComponentType component_type) const;
 
-    EntityArchetype2 fetch_entity_archetype(Entity entity) const;
+    EntityArchetype fetch_entity_archetype(Entity entity) const;
 
     EntityQueryResult query(const EntityQuery& query);
 

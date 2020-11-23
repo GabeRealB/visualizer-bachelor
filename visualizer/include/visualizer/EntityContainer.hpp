@@ -26,26 +26,26 @@ struct EntityLocation {
 
 class ComponentLayout {
 public:
-    ComponentLayout(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database);
+    ComponentLayout(const EntityArchetype& archetype, const EntityDatabaseImpl& entity_database);
 
     std::size_t size() const;
 
     bool has_component(TypeId component_type) const;
     std::size_t component_idx(TypeId component_type) const;
-    EntityComponentData component_desc(std::size_t idx) const;
+    ComponentDescriptor component_desc(std::size_t idx) const;
 
-    std::span<const EntityComponentData> component_descriptors() const;
+    std::span<const ComponentDescriptor> component_descriptors() const;
 
-    EntityArchetype2 archetype() const;
+    EntityArchetype archetype() const;
 
 private:
-    EntityArchetype2 m_archetype;
-    std::vector<EntityComponentData> m_component_descriptors;
+    EntityArchetype m_archetype;
+    std::vector<ComponentDescriptor> m_component_descriptors;
 };
 
 class ComponentChunk {
 public:
-    ComponentChunk(EntityComponentData component_data, std::size_t capacity);
+    ComponentChunk(ComponentDescriptor component_data, std::size_t capacity);
     ComponentChunk(const ComponentChunk& other) = delete;
     ComponentChunk(ComponentChunk&& other) noexcept = default;
     ~ComponentChunk();
@@ -77,7 +77,7 @@ private:
 
     std::size_t m_size;
     std::size_t m_capacity;
-    EntityComponentData m_component_data;
+    ComponentDescriptor m_component_data;
     std::unique_ptr<std::byte[], AlignedDeleter<std::byte>> m_data;
 };
 
@@ -114,7 +114,7 @@ public:
 
     std::span<const Entity> entities() const;
 
-    EntityArchetype2 archetype() const;
+    EntityArchetype archetype() const;
 
 private:
     std::size_t phantom_init(Entity entity);
@@ -127,7 +127,7 @@ private:
 
 class EntityContainer {
 public:
-    EntityContainer(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database);
+    EntityContainer(const EntityArchetype& archetype, const EntityDatabaseImpl& entity_database);
 
     std::size_t size() const;
     std::size_t capacity() const;
@@ -157,7 +157,7 @@ public:
     std::span<EntityChunk> entity_chunks();
     std::span<const EntityChunk> entity_chunks() const;
 
-    EntityArchetype2 archetype() const;
+    EntityArchetype archetype() const;
 
 private:
     struct ChunkCapacity {

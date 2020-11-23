@@ -6,7 +6,7 @@
 
 namespace Visualizer {
 
-EntityQuery::EntityQuery(const EntityArchetype2& archetype)
+EntityQuery::EntityQuery(const EntityArchetype& archetype)
     : m_withTypes{}
     , m_withoutTypes{}
 {

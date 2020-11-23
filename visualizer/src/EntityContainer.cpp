@@ -11,7 +11,7 @@ namespace Visualizer {
  **************************************** ComponentLayout ****************************************
  **************************************************************************************************/
 
-ComponentLayout::ComponentLayout(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database)
+ComponentLayout::ComponentLayout(const EntityArchetype& archetype, const EntityDatabaseImpl& entity_database)
     : m_archetype{ archetype }
     , m_component_descriptors{}
 {
@@ -34,7 +34,7 @@ std::size_t ComponentLayout::size() const { return m_component_descriptors.size(
 bool ComponentLayout::has_component(TypeId component_type) const
 {
     return std::find_if(m_component_descriptors.begin(), m_component_descriptors.end(),
-               [component_type](const EntityComponentData& desc) { return desc.id == component_type; })
+               [component_type](const ComponentDescriptor& desc) { return desc.id == component_type; })
         != m_component_descriptors.end();
 }
 
@@ -42,28 +42,28 @@ std::size_t ComponentLayout::component_idx(TypeId component_type) const
 {
     assert(has_component(component_type));
     const auto component_pos{ std::find_if(m_component_descriptors.begin(), m_component_descriptors.end(),
-        [component_type](const EntityComponentData& desc) { return desc.id == component_type; }) };
+        [component_type](const ComponentDescriptor& desc) { return desc.id == component_type; }) };
     return std::distance(m_component_descriptors.begin(), component_pos);
 }
 
-EntityComponentData ComponentLayout::component_desc(std::size_t idx) const
+ComponentDescriptor ComponentLayout::component_desc(std::size_t idx) const
 {
     assert(size() > idx);
     return m_component_descriptors[idx];
 }
 
-std::span<const EntityComponentData> ComponentLayout::component_descriptors() const
+std::span<const ComponentDescriptor> ComponentLayout::component_descriptors() const
 {
-    return std::span<const EntityComponentData>{ m_component_descriptors.data(), size() };
+    return std::span<const ComponentDescriptor>{ m_component_descriptors.data(), size() };
 }
 
-EntityArchetype2 ComponentLayout::archetype() const { return m_archetype; }
+EntityArchetype ComponentLayout::archetype() const { return m_archetype; }
 
 /**************************************************************************************************
  ***************************************** ComponentChunk *****************************************
  **************************************************************************************************/
 
-ComponentChunk::ComponentChunk(EntityComponentData component_data, std::size_t capacity)
+ComponentChunk::ComponentChunk(ComponentDescriptor component_data, std::size_t capacity)
     : m_size{ 0 }
     , m_capacity{ capacity }
     , m_component_data{ component_data }
@@ -374,7 +374,7 @@ const void* EntityChunk::fetch_unchecked(std::size_t entity_idx, std::size_t com
 
 std::span<const Entity> EntityChunk::entities() const { return std::span<const Entity>{ m_entities.begin(), size() }; }
 
-EntityArchetype2 EntityChunk::archetype() const { return m_layout.get().archetype(); }
+EntityArchetype EntityChunk::archetype() const { return m_layout.get().archetype(); }
 
 std::size_t EntityChunk::phantom_init(Entity entity)
 {
@@ -387,7 +387,7 @@ std::size_t EntityChunk::phantom_init(Entity entity)
  **************************************** EntityContainer ****************************************
  **************************************************************************************************/
 
-EntityContainer::EntityContainer(const EntityArchetype2& archetype, const EntityDatabaseImpl& entity_database)
+EntityContainer::EntityContainer(const EntityArchetype& archetype, const EntityDatabaseImpl& entity_database)
     : m_size{ 0 }
     , m_capacity{ ENTITY_CHUNK_SIZE }
     , m_empty_chunks{ 1 }
@@ -557,7 +557,7 @@ const EntityChunk& EntityContainer::entity_chunk(std::size_t chunk_idx) const
     return m_entity_chunks[chunk_idx];
 }
 
-EntityArchetype2 EntityContainer::archetype() const { return m_layout.archetype(); }
+EntityArchetype EntityContainer::archetype() const { return m_layout.archetype(); }
 
 std::span<EntityChunk> EntityContainer::entity_chunks()
 {
