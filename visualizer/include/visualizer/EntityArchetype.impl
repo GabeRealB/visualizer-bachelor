@@ -118,4 +118,41 @@ template <typename T> requires NoCVRefs<T> constexpr EntityComponentData EntityA
         [](const void* p) { static_cast<const T*>(p)->~T(); } };
 }
 
+/**************************************************************************************************
+ ************************************** EntityComponentData **************************************
+ **************************************************************************************************/
+
+template <typename T> requires NoCVRefs<T> EntityComponentData EntityComponentData::create_desc()
+{
+    return { getTypeId<T>(), sizeof(T), alignof(T), [](void* p) { new (p) T{}; },
+        [](const void* src, void* dst) { *static_cast<T*>(dst) = *static_cast<const T*>(src); },
+        [](void* src, void* dst) {
+            if constexpr (std::is_trivially_copyable<T>::value) {
+                *static_cast<T*>(dst) = *static_cast<const T*>(src);
+            } else {
+                *static_cast<T*>(dst) = std::move(*static_cast<const T*>(src));
+            }
+        },
+        [](const void* src, void* dst) { new (static_cast<T*>(dst)) T{ *static_cast<const T*>(src) }; },
+        [](void* src, void* dst) { new (static_cast<T*>(dst)) T{ std::move(*static_cast<T*>(src)) }; },
+        [](const void* p) { static_cast<const T*>(p)->~T(); } };
+}
+
+/**************************************************************************************************
+ **************************************** EntityArchetype2 ****************************************
+ **************************************************************************************************/
+
+template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 EntityArchetype2::with() const
+{
+    auto component_types{ getTypeIds<Ts...>() };
+    return with(component_types);
+}
+
+template <typename... Ts>
+requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 EntityArchetype2::without() const
+{
+    auto component_types{ getTypeIds<Ts...>() };
+    return without(component_types);
+}
+
 }
