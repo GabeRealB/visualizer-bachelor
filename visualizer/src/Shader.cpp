@@ -236,7 +236,8 @@ ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier 
             continue;
         }
 
-        auto it{ m_parameterInfos.insert_or_assign(name, ShaderEnvironment::ParameterInfo{ currentPos, size, type }) };
+        auto it{ m_parameterInfos.insert_or_assign(
+            name, ShaderEnvironment::ParameterInfo{ false, currentPos, size, type }) };
         m_parameterNames.emplace_back(it.first->first);
 
         if (static_cast<std::size_t>(type) <= static_cast<std::size_t>(ParameterType::MaxIndex)) {
@@ -304,6 +305,11 @@ ShaderEnvironment& ShaderEnvironment::operator=(const ShaderEnvironment& other)
 std::span<std::string_view> ShaderEnvironment::parameters() const
 {
     return { const_cast<std::string_view*>(m_parameterNames.data()), m_parameterNames.size() };
+}
+
+ShaderEnvironment::~ShaderEnvironment()
+{
+    /// TODO: Destruct inners
 }
 
 /**************************************************************************************************

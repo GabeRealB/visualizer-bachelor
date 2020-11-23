@@ -225,6 +225,7 @@ public:
     ShaderEnvironment(ShaderProgram& program, ParameterQualifier filter);
     ShaderEnvironment(const ShaderEnvironment& other);
     ShaderEnvironment(ShaderEnvironment&& other) noexcept = default;
+    ~ShaderEnvironment();
 
     ShaderEnvironment& operator=(const ShaderEnvironment& other);
     ShaderEnvironment& operator=(ShaderEnvironment&& other) noexcept = default;
@@ -236,6 +237,7 @@ public:
     {
         if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {
             auto parameterInfo{ pos->second };
+            assert(parameterInfo.initialized);
             if (idx >= parameterInfo.size || ShaderTypeMapping<T>::mappedType != parameterInfo.type) {
                 return std::nullopt;
             }
@@ -293,7 +295,7 @@ public:
     requires ShaderTypeMapping<T>::hasMapping bool set(std::string_view name, const T& val, std::size_t idx = 0)
     {
         if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {
-            auto parameterInfo{ pos->second };
+            auto& parameterInfo{ pos->second };
             if (idx >= parameterInfo.size || ShaderTypeMapping<T>::mappedType != parameterInfo.type) {
                 return false;
             }
@@ -302,8 +304,14 @@ public:
             if constexpr (std::is_trivially_copyable_v<T>) {
                 std::memcpy(&m_parameterData[index], &val, sizeof(T));
             } else {
-                *reinterpret_cast<T*>(const_cast<unsigned char*>(&m_parameterData[index])) = val;
+                if (parameterInfo.initialized) {
+                    *reinterpret_cast<T*>(const_cast<unsigned char*>(&m_parameterData[index])) = val;
+                } else {
+                    new (&m_parameterData[index]) T{ val };
+                }
             }
+
+            parameterInfo.initialized = true;
 
             return true;
         } else {
@@ -339,6 +347,7 @@ private:
     };
 
     struct ParameterInfo {
+        bool initialized;
         std::size_t pos;
         std::size_t size;
         ParameterType type;
