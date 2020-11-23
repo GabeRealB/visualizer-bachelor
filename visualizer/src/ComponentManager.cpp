@@ -2,9 +2,7 @@
 
 #include <cassert>
 #include <limits>
-
-#include <visualizer/EntityArchetype.hpp>
-#include <visualizer/EntityComponentMap.hpp>
+#include <mutex>
 
 namespace Visualizer {
 
@@ -34,26 +32,6 @@ bool ComponentManager::hasArchetype(EntityArchetypeId archetypeId) const
     return pos != m_chunks.end();
 }
 
-std::optional<EntityArchetype> ComponentManager::getArchetype(Entity entity) const
-{
-    auto pos{ m_entities.find(entity) };
-    if (pos == m_entities.end()) {
-        return std::nullopt;
-    } else {
-        return getArchetype(pos->second);
-    }
-}
-
-std::optional<EntityArchetype> ComponentManager::getArchetype(EntityArchetypeId id) const
-{
-    auto pos{ m_chunks.find(id) };
-    if (pos == m_chunks.end()) {
-        return std::nullopt;
-    } else {
-        return pos->second.archetype();
-    }
-}
-
 std::optional<EntityArchetypeId> ComponentManager::getArchetypeId(Entity entity) const
 {
     auto pos{ m_entities.find(entity) };
@@ -76,7 +54,10 @@ std::optional<EntityArchetypeId> ComponentManager::getArchetypeId(const EntityAr
 
 EntityArchetypeId ComponentManager::addArchetype(const EntityArchetype& archetype)
 {
-    auto pos{ m_archetypeMap.find(archetype) };
+    /// TODO: Remove
+    assert(false);
+    (void)archetype;
+    /*auto pos{ m_archetypeMap.find(archetype) };
     if (pos != m_archetypeMap.end()) {
         return pos->second;
     } else {
@@ -93,34 +74,8 @@ EntityArchetypeId ComponentManager::addArchetype(const EntityArchetype& archetyp
         }
 
         return id;
-    }
-}
-
-bool ComponentManager::removeArchetype(EntityArchetypeId archetypeId)
-{
-    auto chunkPos{ m_chunks.find(archetypeId) };
-    if (chunkPos == m_chunks.end()) {
-        return true;
-    }
-
-    if (chunkPos->second.size() != 0) {
-        return false;
-    }
-
-    auto archetype{ chunkPos->second.archetype() };
-    m_chunks.erase(chunkPos);
-
-    for (auto type : archetype.types()) {
-        auto typePos{ m_typeAssociations.find(type) };
-        typePos->second.erase(archetypeId);
-        if (typePos->second.empty()) {
-            m_typeAssociations.erase(typePos);
-        }
-    }
-
-    m_archetypeMap.erase(archetype);
-    m_freeIds.push_back(archetypeId);
-    return true;
+    }*/
+    return 0;
 }
 
 bool ComponentManager::addEntity(Entity entity, EntityArchetypeId archetypeId)
@@ -323,7 +278,7 @@ EntityArchetypeId ComponentManager::generateNewId()
 }
 
 /**************************************************************************************************
- **************************************** ComponentManager ****************************************
+ *************************************** EntityDatabaseImpl ***************************************
  **************************************************************************************************/
 
 bool EntityDatabaseImpl::has_entity(Entity entity) const { return m_entities.contains(entity); }
@@ -355,7 +310,7 @@ const EntityComponentData& EntityDatabaseImpl::fetch_component_desc(ComponentTyp
     return m_component_descriptors.at(component_type);
 }
 
-Entity EntityDatabaseImpl::init_entity(const EntityArchetype& archetype)
+Entity EntityDatabaseImpl::init_entity(const EntityArchetype2& archetype)
 {
     auto entity{ generate_new_entity() };
     auto& entity_container{ fetch_or_init_entity_container(archetype) };
@@ -379,7 +334,7 @@ Entity EntityDatabaseImpl::init_entity(const EntityBuilder& entity_builder)
     return Entity();
 }
 
-Entity EntityDatabaseImpl::init_entity_copy(Entity entity, const EntityArchetype& archetype)
+Entity EntityDatabaseImpl::init_entity_copy(Entity entity, const EntityArchetype2& archetype)
 {
     assert(has_entity(entity));
     auto new_entity{ generate_new_entity() };
@@ -405,14 +360,14 @@ void EntityDatabaseImpl::erase_entity(Entity entity)
         auto container_archetype{ entity_container.archetype() };
         m_entity_containers.erase(container_id);
         m_archetype_map.erase(container_archetype);
-        for (auto component_type : container_archetype.types()) {
+        for (auto component_type : container_archetype.component_types()) {
             m_type_associations.at(component_type).erase(container_id);
         }
         m_free_container_ids.push_back(container_id);
     }
 }
 
-void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype& archetype)
+void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype2& archetype)
 {
     assert(has_entity(entity));
     auto& dst_entity_container{ fetch_or_init_entity_container(archetype) };
@@ -426,7 +381,7 @@ void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype& arche
             auto container_archetype{ src_entity_container.archetype() };
             m_entity_containers.erase(src_entity_container_id);
             m_archetype_map.erase(container_archetype);
-            for (auto component_type : container_archetype.types()) {
+            for (auto component_type : container_archetype.component_types()) {
                 m_type_associations.at(component_type).erase(src_entity_container_id);
             }
             m_free_container_ids.push_back(src_entity_container_id);
@@ -439,10 +394,7 @@ void EntityDatabaseImpl::add_component(Entity entity, ComponentType component_ty
     assert(has_entity(entity));
     assert(has_component(component_type));
     auto src_archetype{ fetch_entity_archetype(entity) };
-
-    /// TODO: Implement runtime archetype creation.
-    assert(false);
-    auto dst_archetype{ EntityArchetype::with<int>(src_archetype) };
+    auto dst_archetype{ src_archetype.with(component_type) };
     move_entity(entity, dst_archetype);
 }
 
@@ -468,10 +420,7 @@ void EntityDatabaseImpl::remove_component(Entity entity, ComponentType component
     assert(has_component(component_type));
     auto& src_entity_container{ fetch_entity_container(entity) };
     auto src_archetype{ src_entity_container.archetype() };
-
-    /// TODO: Implement runtime archetype creation.
-    assert(false);
-    auto dst_archetype{ EntityArchetype::without<int>(src_archetype) };
+    auto dst_archetype{ src_archetype.without(component_type) };
     move_entity(entity, dst_archetype);
 }
 
@@ -544,7 +493,7 @@ const EntityContainer& EntityDatabaseImpl::fetch_entity_container(Entity entity)
     return m_entity_containers.at(container_id);
 }
 
-EntityArchetype EntityDatabaseImpl::fetch_entity_archetype(Entity entity) const
+EntityArchetype2 EntityDatabaseImpl::fetch_entity_archetype(Entity entity) const
 {
     assert(has_entity(entity));
     return fetch_entity_container(entity).archetype();
@@ -632,12 +581,12 @@ Entity EntityDatabaseImpl::generate_new_entity()
     }
 }
 
-EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const EntityArchetype& archetype)
+EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const EntityArchetype2& archetype)
 {
     if (m_archetype_map.contains(archetype)) {
         return m_entity_containers.at(m_archetype_map.at(archetype));
     } else {
-        for (auto component_type : archetype.types()) {
+        for (auto component_type : archetype.component_types()) {
             assert(has_component(component_type));
         }
         EntityContainerId container_id;
@@ -647,14 +596,229 @@ EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const Entity
             container_id = m_free_container_ids.back();
             m_free_container_ids.pop_back();
         }
-        auto [pos, res] = m_entity_containers.emplace(container_id, archetype);
+        auto [pos, res] = m_entity_containers.emplace(
+            std::piecewise_construct, std::forward_as_tuple(container_id), std::forward_as_tuple(archetype, *this));
         assert(res);
         m_archetype_map.emplace(archetype, container_id);
-        for (auto component_type : archetype.types()) {
+        for (auto component_type : archetype.component_types()) {
             m_type_associations.at(component_type).emplace(container_id);
         }
         return pos->second;
     }
 }
+
+/**************************************************************************************************
+ ***************************************** EntityDatabase *****************************************
+ **************************************************************************************************/
+
+EntityDatabase::~EntityDatabase() noexcept { std::scoped_lock lock{ m_context_mutex }; }
+
+void EntityDatabase::enter_secure_context(EntityDatabaseCallback f)
+{
+    assert(f != nullptr);
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseContext database_context{ m_database_impl };
+    f(database_context);
+}
+
+void EntityDatabase::enter_secure_context(EntityDatabaseConstCallback f) const
+{
+    assert(f != nullptr);
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseContext database_context{ m_database_impl };
+    f(database_context);
+}
+
+void EntityDatabase::enter_secure_lazy_context(EntityDatabaseLazyCallback f)
+{
+    assert(f != nullptr);
+    /// TODO: Allow multiple lazy contexts
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseLazyContext database_context{ m_database_impl };
+    f(database_context);
+}
+
+void EntityDatabase::enter_secure_lazy_context(EntityDatabaseLazyConstCallback f) const
+{
+    assert(f != nullptr);
+    /// TODO: Allow multiple lazy contexts
+    std::scoped_lock lock{ m_context_mutex };
+    EntityDatabaseLazyContext database_context{ m_database_impl };
+    f(database_context);
+}
+
+/**************************************************************************************************
+ ************************************* EntityDatabaseContext *************************************
+ **************************************************************************************************/
+
+EntityDatabaseContext::EntityDatabaseContext(EntityDatabaseImpl& database)
+    : m_database{ database }
+{
+}
+
+bool EntityDatabaseContext::has_entity(Entity entity) const { return m_database.has_entity(entity); }
+
+bool EntityDatabaseContext::has_component(ComponentType component_type) const
+{
+    return m_database.has_component(component_type);
+}
+
+bool EntityDatabaseContext::entity_has_component(Entity entity, ComponentType component_type) const
+{
+    return m_database.entity_has_component(entity, component_type);
+}
+
+ComponentType EntityDatabaseContext::register_component_desc(
+    ComponentType component_type, EntityComponentData component_desc)
+{
+    return m_database.register_component_desc(component_type, component_desc);
+}
+
+const EntityComponentData& EntityDatabaseContext::fetch_component_desc(ComponentType component_type) const
+{
+    return m_database.fetch_component_desc(component_type);
+}
+
+Entity EntityDatabaseContext::init_entity(const EntityArchetype2& archetype)
+{
+    return m_database.init_entity(archetype);
+}
+
+Entity EntityDatabaseContext::init_entity(EntityBuilder&& entity_builder)
+{
+    return m_database.init_entity(entity_builder);
+}
+
+Entity EntityDatabaseContext::init_entity(const EntityBuilder& entity_builder)
+{
+    return m_database.init_entity(entity_builder);
+}
+
+Entity EntityDatabaseContext::init_entity_copy(Entity entity, const EntityArchetype2& archetype)
+{
+    return m_database.init_entity_copy(entity, archetype);
+}
+
+void EntityDatabaseContext::erase_entity(Entity entity) { m_database.erase_entity(entity); }
+
+void EntityDatabaseContext::move_entity(Entity entity, const EntityArchetype2& archetype)
+{
+    m_database.move_entity(entity, archetype);
+}
+
+void EntityDatabaseContext::add_component(Entity entity, ComponentType component_type)
+{
+    m_database.add_component(entity, component_type);
+}
+
+void EntityDatabaseContext::add_component_move(Entity entity, ComponentType component_type, void* src)
+{
+    m_database.add_component_move(entity, component_type, src);
+}
+
+void EntityDatabaseContext::add_component_copy(Entity entity, ComponentType component_type, const void* src)
+{
+    m_database.add_component_copy(entity, component_type, src);
+}
+
+void EntityDatabaseContext::remove_component(Entity entity, ComponentType component_type)
+{
+    m_database.remove_component(entity, component_type);
+}
+
+void EntityDatabaseContext::read_component(Entity entity, ComponentType component_type, void* dst) const
+{
+    m_database.read_component(entity, component_type, dst);
+}
+
+void EntityDatabaseContext::write_component_move(Entity entity, ComponentType component_type, void* src)
+{
+    m_database.write_component_move(entity, component_type, src);
+}
+
+void EntityDatabaseContext::write_component_copy(Entity entity, ComponentType component_type, const void* src)
+{
+    m_database.write_component_copy(entity, component_type, src);
+}
+
+void* EntityDatabaseContext::fetch_component_unchecked(Entity entity, ComponentType component_type)
+{
+    return m_database.fetch_component_unchecked(entity, component_type);
+}
+
+const void* EntityDatabaseContext::fetch_component_unchecked(Entity entity, ComponentType component_type) const
+{
+    return m_database.fetch_component_unchecked(entity, component_type);
+}
+
+EntityContainer& EntityDatabaseContext::fetch_entity_container(Entity entity)
+{
+    return m_database.fetch_entity_container(entity);
+}
+
+const EntityContainer& EntityDatabaseContext::fetch_entity_container(Entity entity) const
+{
+    return m_database.fetch_entity_container(entity);
+}
+
+EntityArchetype2 EntityDatabaseContext::fetch_entity_archetype(Entity entity) const
+{
+    return m_database.fetch_entity_archetype(entity);
+}
+
+EntityQueryResult EntityDatabaseContext::query(const EntityQuery& query) { return m_database.query(query); }
+
+/**************************************************************************************************
+ *********************************** EntityDatabaseLazyContext ***********************************
+ **************************************************************************************************/
+
+EntityDatabaseLazyContext::EntityDatabaseLazyContext(EntityDatabaseImpl& database)
+    : m_database{ database }
+{
+}
+
+bool EntityDatabaseLazyContext::has_entity(Entity entity) const { return m_database.has_entity(entity); }
+
+bool EntityDatabaseLazyContext::has_component(ComponentType component_type) const
+{
+    return m_database.has_component(component_type);
+}
+
+bool EntityDatabaseLazyContext::entity_has_component(Entity entity, ComponentType component_type) const
+{
+    return m_database.entity_has_component(entity, component_type);
+}
+
+void EntityDatabaseLazyContext::read_component(Entity entity, ComponentType component_type, void* dst) const
+{
+    m_database.read_component(entity, component_type, dst);
+}
+
+void EntityDatabaseLazyContext::write_component_move(Entity entity, ComponentType component_type, void* src)
+{
+    m_database.write_component_move(entity, component_type, src);
+}
+
+void EntityDatabaseLazyContext::write_component_copy(Entity entity, ComponentType component_type, const void* src)
+{
+    m_database.write_component_copy(entity, component_type, src);
+}
+
+void* EntityDatabaseLazyContext::fetch_component_unchecked(Entity entity, ComponentType component_type)
+{
+    return m_database.fetch_component_unchecked(entity, component_type);
+}
+
+const void* EntityDatabaseLazyContext::fetch_component_unchecked(Entity entity, ComponentType component_type) const
+{
+    return m_database.fetch_component_unchecked(entity, component_type);
+}
+
+EntityArchetype2 EntityDatabaseLazyContext::fetch_entity_archetype(Entity entity) const
+{
+    return m_database.fetch_entity_archetype(entity);
+}
+
+EntityQueryResult EntityDatabaseLazyContext::query(const EntityQuery& query) { return m_database.query(query); }
 
 }
