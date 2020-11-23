@@ -25,6 +25,8 @@ struct EntityComponentData {
     void (*destructorFunc)(const void* ptr);
 
     bool operator==(const EntityComponentData& other);
+
+    template <typename T> requires NoCVRefs<T> static EntityComponentData create_desc();
 };
 
 class EntityArchetype2 {
@@ -51,6 +53,9 @@ public:
 
     EntityArchetype2 without(TypeId component_type) const;
     EntityArchetype2 without(std::span<const TypeId> component_types) const;
+
+    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 with() const;
+    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 without() const;
 
 private:
     std::size_t m_hash;
