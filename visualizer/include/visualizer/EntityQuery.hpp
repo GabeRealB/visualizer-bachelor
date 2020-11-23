@@ -18,6 +18,8 @@ namespace Visualizer {
 
 class EntityQueryResult;
 class ComponentManager;
+class EntityDatabaseContext;
+class EntityDatabaseLazyContext;
 
 class EntityQuery {
 public:
@@ -35,6 +37,8 @@ public:
 
     EntityQueryResult query(World& world);
     EntityQueryResult query(ComponentManager& componentManager);
+    EntityQueryResult query(EntityDatabaseContext& database_context);
+    EntityQueryResult query(EntityDatabaseLazyContext& database_context);
 
     template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityQuery& with();
     template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityQuery& without();
