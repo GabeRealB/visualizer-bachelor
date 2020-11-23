@@ -128,9 +128,9 @@ template <typename T> requires NoCVRefs<T> EntityComponentData EntityComponentDa
         [](const void* src, void* dst) { *static_cast<T*>(dst) = *static_cast<const T*>(src); },
         [](void* src, void* dst) {
             if constexpr (std::is_trivially_copyable<T>::value) {
-                *static_cast<T*>(dst) = *static_cast<const T*>(src);
+                *static_cast<T*>(dst) = *static_cast<T*>(src);
             } else {
-                *static_cast<T*>(dst) = std::move(*static_cast<const T*>(src));
+                *static_cast<T*>(dst) = std::move(*static_cast<T*>(src));
             }
         },
         [](const void* src, void* dst) { new (static_cast<T*>(dst)) T{ *static_cast<const T*>(src) }; },
