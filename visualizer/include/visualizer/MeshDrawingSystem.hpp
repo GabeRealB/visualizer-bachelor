@@ -19,9 +19,9 @@ public:
     void terminate() final;
 
 private:
-    EntityQuery m_meshQuery;
-    EntityQuery m_cameraQuery;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    EntityQuery m_mesh_query;
+    EntityQuery m_camera_query;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }

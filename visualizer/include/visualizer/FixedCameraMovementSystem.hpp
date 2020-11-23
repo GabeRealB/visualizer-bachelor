@@ -15,9 +15,9 @@ public:
     void terminate() final;
 
 private:
-    double m_currentTime;
-    EntityQuery m_cameraQuery;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    double m_current_time;
+    EntityQuery m_camera_query;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }

@@ -17,15 +17,15 @@
 namespace Visualizer {
 
 FixedCameraMovementSystem::FixedCameraMovementSystem()
-    : m_currentTime{ glfwGetTime() }
-    , m_cameraQuery{ EntityQuery{}.with<Camera, FixedCamera, Transform>() }
-    , m_componentManager{}
+    : m_current_time{ glfwGetTime() }
+    , m_camera_query{ EntityQuery{}.with<Camera, FixedCamera, Transform>() }
+    , m_entity_database{}
 {
 }
 
-void FixedCameraMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void FixedCameraMovementSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void FixedCameraMovementSystem::terminate() { m_componentManager = nullptr; }
+void FixedCameraMovementSystem::terminate() { m_entity_database = nullptr; }
 
 glm::quat safeQuatLookAt(
     glm::vec3 const& lookFrom, glm::vec3 const& lookTo, glm::vec3 const& up, glm::vec3 const& alternativeUp)
@@ -56,159 +56,152 @@ void FixedCameraMovementSystem::run(void*)
     }
 
     auto window{ glfwGetCurrentContext() };
-    auto wKey{ glfwGetKey(window, GLFW_KEY_W) };
-    auto aKey{ glfwGetKey(window, GLFW_KEY_A) };
-    auto sKey{ glfwGetKey(window, GLFW_KEY_S) };
-    auto dKey{ glfwGetKey(window, GLFW_KEY_D) };
-    auto qKey{ glfwGetKey(window, GLFW_KEY_Q) };
-    auto eKey{ glfwGetKey(window, GLFW_KEY_E) };
+    auto w_key{ glfwGetKey(window, GLFW_KEY_W) };
+    auto a_key{ glfwGetKey(window, GLFW_KEY_A) };
+    auto s_key{ glfwGetKey(window, GLFW_KEY_S) };
+    auto d_key{ glfwGetKey(window, GLFW_KEY_D) };
+    auto q_key{ glfwGetKey(window, GLFW_KEY_Q) };
+    auto e_key{ glfwGetKey(window, GLFW_KEY_E) };
 
-    auto shiftKey{ glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) };
-    auto ctrlKey{ glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) };
-    auto newTime{ glfwGetTime() };
-    auto deltaTime{ static_cast<float>(newTime - m_currentTime) };
-    m_currentTime = newTime;
+    auto shift_key{ glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) };
+    auto ctrl_key{ glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) };
+    auto new_time{ glfwGetTime() };
+    auto delta_time{ static_cast<float>(new_time - m_current_time) };
+    m_current_time = new_time;
 
-    auto movementSpeed{ 1 * deltaTime };
-    if (shiftKey == GLFW_PRESS) {
-        movementSpeed *= 10 * 10.0f;
-    } else if (ctrlKey) {
-        movementSpeed *= 10;
+    auto movement_speed{ 1 * delta_time };
+    if (shift_key == GLFW_PRESS) {
+        movement_speed *= 10 * 10.0f;
+    } else if (ctrl_key) {
+        movement_speed *= 10;
     }
 
-    auto fixedCameras{ m_cameraQuery.query(*m_componentManager).filter<Camera>([](const Camera* camera) -> bool {
-        return camera->m_fixed;
-    }) };
+    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+        auto fixed_cameras{ m_camera_query.query(database_context).filter<Camera>([](const Camera* camera) -> bool {
+            return camera->m_fixed;
+        }) };
 
-    auto perspectiveCameras{ fixedCameras };
-    auto orthographicCameras{ fixedCameras };
-    perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
-    orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
+        auto perspective_cameras{ fixed_cameras };
+        auto orthographic_cameras{ fixed_cameras };
+        perspective_cameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
+        orthographic_cameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
 
-    perspectiveCameras.forEach<Camera, FixedCamera, Transform>(
-        [&](const Camera* camera, FixedCamera* fixedCamera, Transform* transform) {
+        perspective_cameras.forEach<Camera, FixedCamera, Transform>([&](const Camera* camera, FixedCamera* fixed_camera,
+                                                                        Transform* transform) {
             if (camera->m_active) {
-                if (wKey == GLFW_PRESS) {
-                    fixedCamera->verticalAngle -= movementSpeed;
-                    if (fixedCamera->verticalAngle <= glm::radians(3.0f)) {
-                        fixedCamera->verticalAngle = glm::radians(3.0f);
+                if (w_key == GLFW_PRESS) {
+                    fixed_camera->verticalAngle -= movement_speed;
+                    if (fixed_camera->verticalAngle <= glm::radians(3.0f)) {
+                        fixed_camera->verticalAngle = glm::radians(3.0f);
                     }
                 }
 
-                if (sKey == GLFW_PRESS) {
-                    fixedCamera->verticalAngle += movementSpeed;
-                    if (fixedCamera->verticalAngle >= glm::radians(177.0f)) {
-                        fixedCamera->verticalAngle = glm::radians(177.0f);
+                if (s_key == GLFW_PRESS) {
+                    fixed_camera->verticalAngle += movement_speed;
+                    if (fixed_camera->verticalAngle >= glm::radians(177.0f)) {
+                        fixed_camera->verticalAngle = glm::radians(177.0f);
                     }
                 }
 
-                if (aKey == GLFW_PRESS) {
-                    fixedCamera->horizontalAngle -= movementSpeed;
-                    if (fixedCamera->horizontalAngle <= 0) {
-                        fixedCamera->horizontalAngle += 2 * glm::pi<float>();
+                if (a_key == GLFW_PRESS) {
+                    fixed_camera->horizontalAngle -= movement_speed;
+                    if (fixed_camera->horizontalAngle <= 0) {
+                        fixed_camera->horizontalAngle += 2 * glm::pi<float>();
                     }
                 }
 
-                if (dKey == GLFW_PRESS) {
-                    fixedCamera->horizontalAngle += movementSpeed;
-                    if (fixedCamera->horizontalAngle >= 2 * glm::pi<float>()) {
-                        fixedCamera->horizontalAngle -= 2 * glm::pi<float>();
+                if (d_key == GLFW_PRESS) {
+                    fixed_camera->horizontalAngle += movement_speed;
+                    if (fixed_camera->horizontalAngle >= 2 * glm::pi<float>()) {
+                        fixed_camera->horizontalAngle -= 2 * glm::pi<float>();
                     }
                 }
 
-                if (qKey == GLFW_PRESS) {
-                    fixedCamera->distance += movementSpeed;
+                if (q_key == GLFW_PRESS) {
+                    fixed_camera->distance += movement_speed;
                 }
 
-                if (eKey == GLFW_PRESS) {
-                    fixedCamera->distance -= movementSpeed;
-                    if (fixedCamera->distance <= 0.0005f) {
-                        fixedCamera->distance = 0.0005f;
+                if (e_key == GLFW_PRESS) {
+                    fixed_camera->distance -= movement_speed;
+                    if (fixed_camera->distance <= 0.0005f) {
+                        fixed_camera->distance = 0.0005f;
                     }
                 }
             }
 
-            auto parent{ static_cast<const Parent*>(
-                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Parent>())) };
-            auto modelMatrix{ getModelMatrix(*static_cast<const Transform*>(
-                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Transform>()))) };
+            auto model_matrix{ getModelMatrix(
+                database_context.fetch_component_unchecked<Transform>(fixed_camera->focus)) };
 
-            while (parent != nullptr) {
-                auto parentTransform{ static_cast<const Transform*>(
-                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
-                modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
-                parent = static_cast<const Parent*>(
-                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
+            for (auto parent_entity{ fixed_camera->focus };
+                 database_context.entity_has_component<Parent>(parent_entity);) {
+                const auto& parent{ database_context.fetch_component_unchecked<Parent>(parent_entity) };
+                model_matrix = getModelMatrix(database_context.fetch_component_unchecked<Transform>(parent.m_parent));
+                parent_entity = parent.m_parent;
             }
 
-            glm::vec4 position{ glm::sin(fixedCamera->verticalAngle) * glm::sin(fixedCamera->horizontalAngle)
-                    * fixedCamera->distance,
-                glm::cos(fixedCamera->verticalAngle) * fixedCamera->distance,
-                glm::sin(fixedCamera->verticalAngle) * glm::cos(fixedCamera->horizontalAngle) * fixedCamera->distance,
+            glm::vec4 position{ glm::sin(fixed_camera->verticalAngle) * glm::sin(fixed_camera->horizontalAngle)
+                    * fixed_camera->distance,
+                glm::cos(fixed_camera->verticalAngle) * fixed_camera->distance,
+                glm::sin(fixed_camera->verticalAngle) * glm::cos(fixed_camera->horizontalAngle)
+                    * fixed_camera->distance,
                 1.0f };
 
-            auto cameraPosition{ modelMatrix * position };
-            auto focusPosition{ modelMatrix * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f } };
+            auto camera_position{ model_matrix * position };
+            auto focus_position{ model_matrix * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f } };
 
-            auto direction{ focusPosition - cameraPosition };
-            auto directionNormalized{ glm::normalize(glm::vec3{ direction }) };
+            auto direction{ focus_position - camera_position };
+            auto direction_normalized{ glm::normalize(glm::vec3{ direction }) };
 
-            auto rotation{ glm::quatLookAt(directionNormalized, glm::vec3{ 0.0f, 1.0f, 0.0f }) };
+            auto rotation{ glm::quatLookAt(direction_normalized, glm::vec3{ 0.0f, 1.0f, 0.0f }) };
 
-            transform->position = cameraPosition;
+            transform->position = camera_position;
             transform->rotation = rotation;
         });
 
-    orthographicCameras.forEach<Camera, FixedCamera, Transform>(
-        [&](Camera* camera, FixedCamera* fixedCamera, Transform* transform) {
+        orthographic_cameras.forEach<Camera, FixedCamera, Transform>([&](Camera* camera, FixedCamera* fixed_camera,
+                                                                         Transform* transform) {
             if (camera->m_active) {
-                fixedCamera->horizontalAngle = 0.0f;
-                fixedCamera->verticalAngle = glm::pi<float>() / 2;
+                fixed_camera->horizontalAngle = 0.0f;
+                fixed_camera->verticalAngle = glm::pi<float>() / 2;
 
-                if (qKey == GLFW_PRESS) {
-                    fixedCamera->distance += movementSpeed;
+                if (q_key == GLFW_PRESS) {
+                    fixed_camera->distance += movement_speed;
                 }
 
-                if (eKey == GLFW_PRESS) {
-                    fixedCamera->distance -= movementSpeed;
-                    if (fixedCamera->distance <= 0.0005f) {
-                        fixedCamera->distance = 0.0005f;
+                if (e_key == GLFW_PRESS) {
+                    fixed_camera->distance -= movement_speed;
+                    if (fixed_camera->distance <= 0.0005f) {
+                        fixed_camera->distance = 0.0005f;
                     }
                 }
             }
 
-            auto parent{ static_cast<const Parent*>(
-                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Parent>())) };
-            auto modelMatrix{ getModelMatrix(*static_cast<const Transform*>(
-                m_componentManager->getEntityComponentPointer(fixedCamera->focus, getTypeId<Transform>()))) };
+            auto model_matrix{ getModelMatrix(
+                database_context.fetch_component_unchecked<Transform>(fixed_camera->focus)) };
 
-            while (parent != nullptr) {
-                auto parentTransform{ static_cast<const Transform*>(
-                    m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Transform>())) };
-                modelMatrix = getModelMatrix(*parentTransform) * modelMatrix;
-
-                if (m_componentManager->has_component(parent->m_parent, getTypeId<Parent>())) {
-                    parent = static_cast<const Parent*>(
-                        m_componentManager->getEntityComponentPointer(parent->m_parent, getTypeId<Parent>()));
-                } else {
-                    parent = nullptr;
-                }
+            for (auto parent_entity{ fixed_camera->focus };
+                 database_context.entity_has_component<Parent>(parent_entity);) {
+                const auto& parent{ database_context.fetch_component_unchecked<Parent>(parent_entity) };
+                model_matrix = getModelMatrix(database_context.fetch_component_unchecked<Transform>(parent.m_parent));
+                parent_entity = parent.m_parent;
             }
 
-            glm::vec4 position{ glm::sin(fixedCamera->verticalAngle) * glm::sin(fixedCamera->horizontalAngle)
-                    * fixedCamera->distance,
-                glm::cos(fixedCamera->verticalAngle) * fixedCamera->distance,
-                glm::sin(fixedCamera->verticalAngle) * glm::cos(fixedCamera->horizontalAngle) * fixedCamera->distance,
+            glm::vec4 position{ glm::sin(fixed_camera->verticalAngle) * glm::sin(fixed_camera->horizontalAngle)
+                    * fixed_camera->distance,
+                glm::cos(fixed_camera->verticalAngle) * fixed_camera->distance,
+                glm::sin(fixed_camera->verticalAngle) * glm::cos(fixed_camera->horizontalAngle)
+                    * fixed_camera->distance,
                 1.0f };
 
-            auto cameraPosition{ modelMatrix * position };
+            auto camera_position{ model_matrix * position };
 
-            transform->position = cameraPosition;
+            transform->position = camera_position;
             transform->rotation = glm::identity<glm::quat>();
 
-            camera->orthographicWidth = fixedCamera->distance;
+            camera->orthographicWidth = fixed_camera->distance;
             camera->orthographicHeight = camera->orthographicWidth / camera->aspect;
         });
+    });
 }
 
 }

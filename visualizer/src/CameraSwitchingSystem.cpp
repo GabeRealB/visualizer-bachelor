@@ -15,14 +15,14 @@
 namespace Visualizer {
 
 CameraSwitchingSystem::CameraSwitchingSystem()
-    : m_cameraSwitcherQuery{ EntityQuery{}.with<ActiveCameraSwitcher>() }
-    , m_componentManager{}
+    : m_camera_switcher_query{ EntityQuery{}.with<ActiveCameraSwitcher>() }
+    , m_entity_database{}
 {
 }
 
-void CameraSwitchingSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void CameraSwitchingSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void CameraSwitchingSystem::terminate() { m_componentManager = nullptr; }
+void CameraSwitchingSystem::terminate() { m_entity_database = nullptr; }
 
 void CameraSwitchingSystem::run(void*)
 {
@@ -42,23 +42,23 @@ void CameraSwitchingSystem::run(void*)
     if (tabKey == GLFW_RELEASE && tabPressed) {
         tabPressed = false;
 
-        m_cameraSwitcherQuery.query(*m_componentManager)
-            .forEach<ActiveCameraSwitcher>([componentManager = m_componentManager](ActiveCameraSwitcher* switcher) {
-                auto current{ switcher->cameras[switcher->current] };
-                switcher->current++;
-                if (switcher->current == switcher->cameras.size()) {
-                    switcher->current = 0;
-                }
-                auto next{ switcher->cameras[switcher->current] };
+        m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+            m_camera_switcher_query.query(database_context)
+                .forEach<ActiveCameraSwitcher>([&](ActiveCameraSwitcher* switcher) {
+                    auto current{ switcher->cameras[switcher->current] };
+                    switcher->current++;
+                    if (switcher->current == switcher->cameras.size()) {
+                        switcher->current = 0;
+                    }
+                    auto next{ switcher->cameras[switcher->current] };
 
-                auto currentCamera{ static_cast<Camera*>(
-                    componentManager->getEntityComponentPointer(current, getTypeId<Camera>())) };
-                auto nextCamera{ static_cast<Camera*>(
-                    componentManager->getEntityComponentPointer(next, getTypeId<Camera>())) };
+                    auto& current_camera{ database_context.fetch_component_unchecked<Camera>(current) };
+                    auto& next_camera{ database_context.fetch_component_unchecked<Camera>(next) };
 
-                currentCamera->m_active = false;
-                nextCamera->m_active = true;
-            });
+                    current_camera.m_active = false;
+                    next_camera.m_active = true;
+                });
+        });
     }
 }
 

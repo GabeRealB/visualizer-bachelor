@@ -26,11 +26,11 @@ public:
 
 private:
     Mesh m_quad;
-    EntityQuery m_copyEntityQuery;
-    EntityQuery m_draggableEntityQuery;
-    EntityQuery m_compositionEntityQuery;
+    EntityQuery m_copy_entity_query;
+    EntityQuery m_draggable_entity_query;
+    EntityQuery m_composition_entity_query;
     std::optional<std::size_t> m_selected;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }
