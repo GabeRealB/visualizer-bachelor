@@ -2,15 +2,15 @@
 
 #include <algorithm>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 
 namespace Visualizer {
 
-EntityQuery::EntityQuery(const EntityArchetype& archetype)
+EntityQuery::EntityQuery(const EntityArchetype2& archetype)
     : m_withTypes{}
     , m_withoutTypes{}
 {
-    auto types{ archetype.types() };
+    auto types{ archetype.component_types() };
     m_withTypes = { types.begin(), types.end() };
 }
 
@@ -63,14 +63,6 @@ EntityQuery& EntityQuery::without(std::span<const TypeId> types)
     }
     return *this;
 }
-
-EntityQueryResult EntityQuery::query(World& world)
-{
-    auto componentManager{ world.getManager<ComponentManager>() };
-    return query(*componentManager);
-}
-
-EntityQueryResult EntityQuery::query(ComponentManager& componentManager) { return componentManager.query(*this); }
 
 EntityQueryResult EntityQuery::query(EntityDatabaseContext& database_context) { return database_context.query(*this); }
 

@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <visualizer/ComponentManager.hpp>
+#include <visualizer/EntityDatabase.hpp>
 #include <visualizer/EntityQuery.hpp>
 #include <visualizer/Framebuffer.hpp>
 #include <visualizer/System.hpp>
