@@ -13,21 +13,21 @@ namespace Visualizer {
 CubeMovementSystem::CubeMovementSystem()
     : m_accumulator{ 0 }
     , m_currentTime{ 0 }
-    , m_tickInterval{ 1.0 }
-    , m_cubesQueryMesh{ EntityQuery{}.with<MeshIteration, std::shared_ptr<Mesh>>() }
-    , m_cubesQueryActivation{ EntityQuery{}.with<EntityActivation>() }
-    , m_cubesQueryHomogeneous{ EntityQuery{}.with<HomogeneousIteration, Transform>() }
-    , m_cubesQueryHeterogeneous{ EntityQuery{}.with<HeterogeneousIteration, Transform>() }
-    , m_componentManager{}
+    , m_tick_interval{ 1.0 }
+    , m_cubes_query_mesh{ EntityQuery{}.with<MeshIteration, std::shared_ptr<Mesh>>() }
+    , m_cubes_query_activation{ EntityQuery{}.with<EntityActivation>() }
+    , m_cubes_query_homogeneous{ EntityQuery{}.with<HomogeneousIteration, Transform>() }
+    , m_cubes_query_heterogeneous{ EntityQuery{}.with<HeterogeneousIteration, Transform>() }
+    , m_entity_database{}
 {
     m_currentTime = glfwGetTime();
 }
 
-void CubeMovementSystem::initialize() { m_componentManager = m_world->getManager<ComponentManager>(); }
+void CubeMovementSystem::initialize() { m_entity_database = m_world->getManager<EntityDatabase>(); }
 
-void CubeMovementSystem::terminate() { m_componentManager = nullptr; }
+void CubeMovementSystem::terminate() { m_entity_database = nullptr; }
 
-void reverseTransform(const HomogeneousIteration& iteration, Transform& transform)
+void reverse_transform(const HomogeneousIteration& iteration, Transform& transform)
 {
     auto position = iteration.positions[iteration.index];
 
@@ -38,23 +38,23 @@ void reverseTransform(const HomogeneousIteration& iteration, Transform& transfor
     transform.position -= glm::vec3{ posX, posY, posZ };
 }
 
-void reverseTransform(const HeterogeneousIteration& iteration, Transform& transform)
+void reverse_transform(const HeterogeneousIteration& iteration, Transform& transform)
 {
     auto scale = iteration.scales[iteration.index];
     auto position = iteration.positions[iteration.index];
 
-    auto halfScale{ scale / 2.0f };
-    halfScale.y *= -1.0f;
+    auto half_scale{ scale / 2.0f };
+    half_scale.y *= -1.0f;
 
     auto posX{ scale.x * position.x };
     auto posY{ -scale.y * position.y };
     auto posZ{ scale.z * position.z };
 
-    auto offset{ halfScale + glm::vec3{ posX, posY, posZ } };
+    auto offset{ half_scale + glm::vec3{ posX, posY, posZ } };
     transform.position -= offset;
 }
 
-void stepIteration(HomogeneousIteration& iteration)
+void step_iteration(HomogeneousIteration& iteration)
 {
     if (++iteration.tick % iteration.ticksPerIteration != 0) {
         return;
@@ -67,7 +67,7 @@ void stepIteration(HomogeneousIteration& iteration)
     }
 }
 
-bool stepIteration(MeshIteration& iteration)
+bool step_iteration(MeshIteration& iteration)
 {
     auto initialized{ iteration.initialized };
     iteration.initialized = true;
@@ -94,7 +94,7 @@ bool stepIteration(MeshIteration& iteration)
     return true;
 }
 
-void stepIteration(EntityActivation& iteration, const std::shared_ptr<ComponentManager>& componentManager)
+void step_iteration(EntityActivation& iteration, EntityDatabaseContext& entity_database)
 {
     if (++iteration.tick % iteration.ticksPerIteration[iteration.index] != 0) {
         return;
@@ -106,18 +106,14 @@ void stepIteration(EntityActivation& iteration, const std::shared_ptr<ComponentM
         iteration.index = 0;
 
         for (auto entity : iteration.entities) {
-            auto& layer{ *static_cast<RenderLayer*>(
-                componentManager->getEntityComponentPointer(entity, getTypeId<RenderLayer>())) };
-            layer = 0;
+            entity_database.write_component(entity, RenderLayer{ 0 });
         }
     }
 
-    auto& layer{ *static_cast<RenderLayer*>(
-        componentManager->getEntityComponentPointer(iteration.entities[iteration.index], getTypeId<RenderLayer>())) };
-    layer = iteration.layer;
+    entity_database.write_component(iteration.entities[iteration.index], iteration.layer);
 }
 
-void stepIteration(HeterogeneousIteration& iteration)
+void step_iteration(HeterogeneousIteration& iteration)
 {
     if (++iteration.tick % iteration.ticksPerIteration[iteration.index] != 0) {
         return;
@@ -130,7 +126,7 @@ void stepIteration(HeterogeneousIteration& iteration)
     }
 }
 
-void computeTransform(const HomogeneousIteration& iteration, Transform& transform)
+void compute_transform(const HomogeneousIteration& iteration, Transform& transform)
 {
     auto position = iteration.positions[iteration.index];
 
@@ -141,25 +137,25 @@ void computeTransform(const HomogeneousIteration& iteration, Transform& transfor
     transform.position += glm::vec3{ posX, posY, posZ };
 }
 
-void computeTransform(const HeterogeneousIteration& iteration, Transform& transform)
+void compute_transform(const HeterogeneousIteration& iteration, Transform& transform)
 {
     auto scale = iteration.scales[iteration.index];
     auto position = iteration.positions[iteration.index];
 
-    auto halfScale{ scale / 2.0f };
-    halfScale.y *= -1.0f;
+    auto half_scale{ scale / 2.0f };
+    half_scale.y *= -1.0f;
 
     auto posX{ scale.x * position.x };
     auto posY{ -scale.y * position.y };
     auto posZ{ scale.z * position.z };
 
-    auto offset{ halfScale + glm::vec3{ posX, posY, posZ } };
+    auto offset{ half_scale + glm::vec3{ posX, posY, posZ } };
 
     transform.scale = scale;
     transform.position += offset;
 }
 
-void computeMesh(const MeshIteration& iteration, Mesh& mesh)
+void compute_mesh(const MeshIteration& iteration, Mesh& mesh)
 {
     /// Adapted from:
     /// https://github.com/mikolalysenko/mikolalysenko.github.com/blob/gh-pages/MinecraftMeshes/js/greedy.js
@@ -219,13 +215,13 @@ void computeMesh(const MeshIteration& iteration, Mesh& mesh)
                 for (std::size_t i{ 0 }; i < iteration.dimensions[u];) {
                     if (mask[n]) {
                         // Compute width
-                        std::size_t w{ 0 };
+                        std::size_t w;
                         for (w = 1; n + w < mask.size() && mask[n + w] && i + w < iteration.dimensions[u]; ++w) {
                         }
 
                         // Compute height (this is slightly awkward)
                         bool done{ false };
-                        std::size_t h{};
+                        std::size_t h;
                         for (h = 1; j + h < iteration.dimensions[v]; ++h) {
                             for (std::size_t k{ 0 }; k < w; ++k) {
                                 if (!mask[n + k + h * iteration.dimensions[u]]) {
@@ -297,49 +293,51 @@ void CubeMovementSystem::run(void*)
 
     auto window{ glfwGetCurrentContext() };
     if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS) {
-        m_tickInterval = 1.0f;
+        m_tick_interval = 1.0f;
     } else if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
-        m_tickInterval = 0.1f;
+        m_tick_interval = 0.1f;
     } else if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
-        m_tickInterval = 0.01f;
+        m_tick_interval = 0.01f;
     } else if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
-        m_tickInterval = 0.001f;
+        m_tick_interval = 0.001f;
     } else if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-        m_tickInterval = 0.0001f;
+        m_tick_interval = 0.0001f;
     } else if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
-        m_tickInterval = std::numeric_limits<double>::max();
+        m_tick_interval = std::numeric_limits<double>::max();
     }
 
     m_accumulator += deltaTime;
-    if (m_accumulator >= m_tickInterval) {
+    if (m_accumulator >= m_tick_interval) {
         m_accumulator = 0;
 
-        m_cubesQueryMesh.query(*m_componentManager)
-            .forEach<MeshIteration, std::shared_ptr<Mesh>>(
-                [](MeshIteration* meshIteration, std::shared_ptr<Mesh>* mesh) {
-                    if (stepIteration(*meshIteration)) {
-                        computeMesh(*meshIteration, *mesh->get());
-                    }
+        m_entity_database->enter_secure_context([&](EntityDatabaseContext& entity_database) {
+            m_cubes_query_mesh.query(entity_database)
+                .forEach<MeshIteration, std::shared_ptr<Mesh>>(
+                    [](MeshIteration* meshIteration, std::shared_ptr<Mesh>* mesh) {
+                        if (step_iteration(*meshIteration)) {
+                            compute_mesh(*meshIteration, *mesh->get());
+                        }
+                    });
+
+            m_cubes_query_activation.query(entity_database).forEach<EntityActivation>([&](EntityActivation* iteration) {
+                step_iteration(*iteration, entity_database);
+            });
+
+            m_cubes_query_homogeneous.query(entity_database)
+                .forEach<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
+                    reverse_transform(*iteration, *transform);
+                    step_iteration(*iteration);
+                    compute_transform(*iteration, *transform);
                 });
 
-        m_cubesQueryActivation.query(*m_componentManager)
-            .forEach<EntityActivation>([&componentManager = this->m_componentManager](EntityActivation* iteration) {
-                stepIteration(*iteration, componentManager);
-            });
-
-        m_cubesQueryHomogeneous.query(*m_componentManager)
-            .forEach<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
-                reverseTransform(*iteration, *transform);
-                stepIteration(*iteration);
-                computeTransform(*iteration, *transform);
-            });
-
-        m_cubesQueryHeterogeneous.query(*m_componentManager)
-            .forEach<HeterogeneousIteration, Transform>([](HeterogeneousIteration* iteration, Transform* transform) {
-                reverseTransform(*iteration, *transform);
-                stepIteration(*iteration);
-                computeTransform(*iteration, *transform);
-            });
+            m_cubes_query_heterogeneous.query(entity_database)
+                .forEach<HeterogeneousIteration, Transform>(
+                    [](HeterogeneousIteration* iteration, Transform* transform) {
+                        reverse_transform(*iteration, *transform);
+                        step_iteration(*iteration);
+                        compute_transform(*iteration, *transform);
+                    });
+        });
     }
 }
 

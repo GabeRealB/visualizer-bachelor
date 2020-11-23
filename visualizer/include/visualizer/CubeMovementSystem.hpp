@@ -17,12 +17,12 @@ public:
 private:
     double m_accumulator;
     double m_currentTime;
-    double m_tickInterval;
-    EntityQuery m_cubesQueryMesh;
-    EntityQuery m_cubesQueryActivation;
-    EntityQuery m_cubesQueryHomogeneous;
-    EntityQuery m_cubesQueryHeterogeneous;
-    std::shared_ptr<ComponentManager> m_componentManager;
+    double m_tick_interval;
+    EntityQuery m_cubes_query_mesh;
+    EntityQuery m_cubes_query_activation;
+    EntityQuery m_cubes_query_homogeneous;
+    EntityQuery m_cubes_query_heterogeneous;
+    std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
 }
