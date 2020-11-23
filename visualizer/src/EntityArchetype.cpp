@@ -2,22 +2,26 @@
 
 namespace Visualizer {
 
-bool EntityComponentData::operator==(const EntityComponentData& other)
+/**************************************************************************************************
+ ************************************** ComponentDescriptor **************************************
+ **************************************************************************************************/
+
+bool ComponentDescriptor::operator==(const ComponentDescriptor& other)
 {
     return (size == other.size && alignment == other.alignment && createFunc == other.createFunc
         && copyFunc == other.copyFunc && moveFunc == other.moveFunc && destructorFunc == other.destructorFunc);
 }
 
 /**************************************************************************************************
- **************************************** EntityArchetype2 ****************************************
+ **************************************** EntityArchetype ****************************************
  **************************************************************************************************/
 
-EntityArchetype2::EntityArchetype2(TypeId component_type)
-    : EntityArchetype2{ std::span<const TypeId>{ &component_type, 1 } }
+EntityArchetype::EntityArchetype(TypeId component_type)
+    : EntityArchetype{ std::span<const TypeId>{ &component_type, 1 } }
 {
 }
 
-EntityArchetype2::EntityArchetype2(std::span<const TypeId> component_types)
+EntityArchetype::EntityArchetype(std::span<const TypeId> component_types)
     : m_hash{}
     , m_identifier{}
     , m_component_types{}
@@ -44,30 +48,30 @@ EntityArchetype2::EntityArchetype2(std::span<const TypeId> component_types)
     m_hash = std::hash<std::string>{}(m_identifier);
 }
 
-bool EntityArchetype2::operator==(const EntityArchetype2& other) const
+bool EntityArchetype::operator==(const EntityArchetype& other) const
 {
     return m_hash == other.m_hash && m_component_types == other.m_component_types;
 }
 
-std::size_t EntityArchetype2::size() const noexcept { return m_component_types.size(); }
+std::size_t EntityArchetype::size() const noexcept { return m_component_types.size(); }
 
-std::size_t EntityArchetype2::hash() const noexcept { return m_hash; }
+std::size_t EntityArchetype::hash() const noexcept { return m_hash; }
 
-const std::string& EntityArchetype2::identifier() const noexcept { return m_identifier; }
+const std::string& EntityArchetype::identifier() const noexcept { return m_identifier; }
 
-std::span<const TypeId> EntityArchetype2::component_types() const noexcept
+std::span<const TypeId> EntityArchetype::component_types() const noexcept
 {
     return std::span<const TypeId>{ m_component_types.data(), size() };
 }
 
-EntityArchetype2 EntityArchetype2::with(TypeId component_type) const
+EntityArchetype EntityArchetype::with(TypeId component_type) const
 {
     return with(std::span<const TypeId>{ &component_type, 1 });
 }
 
-EntityArchetype2 EntityArchetype2::with(std::span<const TypeId> component_types) const
+EntityArchetype EntityArchetype::with(std::span<const TypeId> component_types) const
 {
-    EntityArchetype2 archetype{};
+    EntityArchetype archetype{};
     archetype.m_component_types = m_component_types;
 
     for (auto component_type : component_types) {
@@ -93,14 +97,14 @@ EntityArchetype2 EntityArchetype2::with(std::span<const TypeId> component_types)
     return archetype;
 }
 
-EntityArchetype2 EntityArchetype2::without(TypeId component_type) const
+EntityArchetype EntityArchetype::without(TypeId component_type) const
 {
     return without(std::span<const TypeId>{ &component_type, 1 });
 }
 
-EntityArchetype2 EntityArchetype2::without(std::span<const TypeId> component_types) const
+EntityArchetype EntityArchetype::without(std::span<const TypeId> component_types) const
 {
-    EntityArchetype2 archetype{};
+    EntityArchetype archetype{};
     archetype.m_component_types = m_component_types;
 
     for (auto component_type : component_types) {
@@ -127,8 +131,8 @@ EntityArchetype2 EntityArchetype2::without(std::span<const TypeId> component_typ
 }
 
 /**************************************************************************************************
- ************************************* EntityArchetype2Hasher *************************************
+ ************************************* EntityArchetypeHasher *************************************
  **************************************************************************************************/
 
-std::size_t EntityArchetype2Hasher::operator()(const EntityArchetype2& k) const { return k.hash(); }
+std::size_t EntityArchetypeHasher::operator()(const EntityArchetype& k) const { return k.hash(); }
 }

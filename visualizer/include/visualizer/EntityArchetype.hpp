@@ -13,7 +13,7 @@
 
 namespace Visualizer {
 
-struct EntityComponentData {
+struct ComponentDescriptor {
     TypeId id;
     std::size_t size;
     std::size_t alignment;
@@ -24,38 +24,38 @@ struct EntityComponentData {
     void (*moveUninitializedFunc)(void* src, void* dst);
     void (*destructorFunc)(const void* ptr);
 
-    bool operator==(const EntityComponentData& other);
+    bool operator==(const ComponentDescriptor& other);
 
-    template <typename T> requires NoCVRefs<T> static EntityComponentData create_desc();
+    template <typename T> requires NoCVRefs<T> static ComponentDescriptor create_desc();
 };
 
-class EntityArchetype2 {
+class EntityArchetype {
 public:
-    EntityArchetype2() = default;
-    EntityArchetype2(const EntityArchetype2&) = default;
-    EntityArchetype2(EntityArchetype2&&) noexcept = default;
+    EntityArchetype() = default;
+    EntityArchetype(const EntityArchetype&) = default;
+    EntityArchetype(EntityArchetype&&) noexcept = default;
 
-    EntityArchetype2(TypeId component_type);
-    EntityArchetype2(std::span<const TypeId> component_types);
+    EntityArchetype(TypeId component_type);
+    EntityArchetype(std::span<const TypeId> component_types);
 
-    EntityArchetype2& operator=(const EntityArchetype2&) = default;
-    EntityArchetype2& operator=(EntityArchetype2&&) noexcept = default;
+    EntityArchetype& operator=(const EntityArchetype&) = default;
+    EntityArchetype& operator=(EntityArchetype&&) noexcept = default;
 
-    bool operator==(const EntityArchetype2& other) const;
+    bool operator==(const EntityArchetype& other) const;
 
     std::size_t size() const noexcept;
     std::size_t hash() const noexcept;
     const std::string& identifier() const noexcept;
     std::span<const TypeId> component_types() const noexcept;
 
-    EntityArchetype2 with(TypeId component_type) const;
-    EntityArchetype2 with(std::span<const TypeId> component_types) const;
+    EntityArchetype with(TypeId component_type) const;
+    EntityArchetype with(std::span<const TypeId> component_types) const;
 
-    EntityArchetype2 without(TypeId component_type) const;
-    EntityArchetype2 without(std::span<const TypeId> component_types) const;
+    EntityArchetype without(TypeId component_type) const;
+    EntityArchetype without(std::span<const TypeId> component_types) const;
 
-    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 with() const;
-    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype2 without() const;
+    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype with() const;
+    template <typename... Ts> requires NoCVRefs<Ts...>&& UniqueTypes<Ts...> EntityArchetype without() const;
 
 private:
     std::size_t m_hash;
@@ -63,11 +63,9 @@ private:
     std::vector<TypeId> m_component_types;
 };
 
-struct EntityArchetype2Hasher {
-    std::size_t operator()(const EntityArchetype2& k) const;
+struct EntityArchetypeHasher {
+    std::size_t operator()(const EntityArchetype& k) const;
 };
-
-bool operator==(const EntityComponentData& lhs, const EntityComponentData& rhs);
 
 }
 

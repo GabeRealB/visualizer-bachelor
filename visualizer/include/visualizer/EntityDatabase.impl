@@ -1,3 +1,4 @@
+#include <concepts>
 #include <functional>
 
 /**************************************************************************************************
@@ -6,21 +7,24 @@
 
 namespace Visualizer {
 
-template <typename F> void EntityDatabase::enter_secure_context(F&& f)
+template <typename F>
+requires std::invocable<F, EntityDatabaseContext&> void EntityDatabase::enter_secure_context(F&& f)
 {
     std::scoped_lock lock{ m_context_mutex };
     EntityDatabaseContext database_context{ m_database_impl };
     std::invoke(f, database_context);
 }
 
-template <typename F> void EntityDatabase::enter_secure_context(F&& f) const
+template <typename F>
+requires std::invocable<F, const EntityDatabaseContext&> void EntityDatabase::enter_secure_context(F&& f) const
 {
     std::scoped_lock lock{ m_context_mutex };
     EntityDatabaseContext database_context{ m_database_impl };
     std::invoke(f, database_context);
 }
 
-template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f)
+template <typename F>
+requires std::invocable<F, EntityDatabaseLazyContext&> void EntityDatabase::enter_secure_lazy_context(F&& f)
 {
     /// TODO: Allow multiple lazy contexts
     std::scoped_lock lock{ m_context_mutex };
@@ -28,7 +32,8 @@ template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f)
     std::invoke(f, database_context);
 }
 
-template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f) const
+template <typename F>
+requires std::invocable<F, const EntityDatabaseLazyContext&> void EntityDatabase::enter_secure_lazy_context(F&& f) const
 {
     /// TODO: Allow multiple lazy contexts
     std::scoped_lock lock{ m_context_mutex };
@@ -42,7 +47,7 @@ template <typename F> void EntityDatabase::enter_secure_lazy_context(F&& f) cons
 
 template <typename T> requires NoCVRefs<T> ComponentType EntityDatabaseContext::register_component_desc()
 {
-    return register_component_desc(getTypeId<T>(), EntityComponentData::create_desc<T>());
+    return register_component_desc(getTypeId<T>(), ComponentDescriptor::create_desc<T>());
 }
 
 template <typename T> requires NoCVRefs<T> bool EntityDatabaseContext::entity_has_component(Entity entity) const

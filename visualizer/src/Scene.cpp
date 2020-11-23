@@ -334,7 +334,7 @@ void register_component_descriptors(EntityDatabaseContext& database_context)
 void add_entity(EntityDatabaseContext& database_context, std::unordered_map<std::size_t, Entity>& entity_id_map,
     const Visconfig::Entity& entity)
 {
-    EntityArchetype2 archetype{};
+    EntityArchetype archetype{};
     for (auto& component : entity.components) {
         switch (component.type) {
         case Visconfig::Components::ComponentType::Cube:

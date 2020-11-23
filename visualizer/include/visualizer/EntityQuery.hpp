@@ -23,7 +23,7 @@ class EntityDatabaseLazyContext;
 class EntityQuery {
 public:
     EntityQuery() = default;
-    EntityQuery(const EntityArchetype2& archetype);
+    EntityQuery(const EntityArchetype& archetype);
 
     std::span<const TypeId> withTypes() const;
     std::span<const TypeId> withoutTypes() const;
