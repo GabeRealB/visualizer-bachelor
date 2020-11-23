@@ -80,7 +80,7 @@ EntityArchetype2::EntityArchetype2(std::span<const TypeId> component_types)
 
     for (auto component_type : component_types) {
         auto insertion_pos{ std::upper_bound(m_component_types.begin(), m_component_types.end(), component_type) };
-        if (insertion_pos != m_component_types.end() && *insertion_pos != component_type) {
+        if (insertion_pos == m_component_types.end() || *insertion_pos != component_type) {
             m_component_types.insert(insertion_pos, component_type);
         }
     }
@@ -127,7 +127,7 @@ EntityArchetype2 EntityArchetype2::with(std::span<const TypeId> component_types)
     for (auto component_type : component_types) {
         auto insertion_pos{ std::upper_bound(
             archetype.m_component_types.begin(), archetype.m_component_types.end(), component_type) };
-        if (insertion_pos != archetype.m_component_types.end() && *insertion_pos != component_type) {
+        if (insertion_pos == archetype.m_component_types.end() || *insertion_pos != component_type) {
             archetype.m_component_types.insert(insertion_pos, component_type);
         }
     }
