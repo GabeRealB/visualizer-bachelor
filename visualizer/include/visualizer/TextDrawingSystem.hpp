@@ -7,8 +7,8 @@
 #include FT_FREETYPE_H
 #include <glm/glm.hpp>
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/Framebuffer.hpp>
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Shader.hpp>
@@ -33,8 +33,8 @@ private:
         std::shared_ptr<Texture2D> m_texture;
     };
 
-    EntityQuery m_textQuery;
-    EntityQuery m_cameraQuery;
+    EntityDBQuery m_textQuery;
+    EntityDBQuery m_cameraQuery;
 
     Mesh m_bitmap_mesh;
     Material m_bitmap_material;

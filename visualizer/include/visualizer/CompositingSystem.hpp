@@ -4,8 +4,8 @@
 #include <optional>
 #include <vector>
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Scene.hpp>
 #include <visualizer/Shader.hpp>
@@ -26,9 +26,9 @@ public:
 
 private:
     Mesh m_quad;
-    EntityQuery m_copy_entity_query;
-    EntityQuery m_draggable_entity_query;
-    EntityQuery m_composition_entity_query;
+    EntityDBQuery m_copy_entity_query;
+    EntityDBQuery m_draggable_entity_query;
+    EntityDBQuery m_composition_entity_query;
     std::optional<std::size_t> m_selected;
     std::shared_ptr<EntityDatabase> m_entity_database;
 };

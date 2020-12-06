@@ -1,7 +1,7 @@
 #pragma once
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/System.hpp>
 
 namespace Visualizer {
@@ -15,7 +15,7 @@ public:
     void terminate() final;
 
 private:
-    EntityQuery m_camera_switcher_query;
+    EntityDBQuery m_camera_switcher_query;
     std::shared_ptr<EntityDatabase> m_entity_database;
 };
 

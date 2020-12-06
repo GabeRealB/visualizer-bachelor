@@ -13,9 +13,9 @@ namespace Visualizer {
 
 CompositingSystem::CompositingSystem()
     : m_quad{}
-    , m_copy_entity_query{ EntityQuery{}.with<Copy>() }
-    , m_draggable_entity_query{ EntityQuery{}.with<Composition, Draggable>() }
-    , m_composition_entity_query{ EntityQuery{}.with<Composition>() }
+    , m_copy_entity_query{ EntityDBQuery{}.with_component<Copy>() }
+    , m_draggable_entity_query{ EntityDBQuery{}.with_component<Composition, Draggable>() }
+    , m_composition_entity_query{ EntityDBQuery{}.with_component<Composition>() }
     , m_selected{ std::nullopt }
     , m_entity_database{}
 {
@@ -54,7 +54,7 @@ void CompositingSystem::run(void*)
 
     m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
         if (isDetached()) {
-            auto queryResult{ m_draggable_entity_query.query(database_context) };
+            auto queryResult{ m_draggable_entity_query.query_db_window(database_context) };
 
             auto window{ glfwGetCurrentContext() };
             auto mouseButtonState{ glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) };
@@ -65,7 +65,7 @@ void CompositingSystem::run(void*)
                 getRelativeMousePosition(mouseX, mouseY);
 
                 if (!m_selected) {
-                    queryResult.forEach<Draggable>([&](Draggable* draggable) {
+                    queryResult.for_each<Draggable>([&](Draggable* draggable) {
                         for (auto& box : draggable->boxes) {
                             if (mouseX >= box.xStart && mouseX <= box.xEnd && mouseY <= box.yStart
                                 && mouseY >= box.yEnd) {
@@ -74,7 +74,7 @@ void CompositingSystem::run(void*)
                         }
                     });
                 } else {
-                    queryResult.forEach<Composition, Draggable>([&](Composition* composition, Draggable* draggable) {
+                    queryResult.for_each<Composition, Draggable>([&](Composition* composition, Draggable* draggable) {
                         for (auto& operation : composition->operations) {
                             if (operation.id == m_selected.value()) {
                                 operation.transform.position.x = static_cast<float>(mouseX);
@@ -115,13 +115,13 @@ void CompositingSystem::run(void*)
             }
         }
 
-        m_copy_entity_query.query(database_context).forEach<Copy>([](Copy* copy) {
+        m_copy_entity_query.query_db_window(database_context).for_each<Copy>([](Copy* copy) {
             for (auto& operation : copy->operations) {
                 operation.source->copyTo(*operation.destination, operation.flags, operation.filter);
             }
         });
 
-        m_composition_entity_query.query(database_context).forEach<Composition>([&](Composition* composition) {
+        m_composition_entity_query.query_db_window(database_context).for_each<Composition>([&](Composition* composition) {
             for (auto& operation : composition->operations) {
                 operation.material.m_shader->bind();
                 operation.material.m_materialVariables.set("transMatrix", getModelMatrix(operation.transform));

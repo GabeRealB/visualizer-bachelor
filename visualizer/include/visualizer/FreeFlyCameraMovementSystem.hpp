@@ -4,8 +4,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <memory>
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/Scene.hpp>
 #include <visualizer/System.hpp>
 
@@ -26,7 +26,7 @@ private:
     float m_movement_speed;
     float m_rotation_speed;
     float m_movement_multiplier;
-    EntityQuery m_camera_query;
+    EntityDBQuery m_camera_query;
     std::shared_ptr<EntityDatabase> m_entity_database;
 };
 

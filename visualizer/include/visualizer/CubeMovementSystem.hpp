@@ -1,7 +1,7 @@
 #pragma once
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/System.hpp>
 
 namespace Visualizer {
@@ -18,10 +18,10 @@ private:
     double m_accumulator;
     double m_currentTime;
     double m_tick_interval;
-    EntityQuery m_cubes_query_mesh;
-    EntityQuery m_cubes_query_activation;
-    EntityQuery m_cubes_query_homogeneous;
-    EntityQuery m_cubes_query_heterogeneous;
+    EntityDBQuery m_cubes_query_mesh;
+    EntityDBQuery m_cubes_query_activation;
+    EntityDBQuery m_cubes_query_homogeneous;
+    EntityDBQuery m_cubes_query_heterogeneous;
     std::shared_ptr<EntityDatabase> m_entity_database;
 };
 

@@ -15,7 +15,7 @@
 namespace Visualizer {
 
 CameraSwitchingSystem::CameraSwitchingSystem()
-    : m_camera_switcher_query{ EntityQuery{}.with<ActiveCameraSwitcher>() }
+    : m_camera_switcher_query{ EntityDBQuery{}.with_component<ActiveCameraSwitcher>() }
     , m_entity_database{}
 {
 }
@@ -43,8 +43,8 @@ void CameraSwitchingSystem::run(void*)
         tabPressed = false;
 
         m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
-            m_camera_switcher_query.query(database_context)
-                .forEach<ActiveCameraSwitcher>([&](ActiveCameraSwitcher* switcher) {
+            m_camera_switcher_query.query_db_window(database_context)
+                .for_each<ActiveCameraSwitcher>([&](ActiveCameraSwitcher* switcher) {
                     auto current{ switcher->cameras[switcher->current] };
                     switcher->current++;
                     if (switcher->current == switcher->cameras.size()) {
