@@ -15,7 +15,7 @@
 #include <visualizer/Entity.hpp>
 #include <visualizer/EntityArchetype.hpp>
 #include <visualizer/EntityContainer.hpp>
-#include <visualizer/EntityQuery.hpp>
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/TypeId.hpp>
 #include <visualizer/World.hpp>
 
@@ -69,7 +69,7 @@ public:
 
     EntityArchetype fetch_entity_archetype(Entity entity) const;
 
-    EntityQueryResult query(const EntityQuery& query);
+    EntityDBWindow query_db_window(const EntityDBQuery& query);
 
 private:
     using EntityContainerId = std::size_t;
@@ -155,7 +155,7 @@ public:
 
     EntityArchetype fetch_entity_archetype(Entity entity) const;
 
-    EntityQueryResult query(const EntityQuery& query);
+    EntityDBWindow query_db_window(const EntityDBQuery& query);
 
     template <typename T> requires NoCVRefs<T> ComponentType register_component_desc();
 
@@ -199,8 +199,6 @@ public:
     const void* fetch_component_unchecked(Entity entity, ComponentType component_type) const;
 
     EntityArchetype fetch_entity_archetype(Entity entity) const;
-
-    EntityQueryResult query(const EntityQuery& query);
 
 private:
     EntityDatabaseImpl& m_database;

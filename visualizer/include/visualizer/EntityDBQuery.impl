@@ -1,0 +1,238 @@
+#include <cassert>
+
+namespace Visualizer {
+
+/**************************************************************************************************
+ ***************************************** EntityDBQuery *****************************************
+ **************************************************************************************************/
+
+template <typename... Ts> requires ComponentList<Ts...>&& NoCVRefs<Ts...> EntityDBQuery& EntityDBQuery::with_component()
+{
+    const auto component_types{ getTypeIds<Ts...>() };
+    return with_component(component_types);
+}
+
+template <typename... Ts>
+requires ComponentList<Ts...>&& NoCVRefs<Ts...> EntityDBQuery& EntityDBQuery::without_component()
+{
+    const auto component_types{ getTypeIds<Ts...>() };
+    return without_component(component_types);
+}
+
+template <typename... Ts>
+requires ComponentList<Ts...>&& NoCVRefs<Ts...> EntityDBQuery& EntityDBQuery::with_optional_component()
+{
+    const auto component_types{ getTypeIds<Ts...>() };
+    return with_optional_component(component_types);
+}
+
+/**************************************************************************************************
+ ***************************************** EntityDBWindow *****************************************
+ **************************************************************************************************/
+
+template <typename... Ts, typename Pred>
+requires ComponentList<Ts...>&& EntityDBWindowPred<Pred, Ts...> EntityDBWindow EntityDBWindow::filter(Pred&& pred)
+{
+    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    return filter<Ts...>(std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn>
+requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...> void EntityDBWindow::iterate(Fn&& fn)
+{
+    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    return iterate<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn>
+requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...> void EntityDBWindow::for_each(Fn&& fn)
+{
+    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    return for_each<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn, typename Pred>
+requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
+EntityDBWindow::iterate(Fn&& fn, Pred&& pred)
+{
+    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    return iterate<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Fn, typename Pred>
+requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
+EntityDBWindow::for_each(Fn&& fn, Pred&& pred)
+{
+    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    return for_each<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
+}
+
+template <typename... Ts, typename Pred, std::size_t... Is>
+requires ComponentList<Ts...>&& EntityDBWindowPred<Pred, Ts...> EntityDBWindow EntityDBWindow::filter(
+    Pred&& pred, std::index_sequence<Is...>)
+{
+    auto entities{ std::vector<Entity>{} };
+    auto components{ std::vector<std::vector<void*>>{} };
+    auto component_type_map{ std::unordered_map<ComponentType, std::size_t>{} };
+    components.reserve(sizeof...(Ts));
+    component_type_map.reserve(sizeof...(Ts));
+
+    const auto component_types{ getTypeIds<typename std::remove_const_t<Ts>...>() };
+    for (std::size_t i = 0; i < component_types.size(); ++i) {
+        components.emplace_back();
+        component_type_map.insert({ component_types[i], i });
+    }
+
+    void** component_ptr_start[sizeof...(Ts)];
+    std::size_t component_indices[sizeof...(Ts)]{ component_idx(getTypeId<typename std::remove_const_t<Ts>>())... };
+    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
+        component_ptr_start[i] = m_components[component_indices[i]].data();
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        bool append{ false };
+
+        if constexpr (std::is_invocable_v<Pred, const Ts*...>) {
+            append = std::invoke(
+                std::forward<Pred>(pred), std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        } else {
+            append = std::invoke(std::forward<Pred>(pred), m_entities[i],
+                std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        }
+
+        if (append) {
+            entities.push_back(m_entities[i]);
+            for (std::size_t j = 0; j < sizeof...(Ts); ++j) {
+                components[j].push_back(*component_ptr_start[j]);
+            }
+        }
+
+        for (auto& component_ptr : component_ptr_start) {
+            ++component_ptr;
+        }
+    }
+
+    return EntityDBWindow{ std::move(entities), std::move(components), std::move(component_type_map) };
+}
+
+template <typename... Ts, typename Fn, std::size_t... Is>
+requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...> void EntityDBWindow::iterate(
+    Fn&& fn, std::index_sequence<Is...>)
+{
+    void** component_ptr_start[sizeof...(Ts)];
+    std::size_t component_indices[sizeof...(Ts)]{ component_idx(getTypeId<typename std::remove_const_t<Ts>>())... };
+    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
+        component_ptr_start[i] = m_components[component_indices[i]].data();
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        if constexpr (std::is_invocable_v<Fn, std::size_t, Ts*...>) {
+            std::invoke(std::forward<Fn>(fn), i, std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+        } else {
+            std::invoke(std::forward<Fn>(fn), m_entities[i], i,
+                std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+        }
+
+        for (auto& component_ptr : component_ptr_start) {
+            ++component_ptr;
+        }
+    }
+}
+
+template <typename... Ts, typename Fn, std::size_t... Is>
+requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...> void EntityDBWindow::for_each(
+    Fn&& fn, std::index_sequence<Is...>)
+{
+    void** component_ptr_start[sizeof...(Ts)];
+    std::size_t component_indices[sizeof...(Ts)]{ component_idx(getTypeId<typename std::remove_const_t<Ts>>())... };
+    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
+        component_ptr_start[i] = m_components[component_indices[i]].data();
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        if constexpr (std::is_invocable_v<Fn, Ts*...>) {
+            std::invoke(std::forward<Fn>(fn), std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+        } else {
+            std::invoke(
+                std::forward<Fn>(fn), m_entities[i], std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+        }
+
+        for (auto& component_ptr : component_ptr_start) {
+            ++component_ptr;
+        }
+    }
+}
+
+template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
+EntityDBWindow::iterate(Fn&& fn, Pred&& pred, std::index_sequence<Is...>)
+{
+    void** component_ptr_start[sizeof...(Ts)];
+    std::size_t component_indices[sizeof...(Ts)]{ component_idx(getTypeId<typename std::remove_const_t<Ts>>())... };
+    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
+        component_ptr_start[i] = m_components[component_indices[i]].data();
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        bool valid{ false };
+
+        if constexpr (std::is_invocable_v<Pred, const Ts*...>) {
+            valid = std::invoke(
+                std::forward<Pred>(pred), std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        } else {
+            valid = std::invoke(std::forward<Pred>(pred), m_entities[i],
+                std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        }
+
+        if (valid) {
+            if constexpr (std::is_invocable_v<Fn, std::size_t, Ts*...>) {
+                std::invoke(std::forward<Fn>(fn), i, std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+            } else {
+                std::invoke(std::forward<Fn>(fn), m_entities[i], i,
+                    std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+            }
+        }
+
+        for (auto& component_ptr : component_ptr_start) {
+            ++component_ptr;
+        }
+    }
+}
+
+template <typename... Ts, typename Fn, typename Pred, std::size_t... Is>
+requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
+EntityDBWindow::for_each(Fn&& fn, Pred&& pred, std::index_sequence<Is...>)
+{
+    void** component_ptr_start[sizeof...(Ts)];
+    std::size_t component_indices[sizeof...(Ts)]{ component_idx(getTypeId<typename std::remove_const_t<Ts>>())... };
+    for (std::size_t i = 0; i < sizeof...(Ts); ++i) {
+        component_ptr_start[i] = m_components[component_indices[i]].data();
+    }
+
+    for (std::size_t i = 0; i < size(); ++i) {
+        bool valid{ false };
+
+        if constexpr (std::is_invocable_v<Pred, const Ts*...>) {
+            valid = std::invoke(
+                std::forward<Pred>(pred), std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        } else {
+            valid = std::invoke(std::forward<Pred>(pred), m_entities[i],
+                std::forward<const Ts*>(static_cast<const Ts*>(*component_ptr_start[Is]))...);
+        }
+
+        if (valid) {
+            if constexpr (std::is_invocable_v<Fn, Ts*...>) {
+                std::invoke(std::forward<Fn>(fn), std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+            } else {
+                std::invoke(std::forward<Fn>(fn), m_entities[i],
+                    std::forward<Ts*>(static_cast<Ts*>(*component_ptr_start[Is]))...);
+            }
+        }
+
+        for (auto& component_ptr : component_ptr_start) {
+            ++component_ptr;
+        }
+    }
+}
+
+}
