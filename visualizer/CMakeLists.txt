@@ -17,8 +17,8 @@ set(VISUALIZER_INCLUDES
         include/visualizer/Entity.hpp
         include/visualizer/EntityArchetype.hpp
         include/visualizer/EntityArchetype.impl
-        include/visualizer/EntityQuery.hpp
-        include/visualizer/EntityQuery.impl
+        include/visualizer/EntityDBQuery.hpp
+        include/visualizer/EntityDBQuery.impl
         include/visualizer/Framebuffer.hpp
         include/visualizer/FreeFly.hpp
         include/visualizer/GenericBuffer.hpp
@@ -59,7 +59,7 @@ set(VISUALIZER_SRC
         src/CubeMovementSystem.cpp
         src/Entity.cpp
         src/EntityArchetype.cpp
-        src/EntityQuery.cpp
+        src/EntityDBQuery.cpp
         src/Framebuffer.cpp
         src/GenericBuffer.cpp
         src/Mesh.cpp

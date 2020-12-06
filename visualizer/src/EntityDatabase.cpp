@@ -241,73 +241,172 @@ EntityArchetype EntityDatabaseImpl::fetch_entity_archetype(Entity entity) const
     return fetch_entity_container(entity).archetype();
 }
 
-EntityQueryResult EntityDatabaseImpl::query(const EntityQuery& query)
+template <typename T, typename It> void set_intersection_in_place(T& cont, It first2, It last2)
 {
-    auto withTypes{ query.withTypes() };
-    auto withoutTypes{ query.withoutTypes() };
+    auto it1{ std::begin(cont) };
+    auto it2{ first2 };
 
-    std::unordered_set<EntityContainerId> with_ids{};
-    if (withTypes.size() > 0) {
-        if (auto pos{ m_type_associations.find(withTypes[0]) }; pos != m_type_associations.end()) {
-            with_ids = pos->second;
+    while (it1 != std::end(cont) && it2 != last2) {
+        if (*it1 < *it2) {
+            it1 = cont.erase(it1);
+        } else if (*it2 < *it1) {
+            ++it2;
+        } else {
+            ++it1;
+            ++it2;
+        }
+    }
+
+    cont.erase(it1, std::end(cont));
+}
+
+template <typename T, typename It> void set_union_in_place(T& cont, It first2, It last2)
+{
+    auto it1{ std::begin(cont) };
+    auto it2{ first2 };
+
+    while (it1 != std::end(cont) && it2 != last2) {
+        if (*it1 < *it2) {
+            ++it1;
+        } else if (*it2 < *it1) {
+            it1 = cont.insert(it1, *it2);
+            ++it2;
+        } else {
+            ++it1;
+            ++it2;
+        }
+    }
+
+    cont.insert(it1, it2, last2);
+}
+
+template <typename T, typename It> void set_difference_in_place(T& cont, It first2, It last2)
+{
+    auto it1{ std::begin(cont) };
+    auto it2{ first2 };
+
+    while (it1 != std::end(cont) && it2 != last2) {
+        if (*it1 < *it2) {
+            ++it1;
+        } else if (*it2 < *it1) {
+            ++it2;
+        } else {
+            it1 = cont.erase(it1);
+            ++it2;
+        }
+    }
+}
+
+EntityDBWindow EntityDatabaseImpl::query_db_window(const EntityDBQuery& query)
+{
+    auto required_components{ query.required_components() };
+    auto prohibited_components{ query.prohibited_components() };
+    auto optional_components{ query.optional_components() };
+
+    std::vector<Entity> entities{};
+    std::vector<std::vector<void*>> components{};
+    std::unordered_map<ComponentType, std::size_t> component_type_map;
+
+    components.reserve(required_components.size() + optional_components.size());
+    component_type_map.reserve(required_components.size() + optional_components.size());
+    for (std::size_t i{ 0 }; i < required_components.size(); ++i) {
+        components.emplace_back();
+        component_type_map.insert({ required_components[i], i });
+    }
+    for (std::size_t i{ 0 }; i < optional_components.size(); ++i) {
+        components.emplace_back();
+        component_type_map.insert({ optional_components[i], i + required_components.size() });
+    }
+
+    std::vector<EntityContainerId> required_container_ids{};
+    if (required_components.size() > 0) {
+        if (auto pos{ m_type_associations.find(required_components[0]) }; pos != m_type_associations.end()) {
+            required_container_ids = { pos->second.begin(), pos->second.end() };
         }
 
-        for (std::size_t i = 1; i < withTypes.size() && with_ids.size() > 0; ++i) {
-            if (auto pos{ m_type_associations.find(withTypes[i]) }; pos != m_type_associations.end()) {
-                std::erase_if(with_ids, [&](const EntityContainerId& id) { return !pos->second.contains(id); });
+        for (std::size_t i{ 1 }; i < required_components.size() && !required_container_ids.empty(); ++i) {
+            if (auto pos{ m_type_associations.find(required_components[i]) }; pos != m_type_associations.end()) {
+                set_intersection_in_place(required_container_ids, pos->second.begin(), pos->second.end());
             } else {
-                with_ids.clear();
+                required_container_ids.clear();
             }
         }
     }
 
-    if (with_ids.empty()) {
-        return EntityQueryResult{};
+    if (required_container_ids.empty()) {
+        return EntityDBWindow{ std::move(entities), std::move(components), std::move(component_type_map) };
     }
 
-    std::unordered_set<EntityContainerId> without_ids{};
-    for (auto type : withoutTypes) {
-        if (auto pos{ m_type_associations.find(type) }; pos != m_type_associations.end()) {
-            without_ids.insert(pos->second.begin(), pos->second.end());
+    std::vector<EntityContainerId> prohibited_container_ids{};
+    for (auto prohibited_component : prohibited_components) {
+        if (auto pos{ m_type_associations.find(prohibited_component) }; pos != m_type_associations.end()) {
+            set_union_in_place(prohibited_container_ids, pos->second.begin(), pos->second.end());
         }
     }
 
-    if (!without_ids.empty()) {
-        std::erase_if(with_ids, [&](const EntityContainerId& id) { return without_ids.contains(id); });
+    if (!prohibited_container_ids.empty()) {
+        set_difference_in_place(
+            required_container_ids, prohibited_container_ids.begin(), prohibited_container_ids.end());
     }
 
-    if (with_ids.empty()) {
-        return EntityQueryResult{};
+    if (required_container_ids.empty()) {
+        return EntityDBWindow{ std::move(entities), std::move(components), std::move(component_type_map) };
     }
-
-    std::vector<Entity> entities{};
-    std::vector<void*> components{};
-    std::vector<TypeId> types{ withTypes.begin(), withTypes.end() };
 
     std::vector<std::size_t> component_indices{};
+    std::vector<bool> optional_component_presence{};
 
-    for (auto archetypeId : with_ids) {
-        auto& entity_container{ m_entity_containers.at(archetypeId) };
-        component_indices.reserve(withTypes.size());
-        for (auto type : withTypes) {
-            auto component_idx{ entity_container.component_idx(type) };
+    for (auto container_id : required_container_ids) {
+        auto& entity_container{ m_entity_containers.at(container_id) };
+
+        component_indices.reserve(required_components.size() + optional_components.size());
+        optional_component_presence.reserve(optional_components.size());
+        for (auto component_type : required_components) {
+            auto component_idx{ entity_container.component_idx(component_type) };
             component_indices.push_back(component_idx);
+        }
+        for (auto component_type : optional_components) {
+            if (entity_container.has_component(component_type)) {
+                auto component_idx{ entity_container.component_idx(component_type) };
+                component_indices.push_back(component_idx);
+                optional_component_presence.push_back(true);
+            } else {
+                component_indices.push_back(0);
+                optional_component_presence.push_back(false);
+            }
+        }
+
+        for (auto& component_vec : components) {
+            component_vec.reserve(component_vec.size() + entity_container.size());
         }
 
         for (auto& entity_chunk : entity_container.entity_chunks()) {
             for (auto& entity : entity_chunk.entities()) {
                 entities.push_back(entity);
                 auto entity_idx{ entity_chunk.entity_idx(entity) };
-                for (auto component_idx : component_indices) {
-                    components.push_back(const_cast<void*>(entity_chunk.fetch_unchecked(entity_idx, component_idx)));
+
+                for (std::size_t i{ 0 }; i < required_components.size(); ++i) {
+                    auto component_ptr{ const_cast<void*>(
+                        entity_chunk.fetch_unchecked(entity_idx, component_indices[i])) };
+                    components[i].push_back(component_ptr);
+                }
+                for (std::size_t i{ 0 }; i < optional_components.size(); ++i) {
+                    if (optional_component_presence[i]) {
+                        auto component_ptr{ const_cast<void*>(entity_chunk.fetch_unchecked(
+                            entity_idx, component_indices[i + required_components.size()])) };
+                        components[i].push_back(component_ptr);
+                    } else {
+                        components[i + required_components.size()].push_back(nullptr);
+                    }
                 }
             }
         }
 
         component_indices.clear();
+        optional_component_presence.clear();
     }
 
-    return { std::move(entities), std::move(components), types };
+    return EntityDBWindow{ std::move(entities), std::move(components), std::move(component_type_map) };
 }
 
 Entity EntityDatabaseImpl::generate_new_entity()
@@ -474,7 +573,10 @@ EntityArchetype EntityDatabaseContext::fetch_entity_archetype(Entity entity) con
     return m_database.fetch_entity_archetype(entity);
 }
 
-EntityQueryResult EntityDatabaseContext::query(const EntityQuery& query) { return m_database.query(query); }
+EntityDBWindow EntityDatabaseContext::query_db_window(const EntityDBQuery& query)
+{
+    return m_database.query_db_window(query);
+}
 
 /**************************************************************************************************
  *********************************** EntityDatabaseLazyContext ***********************************
@@ -526,7 +628,5 @@ EntityArchetype EntityDatabaseLazyContext::fetch_entity_archetype(Entity entity)
 {
     return m_database.fetch_entity_archetype(entity);
 }
-
-EntityQueryResult EntityDatabaseLazyContext::query(const EntityQuery& query) { return m_database.query(query); }
 
 }
