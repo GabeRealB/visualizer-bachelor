@@ -40,7 +40,6 @@ set(VISUALIZER_INCLUDES
         include/visualizer/UniqueTypes.hpp
         include/visualizer/VertexAttributeBuffer.hpp
         include/visualizer/Visualizer.hpp
-        include/visualizer/VisualizerConfiguration.hpp
         include/visualizer/World.hpp
         include/visualizer/UIText.hpp
         include/visualizer/TextDrawingSystem.hpp
@@ -72,7 +71,6 @@ set(VISUALIZER_SRC
         src/Transform.cpp
         src/VertexAttributeBuffer.cpp
         src/Visualizer.cpp
-        src/VisualizerConfiguration.cpp
         src/World.cpp
         src/TextDrawingSystem.cpp
         src/AssetDatabase.cpp
