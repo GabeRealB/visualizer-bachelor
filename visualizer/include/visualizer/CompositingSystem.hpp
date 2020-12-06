@@ -12,7 +12,6 @@
 #include <visualizer/System.hpp>
 #include <visualizer/Texture.hpp>
 #include <visualizer/Transform.hpp>
-#include <visualizer/VisualizerConfiguration.hpp>
 
 namespace Visualizer {
 

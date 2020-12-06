@@ -6,7 +6,6 @@
 
 #include <visconfig/Config.hpp>
 
-#include <visualizer/VisualizerConfiguration.hpp>
 #include <visualizer/World.hpp>
 
 namespace Visualizer {
