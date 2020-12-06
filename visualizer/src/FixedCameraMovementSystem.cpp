@@ -18,7 +18,7 @@ namespace Visualizer {
 
 FixedCameraMovementSystem::FixedCameraMovementSystem()
     : m_current_time{ glfwGetTime() }
-    , m_camera_query{ EntityQuery{}.with<Camera, FixedCamera, Transform>() }
+    , m_camera_query{ EntityDBQuery{}.with_component<Camera, FixedCamera, Transform>() }
     , m_entity_database{}
 {
 }
@@ -77,89 +77,92 @@ void FixedCameraMovementSystem::run(void*)
     }
 
     m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
-        auto fixed_cameras{ m_camera_query.query(database_context).filter<Camera>([](const Camera* camera) -> bool {
-            return camera->m_fixed;
-        }) };
+        auto fixed_cameras{
+            m_camera_query.query_db_window(database_context)
+                .filter<Camera, FixedCamera, Transform>(
+                    [](const Camera* camera, const FixedCamera*, const Transform*) -> bool { return camera->m_fixed; })
+        };
 
-        auto perspective_cameras{ fixed_cameras };
-        auto orthographic_cameras{ fixed_cameras };
-        perspective_cameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
-        orthographic_cameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
+        auto perspective_cameras{ fixed_cameras.filter<Camera, FixedCamera, Transform>(
+            [](const Camera* camera, const FixedCamera*, const Transform*) -> bool { return camera->perspective; }) };
+        auto orthographic_cameras{ fixed_cameras.filter<Camera, FixedCamera, Transform>(
+            [](const Camera* camera, const FixedCamera*, const Transform*) -> bool { return !camera->perspective; }) };
 
-        perspective_cameras.forEach<Camera, FixedCamera, Transform>([&](const Camera* camera, FixedCamera* fixed_camera,
-                                                                        Transform* transform) {
-            if (camera->m_active) {
-                if (w_key == GLFW_PRESS) {
-                    fixed_camera->verticalAngle -= movement_speed;
-                    if (fixed_camera->verticalAngle <= glm::radians(3.0f)) {
-                        fixed_camera->verticalAngle = glm::radians(3.0f);
+        perspective_cameras.for_each<Camera, FixedCamera, Transform>(
+            [&](const Camera* camera, FixedCamera* fixed_camera, Transform* transform) {
+                if (camera->m_active) {
+                    if (w_key == GLFW_PRESS) {
+                        fixed_camera->verticalAngle -= movement_speed;
+                        if (fixed_camera->verticalAngle <= glm::radians(3.0f)) {
+                            fixed_camera->verticalAngle = glm::radians(3.0f);
+                        }
+                    }
+
+                    if (s_key == GLFW_PRESS) {
+                        fixed_camera->verticalAngle += movement_speed;
+                        if (fixed_camera->verticalAngle >= glm::radians(177.0f)) {
+                            fixed_camera->verticalAngle = glm::radians(177.0f);
+                        }
+                    }
+
+                    if (a_key == GLFW_PRESS) {
+                        fixed_camera->horizontalAngle -= movement_speed;
+                        if (fixed_camera->horizontalAngle <= 0) {
+                            fixed_camera->horizontalAngle += 2 * glm::pi<float>();
+                        }
+                    }
+
+                    if (d_key == GLFW_PRESS) {
+                        fixed_camera->horizontalAngle += movement_speed;
+                        if (fixed_camera->horizontalAngle >= 2 * glm::pi<float>()) {
+                            fixed_camera->horizontalAngle -= 2 * glm::pi<float>();
+                        }
+                    }
+
+                    if (q_key == GLFW_PRESS) {
+                        fixed_camera->distance += movement_speed;
+                    }
+
+                    if (e_key == GLFW_PRESS) {
+                        fixed_camera->distance -= movement_speed;
+                        if (fixed_camera->distance <= 0.0005f) {
+                            fixed_camera->distance = 0.0005f;
+                        }
                     }
                 }
 
-                if (s_key == GLFW_PRESS) {
-                    fixed_camera->verticalAngle += movement_speed;
-                    if (fixed_camera->verticalAngle >= glm::radians(177.0f)) {
-                        fixed_camera->verticalAngle = glm::radians(177.0f);
-                    }
+                auto model_matrix{ getModelMatrix(
+                    database_context.fetch_component_unchecked<Transform>(fixed_camera->focus)) };
+
+                for (auto parent_entity{ fixed_camera->focus };
+                     database_context.entity_has_component<Parent>(parent_entity);) {
+                    const auto& parent{ database_context.fetch_component_unchecked<Parent>(parent_entity) };
+                    model_matrix
+                        = getModelMatrix(database_context.fetch_component_unchecked<Transform>(parent.m_parent));
+                    parent_entity = parent.m_parent;
                 }
 
-                if (a_key == GLFW_PRESS) {
-                    fixed_camera->horizontalAngle -= movement_speed;
-                    if (fixed_camera->horizontalAngle <= 0) {
-                        fixed_camera->horizontalAngle += 2 * glm::pi<float>();
-                    }
-                }
+                glm::vec4 position{ glm::sin(fixed_camera->verticalAngle) * glm::sin(fixed_camera->horizontalAngle)
+                        * fixed_camera->distance,
+                    glm::cos(fixed_camera->verticalAngle) * fixed_camera->distance,
+                    glm::sin(fixed_camera->verticalAngle) * glm::cos(fixed_camera->horizontalAngle)
+                        * fixed_camera->distance,
+                    1.0f };
 
-                if (d_key == GLFW_PRESS) {
-                    fixed_camera->horizontalAngle += movement_speed;
-                    if (fixed_camera->horizontalAngle >= 2 * glm::pi<float>()) {
-                        fixed_camera->horizontalAngle -= 2 * glm::pi<float>();
-                    }
-                }
+                auto camera_position{ model_matrix * position };
+                auto focus_position{ model_matrix * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f } };
 
-                if (q_key == GLFW_PRESS) {
-                    fixed_camera->distance += movement_speed;
-                }
+                auto direction{ focus_position - camera_position };
+                auto direction_normalized{ glm::normalize(glm::vec3{ direction }) };
 
-                if (e_key == GLFW_PRESS) {
-                    fixed_camera->distance -= movement_speed;
-                    if (fixed_camera->distance <= 0.0005f) {
-                        fixed_camera->distance = 0.0005f;
-                    }
-                }
-            }
+                auto rotation{ glm::quatLookAt(direction_normalized, glm::vec3{ 0.0f, 1.0f, 0.0f }) };
 
-            auto model_matrix{ getModelMatrix(
-                database_context.fetch_component_unchecked<Transform>(fixed_camera->focus)) };
+                transform->position = camera_position;
+                transform->rotation = rotation;
+            });
 
-            for (auto parent_entity{ fixed_camera->focus };
-                 database_context.entity_has_component<Parent>(parent_entity);) {
-                const auto& parent{ database_context.fetch_component_unchecked<Parent>(parent_entity) };
-                model_matrix = getModelMatrix(database_context.fetch_component_unchecked<Transform>(parent.m_parent));
-                parent_entity = parent.m_parent;
-            }
-
-            glm::vec4 position{ glm::sin(fixed_camera->verticalAngle) * glm::sin(fixed_camera->horizontalAngle)
-                    * fixed_camera->distance,
-                glm::cos(fixed_camera->verticalAngle) * fixed_camera->distance,
-                glm::sin(fixed_camera->verticalAngle) * glm::cos(fixed_camera->horizontalAngle)
-                    * fixed_camera->distance,
-                1.0f };
-
-            auto camera_position{ model_matrix * position };
-            auto focus_position{ model_matrix * glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f } };
-
-            auto direction{ focus_position - camera_position };
-            auto direction_normalized{ glm::normalize(glm::vec3{ direction }) };
-
-            auto rotation{ glm::quatLookAt(direction_normalized, glm::vec3{ 0.0f, 1.0f, 0.0f }) };
-
-            transform->position = camera_position;
-            transform->rotation = rotation;
-        });
-
-        orthographic_cameras.forEach<Camera, FixedCamera, Transform>([&](Camera* camera, FixedCamera* fixed_camera,
-                                                                         Transform* transform) {
+        orthographic_cameras.for_each<Camera, FixedCamera, Transform>([&](Camera* camera, FixedCamera* fixed_camera,
+                                                                          Transform* transform) {
             if (camera->m_active) {
                 fixed_camera->horizontalAngle = 0.0f;
                 fixed_camera->verticalAngle = glm::pi<float>() / 2;

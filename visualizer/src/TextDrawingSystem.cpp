@@ -7,8 +7,8 @@
 namespace Visualizer {
 
 TextDrawingSystem::TextDrawingSystem()
-    : m_textQuery{ EntityQuery{}.with<UIText, Transform>() }
-    , m_cameraQuery{ EntityQuery{}.with<Camera>() }
+    : m_textQuery{ EntityDBQuery{}.with_component<UIText, Transform>() }
+    , m_cameraQuery{ EntityDBQuery{}.with_component<Camera>() }
     , m_bitmap_mesh{}
     , m_bitmap_material{}
     , m_characters{}
@@ -53,10 +53,10 @@ void TextDrawingSystem::run(void*)
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context){
-        auto textUIs{ m_textQuery.query(database_context) };
+    m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
+        auto textUIs{ m_textQuery.query_db_window(database_context) };
 
-        m_cameraQuery.query(database_context).forEach<const Camera>([&](const Camera* camera) {
+        m_cameraQuery.query_db_window(database_context).for_each<const Camera>([&](const Camera* camera) {
             camera->m_renderTarget->bind(FramebufferBinding::ReadWrite);
             auto cameraViewport{ camera->m_renderTarget->viewport() };
 

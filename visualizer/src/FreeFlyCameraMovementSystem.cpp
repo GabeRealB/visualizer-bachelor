@@ -22,7 +22,7 @@ FreeFlyCameraMovementSystem::FreeFlyCameraMovementSystem()
     , m_movement_speed{ 10.0f }
     , m_rotation_speed{ 0.005f }
     , m_movement_multiplier{ 1.5f }
-    , m_camera_query{ EntityQuery{}.with<Camera, FreeFly, Transform>() }
+    , m_camera_query{ EntityDBQuery{}.with_component<Camera, FreeFly, Transform>() }
     , m_entity_database{}
 {
     glfwGetCursorPos(glfwGetCurrentContext(), &m_mouse_x, &m_mouse_y);
@@ -74,16 +74,17 @@ void FreeFlyCameraMovementSystem::run(void*)
     glm::vec3 mouse_rotation{ m_rotation_speed * mouse_y_offset, m_rotation_speed * mouse_x_offset, 0.0 };
 
     m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
-        auto activeFreeCameras{ m_camera_query.query(database_context).filter<Camera>([](const Camera* camera) -> bool {
-            return camera->m_active && !camera->m_fixed;
-        }) };
+        auto activeFreeCameras{ m_camera_query.query_db_window(database_context)
+                                    .filter<Camera, Transform>([](const Camera* camera, const Transform*) -> bool {
+                                        return camera->m_active && !camera->m_fixed;
+                                    }) };
 
-        auto perspectiveCameras{ activeFreeCameras };
-        auto orthographicCameras{ activeFreeCameras };
-        perspectiveCameras.filter<Camera>([](const Camera* camera) -> bool { return camera->perspective; });
-        orthographicCameras.filter<Camera>([](const Camera* camera) -> bool { return !camera->perspective; });
+        auto perspectiveCameras{ activeFreeCameras.filter<Camera, Transform>(
+            [](const Camera* camera, const Transform*) -> bool { return camera->perspective; }) };
+        auto orthographicCameras{ activeFreeCameras.filter<Camera, Transform>(
+            [](const Camera* camera, const Transform*) -> bool { return !camera->perspective; }) };
 
-        perspectiveCameras.forEach<Transform>([&](Transform* transform) {
+        perspectiveCameras.for_each<Transform>([&](Transform* transform) {
             auto localRight{ transform->rotation * right };
             auto upRotation{ glm::angleAxis(mouse_rotation.y, up) };
             auto rightRotation{ glm::angleAxis(mouse_rotation.x, localRight) };
@@ -117,7 +118,7 @@ void FreeFlyCameraMovementSystem::run(void*)
             }
         });
 
-        orthographicCameras.forEach<Camera, Transform>([&](Camera* camera, Transform* transform) {
+        orthographicCameras.for_each<Camera, Transform>([&](Camera* camera, Transform* transform) {
             transform->rotation = glm::identity<glm::quat>();
 
             if (w_key == GLFW_PRESS) {

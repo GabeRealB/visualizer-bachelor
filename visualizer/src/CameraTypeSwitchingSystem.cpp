@@ -16,7 +16,7 @@
 namespace Visualizer {
 
 CameraTypeSwitchingSystem::CameraTypeSwitchingSystem()
-    : m_camera_query{ EntityQuery{}.with<Camera, FreeFly, FixedCamera>() }
+    : m_camera_query{ EntityDBQuery{}.with_component<Camera, FreeFly, FixedCamera>() }
     , m_entity_database{}
 {
 }
@@ -50,17 +50,17 @@ void CameraTypeSwitchingSystem::run(void*)
         if (fKey == GLFW_RELEASE && fPressed) {
             fPressed = false;
 
-            m_camera_query.query(database_context)
+            m_camera_query.query_db_window(database_context)
                 .filter<Camera>([](const Camera* camera) { return camera->m_active; })
-                .forEach<Camera>([](Camera* camera) { camera->m_fixed = !camera->m_fixed; });
+                .for_each<Camera>([](Camera* camera) { camera->m_fixed = !camera->m_fixed; });
         }
 
         if (gKey == GLFW_RELEASE && gPressed) {
             gPressed = false;
 
-            m_camera_query.query(database_context)
+            m_camera_query.query_db_window(database_context)
                 .filter<Camera>([](const Camera* camera) { return camera->m_active; })
-                .forEach<Camera>([](Camera* camera) { camera->perspective = !camera->perspective; });
+                .for_each<Camera>([](Camera* camera) { camera->perspective = !camera->perspective; });
         }
     });
 }

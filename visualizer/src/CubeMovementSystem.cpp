@@ -14,10 +14,10 @@ CubeMovementSystem::CubeMovementSystem()
     : m_accumulator{ 0 }
     , m_currentTime{ 0 }
     , m_tick_interval{ 1.0 }
-    , m_cubes_query_mesh{ EntityQuery{}.with<MeshIteration, std::shared_ptr<Mesh>>() }
-    , m_cubes_query_activation{ EntityQuery{}.with<EntityActivation>() }
-    , m_cubes_query_homogeneous{ EntityQuery{}.with<HomogeneousIteration, Transform>() }
-    , m_cubes_query_heterogeneous{ EntityQuery{}.with<HeterogeneousIteration, Transform>() }
+    , m_cubes_query_mesh{ EntityDBQuery{}.with_component<MeshIteration, std::shared_ptr<Mesh>>() }
+    , m_cubes_query_activation{ EntityDBQuery{}.with_component<EntityActivation>() }
+    , m_cubes_query_homogeneous{ EntityDBQuery{}.with_component<HomogeneousIteration, Transform>() }
+    , m_cubes_query_heterogeneous{ EntityDBQuery{}.with_component<HeterogeneousIteration, Transform>() }
     , m_entity_database{}
 {
     m_currentTime = glfwGetTime();
@@ -311,27 +311,27 @@ void CubeMovementSystem::run(void*)
         m_accumulator = 0;
 
         m_entity_database->enter_secure_context([&](EntityDatabaseContext& entity_database) {
-            m_cubes_query_mesh.query(entity_database)
-                .forEach<MeshIteration, std::shared_ptr<Mesh>>(
+            m_cubes_query_mesh.query_db_window(entity_database)
+                .for_each<MeshIteration, std::shared_ptr<Mesh>>(
                     [](MeshIteration* meshIteration, std::shared_ptr<Mesh>* mesh) {
                         if (step_iteration(*meshIteration)) {
                             compute_mesh(*meshIteration, *mesh->get());
                         }
                     });
 
-            m_cubes_query_activation.query(entity_database).forEach<EntityActivation>([&](EntityActivation* iteration) {
-                step_iteration(*iteration, entity_database);
-            });
+            m_cubes_query_activation.query_db_window(entity_database)
+                .for_each<EntityActivation>(
+                    [&](EntityActivation* iteration) { step_iteration(*iteration, entity_database); });
 
-            m_cubes_query_homogeneous.query(entity_database)
-                .forEach<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
+            m_cubes_query_homogeneous.query_db_window(entity_database)
+                .for_each<HomogeneousIteration, Transform>([](HomogeneousIteration* iteration, Transform* transform) {
                     reverse_transform(*iteration, *transform);
                     step_iteration(*iteration);
                     compute_transform(*iteration, *transform);
                 });
 
-            m_cubes_query_heterogeneous.query(entity_database)
-                .forEach<HeterogeneousIteration, Transform>(
+            m_cubes_query_heterogeneous.query_db_window(entity_database)
+                .for_each<HeterogeneousIteration, Transform>(
                     [](HeterogeneousIteration* iteration, Transform* transform) {
                         reverse_transform(*iteration, *transform);
                         step_iteration(*iteration);

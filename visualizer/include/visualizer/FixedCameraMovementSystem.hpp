@@ -1,7 +1,7 @@
 #pragma once
 
+#include <visualizer/EntityDBQuery.hpp>
 #include <visualizer/EntityDatabase.hpp>
-#include <visualizer/EntityQuery.hpp>
 #include <visualizer/System.hpp>
 
 namespace Visualizer {
@@ -16,7 +16,7 @@ public:
 
 private:
     double m_current_time;
-    EntityQuery m_camera_query;
+    EntityDBQuery m_camera_query;
     std::shared_ptr<EntityDatabase> m_entity_database;
 };
 
