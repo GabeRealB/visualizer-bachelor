@@ -1,4 +1,4 @@
-set(MDH2VIS_SRC main.cpp MDHConfig.hpp MDHConfig.cpp MDHOps.hpp MDHOps.cpp)
+set(MDH2VIS_SRC main.cpp MDHConfig.hpp MDHConfig.cpp MDHOps.hpp MDHOps.cpp processing.hpp processing.cpp)
 
 add_executable(mdh2vis ${MDH2VIS_SRC})
 target_include_directories(mdh2vis PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
