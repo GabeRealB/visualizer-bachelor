@@ -1,0 +1,18 @@
+#include "Config.hpp"
+
+namespace Config {
+
+struct ConfigInitialization {
+    ConfigInitialization(void (*func)()) { func(); }
+};
+
+static void config_init_func();
+static ConfigInitialization config_initialization = ConfigInitialization{ config_init_func };
+
+static void config_init_func()
+{
+    auto config_instance = ConfigContainer::get_instance();
+    @CONFIG_INIT_FUNC@
+}
+
+}
