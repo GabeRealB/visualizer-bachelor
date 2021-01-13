@@ -20,13 +20,13 @@ def generate(config, template, output):
         return {};
     }}"""
 
-    callable_template = """[](const VariableMap& variable_map) -> std::array<std::tuple<std::size_t, std::size_t>> {{
+    callable_template = """[]([[maybe_unused]] const VariableMap& variable_map) -> std::array<std::tuple<int, int>, 3> {{
         {}
         
         return {{
-            {{ {}(), {}() }},
-            {{ {}(), {}() }},
-            {{ {}(), {}() }},
+            std::tuple<int, int>{{ {}(), {}() }},
+            std::tuple<int, int>{{ {}(), {}() }},
+            std::tuple<int, int>{{ {}(), {}() }},
         }};
     }}"""
 
@@ -76,11 +76,11 @@ def generate(config, template, output):
     # Generate the code
     code_str = "\n"
     for name, region in variables["sequential"].items():
-        code_str = code_str + "\tconfig_instance.add_variable(VariableType::SEQUENTIAL, {}, {}, {});\n" \
+        code_str = code_str + """\tconfig_instance.add_variable(VariableType::SEQUENTIAL, "{}", {}, {});\n""" \
             .format(name, *region) \
             .expandtabs(4)
     for name, region in variables["parallel"].items():
-        code_str = code_str + "\tconfig_instance.add_variable(VariableType::PARALLEL, {}, {}, {});\n" \
+        code_str = code_str + """\tconfig_instance.add_variable(VariableType::PARALLEL, "{}", {}, {});\n""" \
             .format(name, *region) \
             .expandtabs(4)
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <iostream>
 #include <map>
 #include <set>
@@ -31,7 +32,7 @@ public:
 
     std::size_t& get_variable_ref(const std::string& name)
     {
-        if (auto pos = std::find(m_names.begin(), m_names.end(), name) != m_names.end()) {
+        if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
             return m_values[index];
         } else {
@@ -42,7 +43,7 @@ public:
 
     const std::size_t& get_variable_ref(const std::string& name) const
     {
-        if (auto pos = std::find(m_names.begin(), m_names.end(), name) != m_names.end()) {
+        if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
             return m_values[index];
         } else {
@@ -53,7 +54,7 @@ public:
 
     std::pair<std::size_t, std::size_t> get_variable_region(const std::string& name) const
     {
-        if (auto pos = std::find(m_names.begin(), m_names.end(), name) != m_names.end()) {
+        if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
             return m_regions[index];
         } else {
@@ -78,7 +79,7 @@ public:
 
     const std::string& get_variable_name(std::size_t index) const
     {
-        if (index > names.size()) {
+        if (index > m_names.size()) {
             std::cerr << "Out of bounds." << std::endl;
             std::abort();
         }
@@ -134,7 +135,7 @@ public:
             std::abort();
         }
 
-        auto type = m_variable_types[name];
+        auto type = m_variable_types.at(name);
         switch (type) {
         case VariableType::PARALLEL:
             return m_parallel.get_variable_ref(name);
@@ -153,7 +154,7 @@ public:
             std::abort();
         }
 
-        auto type = m_variable_types[name];
+        auto type = m_variable_types.at(name);
         switch (type) {
         case VariableType::PARALLEL:
             return m_parallel.get_variable_region(name);
@@ -223,12 +224,12 @@ private:
     std::map<std::string, VariableType> m_variable_types;
 };
 
-using ViewCuboidCallable = std::array<std::tuple<std::size_t, std::size_t>> (*)(const VariableMap& variable_map);
+using ViewCuboidCallable = std::array<std::tuple<int, int>, 3> (*)(const VariableMap& variable_map);
 
 struct CuboidContainer {
-    std::array<std::size_t> fill_color;
-    std::array<std::size_t> unused_color;
-    std::array<std::size_t> active_color;
+    std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> unused_color;
+    std::array<std::size_t, 4> active_color;
     ViewCuboidCallable pos_size_callable;
 };
 
@@ -282,7 +283,7 @@ public:
 
     const ViewContainer& get_view_container(const std::string& name) const
     {
-        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), name) != m_view_names.end()) {
+        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), name); pos != m_view_names.end()) {
             auto index = std::distance(m_view_names.begin(), pos);
             return m_views[index];
         } else {
