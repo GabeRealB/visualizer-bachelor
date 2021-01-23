@@ -11,9 +11,14 @@ Config from_file(const std::filesystem::path& path)
         std::abort();
     } else {
         try {
-            std::ifstream file{ path };
-            nlohmann::json j{};
-            file >> j;
+            auto bin_path = path;
+            bin_path.replace_extension(".vbin");
+            std::ifstream file{ bin_path, std::ios::in | std::ios::binary };
+            file.unsetf(std::ios::skipws);
+
+            nlohmann::json j = nlohmann::json::from_cbor(
+                std::istream_iterator<std::uint8_t>(file), std::istream_iterator<std::uint8_t>());
+            // file >> j;
             return { j.get<Config>() };
         } catch (nlohmann::json::exception& e) {
             std::cerr << e.what() << std::endl;
@@ -29,6 +34,12 @@ void to_file(const std::filesystem::path& path, const Config& config)
         j = config;
         std::ofstream file{ path };
         file << std::setw(4) << j << std::endl;
+
+        auto bin_path = path;
+        bin_path.replace_extension(".vbin");
+        auto binary = nlohmann::json::to_cbor(j);
+        std::ofstream bin_file{ bin_path, std::ios::out | std::ios::binary };
+        bin_file.write(reinterpret_cast<char*>(binary.data()), binary.size() * sizeof(std::uint8_t));
     } catch (std::exception& e) {
         std::cerr << e.what() << std::endl;
         std::abort();

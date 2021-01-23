@@ -30,7 +30,7 @@ public:
         }
     }
 
-    std::size_t& get_variable_ref(const std::string& name)
+    int& get_variable_ref(const std::string& name)
     {
         if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
@@ -41,7 +41,7 @@ public:
         }
     }
 
-    const std::size_t& get_variable_ref(const std::string& name) const
+    const int& get_variable_ref(const std::string& name) const
     {
         if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
@@ -52,7 +52,7 @@ public:
         }
     }
 
-    std::pair<std::size_t, std::size_t> get_variable_region(const std::string& name) const
+    std::pair<int, int> get_variable_region(const std::string& name) const
     {
         if (auto pos = std::find(m_names.begin(), m_names.end(), name); pos != m_names.end()) {
             auto index = std::distance(m_names.begin(), pos);
@@ -63,7 +63,7 @@ public:
         }
     }
 
-    void initialize_variable(const std::string& name, std::size_t start, std::size_t end)
+    void initialize_variable(const std::string& name, int start, int end)
     {
         if (std::find(m_names.begin(), m_names.end(), name) != m_names.end()) {
             std::cerr << "A variable with the same name already exists." << std::endl;
@@ -88,9 +88,9 @@ public:
     }
 
 private:
+    std::vector<int> m_values;
     std::vector<std::string> m_names;
-    std::vector<std::size_t> m_values;
-    std::vector<std::pair<std::size_t, std::size_t>> m_regions;
+    std::vector<std::pair<int, int>> m_regions;
 };
 
 class VariableMap {
@@ -109,7 +109,7 @@ public:
         m_sequential.reset();
     }
 
-    std::size_t& get_variable_ref(const std::string& name)
+    int& get_variable_ref(const std::string& name)
     {
         if (!m_variable_types.contains(name)) {
             std::cerr << "The variable does not exist." << std::endl;
@@ -128,7 +128,7 @@ public:
         }
     }
 
-    const std::size_t& get_variable_ref(const std::string& name) const
+    const int& get_variable_ref(const std::string& name) const
     {
         if (!m_variable_types.contains(name)) {
             std::cerr << "The variable does not exist." << std::endl;
@@ -147,7 +147,7 @@ public:
         }
     }
 
-    std::pair<std::size_t, std::size_t> get_variable_region(const std::string& name) const
+    std::pair<int, int> get_variable_region(const std::string& name) const
     {
         if (!m_variable_types.contains(name)) {
             std::cerr << "The variable does not exist." << std::endl;
@@ -166,7 +166,7 @@ public:
         }
     }
 
-    void initialize_variable(VariableType type, const std::string& name, std::size_t start, std::size_t end)
+    void initialize_variable(VariableType type, const std::string& name, int start, int end)
     {
         if (m_variable_types.contains(name)) {
             std::cerr << "A variable with the same name already exists." << std::endl;
@@ -249,6 +249,8 @@ public:
         m_variable_requirements.push_back(requirements);
     }
 
+    std::size_t get_num_cuboids() const { return m_cuboids.size(); }
+
     std::vector<CuboidContainer> find_matching(const std::set<std::string>& requirements) const
     {
         auto result = std::vector<CuboidContainer>{};
@@ -277,7 +279,7 @@ public:
 
     static ConfigContainer& get_instance()
     {
-        static auto container = ConfigContainer{};
+        static ConfigContainer container{};
         return container;
     }
 

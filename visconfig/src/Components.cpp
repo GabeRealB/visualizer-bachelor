@@ -38,6 +38,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::ExplicitHeterogeneousIteration:
         to_json(j, *std::static_pointer_cast<ExplicitHeterogeneousIterationComponent>(v));
         break;
+    case ComponentType::CuboidCommandList:
+        to_json(j, *std::static_pointer_cast<CuboidCommandListComponent>(v));
+        break;
     case ComponentType::Camera:
         to_json(j, *std::static_pointer_cast<CameraComponent>(v));
         break;
@@ -117,6 +120,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::CuboidCommandList: {
+        auto ptr{ std::make_shared<CuboidCommandListComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     case ComponentType::Camera: {
         auto ptr{ std::make_shared<CameraComponent>() };
         from_json(j, *ptr);
@@ -164,6 +172,7 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::EntityActivation, "entity_activation" },
     { ComponentType::MeshIteration, "mesh_iteration" },
     { ComponentType::ExplicitHeterogeneousIteration, "explicit_heterogeneous_iteration" },
+    { ComponentType::CuboidCommandList, "cuboid_command_list" },
     { ComponentType::Camera, "camera" },
     { ComponentType::FreeFlyCamera, "free_fly_camera" },
     { ComponentType::FixedCamera, "fixed_camera" },
@@ -259,6 +268,33 @@ void from_json(const nlohmann::json& j, IterationOrder& v)
     } };
     if (auto pos{ std::find_if(sIterationOrderStringNameMap.begin(), sIterationOrderStringNameMap.end(), predicate) };
         pos != sIterationOrderStringNameMap.end()) {
+        v = pos->first;
+    } else {
+        std::abort();
+    }
+}
+
+std::unordered_map<CuboidCommandType, std::string> sCuboidCommandTypeStringNameMap{
+    { CuboidCommandType::NOOP, "noop" },
+    { CuboidCommandType::DRAW, "draw" },
+    { CuboidCommandType::DRAW_MULTIPLE, "draw_multiple" },
+    { CuboidCommandType::DELETE, "delete" },
+    { CuboidCommandType::DELETE_MULTIPLE, "delete_multiple" },
+};
+
+void to_json(nlohmann::json& j, const CuboidCommandType& v) { j = sCuboidCommandTypeStringNameMap[v]; }
+
+void from_json(const nlohmann::json& j, CuboidCommandType& v)
+{
+    std::string type{};
+    j.get_to(type);
+
+    auto predicate{ [&](const decltype(sCuboidCommandTypeStringNameMap)::value_type& pair) {
+        return pair.second == type;
+    } };
+    if (auto pos{
+            std::find_if(sCuboidCommandTypeStringNameMap.begin(), sCuboidCommandTypeStringNameMap.end(), predicate) };
+        pos != sCuboidCommandTypeStringNameMap.end()) {
         v = pos->first;
     } else {
         std::abort();
@@ -426,6 +462,16 @@ void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent&
     j[ExplicitHeterogeneousIterationComponent::scalesJson].get_to(v.scales);
     j[ExplicitHeterogeneousIterationComponent::positionsJson].get_to(v.positions);
     j[ExplicitHeterogeneousIterationComponent::ticksPerIterationJson].get_to(v.ticksPerIteration);
+}
+
+void to_json(nlohmann::json& j, const CuboidCommandListComponent& v)
+{
+    j[CuboidCommandListComponent::commands_json] = v.commands;
+}
+
+void from_json(const nlohmann::json& j, CuboidCommandListComponent& v)
+{
+    j[CuboidCommandListComponent::commands_json].get_to(v.commands);
 }
 
 void to_json(nlohmann::json& j, const CameraComponent& v)
@@ -1006,6 +1052,114 @@ void from_json(const nlohmann::json& j, Sampler2DMaterialAttribute& v)
 {
     j[Sampler2DMaterialAttribute::assetJson].get_to(v.asset);
     j[Sampler2DMaterialAttribute::slotJson].get_to(v.slot);
+}
+
+void to_json(nlohmann::json& j, const NoopCommand& v) { j[NoopCommand::counter_json] = v.counter; }
+
+void from_json(const nlohmann::json& j, NoopCommand& v) { j[NoopCommand::counter_json].get_to(v.counter); }
+
+void to_json(nlohmann::json& j, const DrawCommand& v)
+{
+    j[DrawCommand::cuboid_size_json] = v.cuboid_size;
+    j[DrawCommand::start_position_json] = v.start_position;
+    j[DrawCommand::fill_color_json] = v.fill_color;
+    j[DrawCommand::border_color_json] = v.border_color;
+}
+
+void from_json(const nlohmann::json& j, DrawCommand& v)
+{
+    j[DrawCommand::cuboid_size_json].get_to(v.cuboid_size);
+    j[DrawCommand::start_position_json].get_to(v.start_position);
+    j[DrawCommand::fill_color_json].get_to(v.fill_color);
+    j[DrawCommand::border_color_json].get_to(v.border_color);
+}
+
+void to_json(nlohmann::json& j, const DrawMultipleCommand& v)
+{
+    j[DrawMultipleCommand::fill_color_json] = v.fill_color;
+    j[DrawMultipleCommand::border_color_json] = v.border_color;
+    j[DrawMultipleCommand::cuboid_sizes_json] = v.cuboid_sizes;
+    j[DrawMultipleCommand::start_positions_json] = v.start_positions;
+}
+
+void from_json(const nlohmann::json& j, DrawMultipleCommand& v)
+{
+    j[DrawMultipleCommand::fill_color_json].get_to(v.fill_color);
+    j[DrawMultipleCommand::border_color_json].get_to(v.border_color);
+    j[DrawMultipleCommand::cuboid_sizes_json].get_to(v.cuboid_sizes);
+    j[DrawMultipleCommand::start_positions_json].get_to(v.start_positions);
+}
+
+void to_json(nlohmann::json& j, const DeleteCommand& v)
+{
+    j[DeleteCommand::fill_color_json] = v.fill_color;
+    j[DeleteCommand::border_color_json] = v.border_color;
+}
+
+void from_json(const nlohmann::json& j, DeleteCommand& v)
+{
+    j[DeleteCommand::fill_color_json].get_to(v.fill_color);
+    j[DeleteCommand::border_color_json].get_to(v.border_color);
+}
+
+void to_json(nlohmann::json& j, const DeleteMultipleCommand& v)
+{
+    j[DeleteMultipleCommand::counter_json] = v.counter;
+    j[DeleteMultipleCommand::fill_color_json] = v.fill_color;
+    j[DeleteMultipleCommand::border_color_json] = v.border_color;
+}
+
+void from_json(const nlohmann::json& j, DeleteMultipleCommand& v)
+{
+    j[DeleteMultipleCommand::counter_json].get_to(v.counter);
+    j[DeleteMultipleCommand::fill_color_json].get_to(v.fill_color);
+    j[DeleteMultipleCommand::border_color_json].get_to(v.border_color);
+}
+
+void to_json(nlohmann::json& j, const CuboidCommand& v)
+{
+    j[CuboidCommand::type_json] = v.type;
+
+    switch (v.type) {
+    case CuboidCommandType::NOOP:
+        j[CuboidCommand::command_json] = std::get<NoopCommand>(v.command);
+        break;
+    case CuboidCommandType::DRAW:
+        j[CuboidCommand::command_json] = std::get<DrawCommand>(v.command);
+        break;
+    case CuboidCommandType::DRAW_MULTIPLE:
+        j[CuboidCommand::command_json] = std::get<DrawMultipleCommand>(v.command);
+        break;
+    case CuboidCommandType::DELETE:
+        j[CuboidCommand::command_json] = std::get<DeleteCommand>(v.command);
+        break;
+    case CuboidCommandType::DELETE_MULTIPLE:
+        j[CuboidCommand::command_json] = std::get<DeleteMultipleCommand>(v.command);
+        break;
+    }
+}
+
+void from_json(const nlohmann::json& j, CuboidCommand& v)
+{
+    j[CuboidCommand::type_json].get_to(v.type);
+
+    switch (v.type) {
+    case CuboidCommandType::NOOP:
+        v.command = j[CuboidCommand::command_json].get<NoopCommand>();
+        break;
+    case CuboidCommandType::DRAW:
+        v.command = j[CuboidCommand::command_json].get<DrawCommand>();
+        break;
+    case CuboidCommandType::DRAW_MULTIPLE:
+        v.command = j[CuboidCommand::command_json].get<DrawMultipleCommand>();
+        break;
+    case CuboidCommandType::DELETE:
+        v.command = j[CuboidCommand::command_json].get<DeleteCommand>();
+        break;
+    case CuboidCommandType::DELETE_MULTIPLE:
+        v.command = j[CuboidCommand::command_json].get<DeleteMultipleCommand>();
+        break;
+    }
 }
 
 void to_json(nlohmann::json& j, const CompositionOperation& v)

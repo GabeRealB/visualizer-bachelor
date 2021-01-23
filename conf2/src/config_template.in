@@ -11,7 +11,7 @@ static ConfigInitialization config_initialization = ConfigInitialization{ config
 
 static void config_init_func()
 {
-    auto config_instance = ConfigContainer::get_instance();
+    auto& config_instance = ConfigContainer::get_instance();
     @CONFIG_INIT_FUNC@
 }
 

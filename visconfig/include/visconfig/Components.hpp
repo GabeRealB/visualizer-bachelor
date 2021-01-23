@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -23,6 +24,7 @@ enum class ComponentType {
     EntityActivation,
     MeshIteration,
     ExplicitHeterogeneousIteration,
+    CuboidCommandList,
     Camera,
     FreeFlyCamera,
     FixedCamera,
@@ -242,6 +244,70 @@ struct ExplicitHeterogeneousIterationComponent : public ComponentData {
     static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
+enum class CuboidCommandType { NOOP, DRAW, DRAW_MULTIPLE, DELETE, DELETE_MULTIPLE };
+
+struct NoopCommand {
+    std::size_t counter;
+
+    static constexpr const char* counter_json{ "counter" };
+};
+
+struct DrawCommand {
+    std::array<int, 3> cuboid_size;
+    std::array<int, 3> start_position;
+    std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> border_color;
+
+    static constexpr const char* cuboid_size_json{ "cuboid_size" };
+    static constexpr const char* start_position_json{ "start_position" };
+    static constexpr const char* fill_color_json{ "fill_color" };
+    static constexpr const char* border_color_json{ "border_color" };
+};
+
+struct DrawMultipleCommand {
+    std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> border_color;
+    std::vector<std::array<int, 3>> cuboid_sizes;
+    std::vector<std::array<int, 3>> start_positions;
+
+    static constexpr const char* fill_color_json{ "fill_color" };
+    static constexpr const char* border_color_json{ "border_color" };
+    static constexpr const char* cuboid_sizes_json{ "cuboid_sizes" };
+    static constexpr const char* start_positions_json{ "start_positions" };
+};
+
+struct DeleteCommand {
+    std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> border_color;
+
+    static constexpr const char* fill_color_json{ "fill_color" };
+    static constexpr const char* border_color_json{ "border_color" };
+};
+
+struct DeleteMultipleCommand {
+    std::size_t counter;
+    std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> border_color;
+
+    static constexpr const char* counter_json{ "counter" };
+    static constexpr const char* fill_color_json{ "fill_color" };
+    static constexpr const char* border_color_json{ "border_color" };
+};
+
+struct CuboidCommand {
+    CuboidCommandType type;
+    std::variant<NoopCommand, DrawCommand, DrawMultipleCommand, DeleteCommand, DeleteMultipleCommand> command;
+
+    static constexpr const char* type_json{ "type" };
+    static constexpr const char* command_json{ "command" };
+};
+
+struct CuboidCommandListComponent : public ComponentData {
+    std::vector<CuboidCommand> commands;
+
+    static constexpr const char* commands_json{ "commands" };
+};
+
 struct CameraComponent : public ComponentData {
     bool active;
     bool fixed;
@@ -355,6 +421,9 @@ void from_json(const nlohmann::json& j, MaterialAttributeType& v);
 void to_json(nlohmann::json& j, const IterationOrder& v);
 void from_json(const nlohmann::json& j, IterationOrder& v);
 
+void to_json(nlohmann::json& j, const CuboidCommandType& v);
+void from_json(const nlohmann::json& j, CuboidCommandType& v);
+
 void to_json(nlohmann::json& j, const CopyOperationFlag& v);
 void from_json(const nlohmann::json& j, CopyOperationFlag& v);
 
@@ -395,6 +464,9 @@ void from_json(const nlohmann::json& j, MeshIterationComponent& v);
 
 void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v);
 void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent& v);
+
+void to_json(nlohmann::json& j, const CuboidCommandListComponent& v);
+void from_json(const nlohmann::json& j, CuboidCommandListComponent& v);
 
 void to_json(nlohmann::json& j, const CameraComponent& v);
 void from_json(const nlohmann::json& j, CameraComponent& v);
@@ -446,6 +518,24 @@ void from_json(const nlohmann::json& j, MaterialAttribute& v);
 
 void to_json(nlohmann::json& j, const Sampler2DMaterialAttribute& v);
 void from_json(const nlohmann::json& j, Sampler2DMaterialAttribute& v);
+
+void to_json(nlohmann::json& j, const NoopCommand& v);
+void from_json(const nlohmann::json& j, NoopCommand& v);
+
+void to_json(nlohmann::json& j, const DrawCommand& v);
+void from_json(const nlohmann::json& j, DrawCommand& v);
+
+void to_json(nlohmann::json& j, const DrawMultipleCommand& v);
+void from_json(const nlohmann::json& j, DrawMultipleCommand& v);
+
+void to_json(nlohmann::json& j, const DeleteCommand& v);
+void from_json(const nlohmann::json& j, DeleteCommand& v);
+
+void to_json(nlohmann::json& j, const DeleteMultipleCommand& v);
+void from_json(const nlohmann::json& j, DeleteMultipleCommand& v);
+
+void to_json(nlohmann::json& j, const CuboidCommand& v);
+void from_json(const nlohmann::json& j, CuboidCommand& v);
 
 void to_json(nlohmann::json& j, const CompositionOperation& v);
 void from_json(const nlohmann::json& j, CompositionOperation& v);
