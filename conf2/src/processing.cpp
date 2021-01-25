@@ -145,7 +145,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
                 command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE,
                     DeleteCommand{
-                        cuboids[i].fill_color,
+                        { 0, 0, 0, 0 },
                         cuboids[i].unused_color,
                     } });
             }
@@ -164,7 +164,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE_MULTIPLE,
                         DeleteMultipleCommand{
                             0,
-                            cuboids[i].fill_color,
+                            { 0, 0, 0, 0 },
                             cuboids[i].unused_color,
                         } });
                 } else {
@@ -217,14 +217,18 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
             std::visit(draw_multiple_command_lambda, containers);
         }
 
+        if (counter != std::get<0>(iteration_region) && variable_type == VariableType::SEQUENTIAL) {
+            for (std::size_t i = 0; i < idx; i++) {
+                std::visit(noop_command_lambda, container_list[i]);
+            }
+        }
+
         if (idx < end_idx) {
             generate_cuboid_command_list(command_list, container_list, variable_map,
                 idx + 1 <= num_seq_vars ? VariableType::SEQUENTIAL : VariableType::PARALLEL, end_idx, idx + 1);
         }
 
         if (idx <= num_seq_vars) {
-            std::visit(delete_command_lambda, containers);
-
             if (idx == num_seq_vars) {
                 for (std::size_t i = 0; i <= end_idx; i++) {
                     std::visit(noop_command_lambda, container_list[i]);
@@ -232,6 +236,14 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                         std::visit(delete_multiple_command_lambda, container_list[i]);
                     }
                 }
+            }
+
+            std::visit(delete_command_lambda, containers);
+        }
+
+        if (counter != std::get<1>(iteration_region) && variable_type == VariableType::SEQUENTIAL) {
+            for (std::size_t i = 0; i < idx; i++) {
+                std::visit(noop_command_lambda, container_list[i]);
             }
         }
     }

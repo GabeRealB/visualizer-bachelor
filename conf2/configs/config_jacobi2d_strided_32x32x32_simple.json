@@ -16,27 +16,22 @@
   "CUBES" : {
     "input buffer": {
       "mapping": [
-        // 1. Würfel: IS (global memory)
         [ [  ],
           [ 0, "32  + 2 - 1" ] ,
           [ 0, "32  + 2 - 1" ] ,
           [ 0, 0             ] ],
-        // 2. Würfel: local tiles (local memory)
         [ [ "lcl_til_id_1", "lcl_til_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        )" , "(lcl_til_id_1)*(32 /2        ) + 2 - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        )" , "(lcl_til_id_2)*(32 /2        ) + 2 - 1" ] ,
           [ 0                                  , 0                                        ] ],
-        // 3. Würfel: private tiles (private memory)
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1)*(32 /2        /2        ) + 2 - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2)*(32 /2        /2        ) + 2 - 1" ] ,
           [ 0                                                                               , 0                                                                                     ] ],
-        // 4. Würfel: WGs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1)*(32 /2        /2        /2        /2       ) + 2 - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2)*(32 /2        /2        /2        /2       ) + 2 - 1" ] ,
           [ 0                                                                                                                                                                                                 , 0                                                                                                                                                                                                       ] ],
-        // 5. Würfel: WIs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2", "wi_id_1", "wi_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1)*(32 /2        /2        /2        /2       /2       ) + 2 - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2)*(32 /2        /2        /2        /2       /2       ) + 2 - 1" ] ,
@@ -52,17 +47,14 @@
     },
     "input mda": {
       "mapping": [
-        // 1. Würfel: MDA
         [ [  ],
           [ 0, "2       *2       -1" ] ,
           [ 0, "2       *2       -1" ] ,
           [ 0, 0                     ] ],
-        // 2. Würfel: WGs
         [ [ "wg_id_1", "wg_id_2" ],
           [ "(wg_id_1-1)*(2       )" , "(wg_id_1)*(2       ) - 1" ] ,
           [ "(wg_id_2-1)*(2       )" , "(wg_id_2)*(2       ) - 1" ] ,
           [ 0                        , 0                          ] ],
-        // 3. Würfel: WIs
         [ [ "wg_id_1", "wg_id_2", "wi_id_1", "wi_id_2" ],
           [ "(wg_id_1-1)*(2       ) + (wi_id_1-1)" , "(wg_id_1-1)*(2       ) + (wi_id_1) - 1" ] ,
           [ "(wg_id_2-1)*(2       ) + (wi_id_2-1)" , "(wg_id_2-1)*(2       ) + (wi_id_2) - 1" ] ,
@@ -76,32 +68,26 @@
     },
     "computation": {
       "mapping": [
-        // 1. Würfel: IS
         [ [  ],
           [ 0, "32  - 1" ] ,
           [ 0, "32  - 1" ] ,
           [ 0, 0         ] ],
-        // 2. Würfel: local tiles
         [ [ "lcl_til_id_1", "lcl_til_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        )" , "(lcl_til_id_1)*(32 /2        ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        )" , "(lcl_til_id_2)*(32 /2        ) - 1" ] ,
           [ 0                                  , 0                                    ] ],
-        // 3. Würfel: private tiles
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1)*(32 /2        /2        ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2)*(32 /2        /2        ) - 1" ] ,
           [ 0                                                                               , 0                                                                                 ] ],
-        // 4. Würfel: sequential tiles
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1)*(32 /2        /2        /2        ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2)*(32 /2        /2        /2        ) - 1" ] ,
           [ 0                                                                                                                                      , 0                                                                                                                                        ] ],
-        // 5. Würfel: WGs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ 0                                                                                                                                                                                                 , 0                                                                                                                                                                                                   ] ],
-        // 6. Würfel: WIs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2", "wi_id_1", "wi_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,
@@ -118,22 +104,18 @@
     },
     "output mda": {
       "mapping": [
-        // 1. Würfel: local memory
         [ [  ],
           [ 0 , "(32 /2        ) - 1" ] ,
           [ 0 , "(32 /2        ) - 1" ] ,
           [ 0 , 0                     ] ],
-        // 2. Würfel: private memory
         [ [ "prv_til_id_1", "prv_til_id_2" ],
           [ "(prv_til_id_1-1)*(32 /2        /2        )" , "(prv_til_id_1)*(32 /2        /2        ) - 1" ] ,
           [ "(prv_til_id_2-1)*(32 /2        /2        )" , "(prv_til_id_2)*(32 /2        /2        ) - 1" ] ,
           [ 0                                            , 0                                              ] ],
-        // 3. Würfel: WGs
         [ [ "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2" ],
           [ "(prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       )" , "(prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ "(prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       )" , "(prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ 0                                                                                                                                                              , 0                                                                                                                                                                ] ],
-        // 4. Würfel: WIs
         [ [ "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2", "wi_id_1", "wi_id_2" ],
           [ "(prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1-1)*(32 /2        /2        /2        /2       /2       )" , "(prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,
           [ "(prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2-1)*(32 /2        /2        /2        /2       /2       )" , "(prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,
@@ -148,17 +130,14 @@
     },
     "output buffer": {
       "mapping": [
-        // 1. Würfel: global memory
         [ [  ],
           [ 0, "32  - 1" ] ,
           [ 0, "32  - 1" ] ,
           [ 0, 0         ] ],
-        // 2. Würfel: WGs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2)*(32 /2        /2        /2        /2       ) - 1" ] ,
           [ 0                                                                                                                                                                                                 , 0                                                                                                                                                                                                   ] ],
-        // 3. Würfel: WIs
         [ [ "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wg_id_1", "wg_id_2", "wi_id_1", "wi_id_2" ],
           [ "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_1-1)*(32 /2        ) + (prv_til_id_1-1)*(32 /2        /2        ) + (seq_til_id_1-1)*(32 /2        /2        /2        ) + (wg_id_1-1)*(32 /2        /2        /2        /2       ) + (wi_id_1)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,
           [ "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2-1)*(32 /2        /2        /2        /2       /2       )" , "(lcl_til_id_2-1)*(32 /2        ) + (prv_til_id_2-1)*(32 /2        /2        ) + (seq_til_id_2-1)*(32 /2        /2        /2        ) + (wg_id_2-1)*(32 /2        /2        /2        /2       ) + (wi_id_2)*(32 /2        /2        /2        /2       /2       ) - 1" ] ,

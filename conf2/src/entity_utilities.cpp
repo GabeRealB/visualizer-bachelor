@@ -72,9 +72,9 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
     return entity;
 }
 
-Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, const CuboidCommandList& command_list,
+Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global, const CuboidCommandList& command_list,
     const std::string& front_texture, const std::string& side_texture, const std::string& top_texture,
-    const std::string& mesh_name, const std::string& shader_asset_name)
+    const std::string& mesh_name, const std::string& shader_asset_name, std::array<int, 3> global_size)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -178,9 +178,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, c
             break;
         case CuboidCommandType::DRAW:
             visconfig_command.type = Visconfig::Components::CuboidCommandType::DRAW;
-            visconfig_command.command = [](auto&& command) -> auto
+            visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawCommand{
+                    global,
+                    global_size,
                     command.cuboid_size,
                     command.start_position,
                     command.fill_color,
@@ -191,9 +193,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, c
             break;
         case CuboidCommandType::DRAW_MULTIPLE:
             visconfig_command.type = Visconfig::Components::CuboidCommandType::DRAW_MULTIPLE;
-            visconfig_command.command = [](auto&& command) -> auto
+            visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawMultipleCommand{
+                    global,
+                    global_size,
                     command.fill_color,
                     command.border_color,
                     command.cuboid_sizes,

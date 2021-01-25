@@ -86,53 +86,57 @@ void getRelativeMousePosition(double& xPos, double& yPos)
 
 int run(const std::filesystem::path& configurationPath)
 {
-    auto config{ Visconfig::from_file(configurationPath) };
+    Scene scene;
+    {
+        auto config{ Visconfig::from_file(configurationPath) };
 
-    if (!glfwInit()) {
-        std::cerr << "ERROR: Could not initialize GLFW!" << std::endl;
-        glfwTerminate();
-        return 1;
-    }
-
-    glfwSetErrorCallback(
-        [](int code, const char* desc) { std::cerr << "Error: " << code << ". Description: " << desc << std::endl; });
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_SAMPLES, config.options.screenMSAASamples);
-    g_window = createWindow(config);
-    if (!g_window) {
-        std::cerr << "ERROR: Could not create a window!" << std::endl;
-        glfwTerminate();
-        return 1;
-    }
-    glfwSetWindowAspectRatio(g_window, config.options.screenWidth, config.options.screenHeight);
-    attach(true);
-
-    glfwMakeContextCurrent(g_window);
-    glfwSetKeyCallback(g_window, [](GLFWwindow*, int key, int, int action, int) {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-            quit();
-        } else if (key == GLFW_KEY_LEFT_ALT && action == GLFW_RELEASE) {
-            attach(isDetached());
+        if (!glfwInit()) {
+            std::cerr << "ERROR: Could not initialize GLFW!" << std::endl;
+            glfwTerminate();
+            return 1;
         }
-    });
 
-    if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
-        std::cerr << "ERROR: Could not setup glad!" << std::endl;
-        glfwTerminate();
-        return 1;
-    }
-    glEnable(GL_MULTISAMPLE);
+        glfwSetErrorCallback([](int code, const char* desc) {
+            std::cerr << "Error: " << code << ". Description: " << desc << std::endl;
+        });
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_SAMPLES, config.options.screenMSAASamples);
+        g_window = createWindow(config);
+        if (!g_window) {
+            std::cerr << "ERROR: Could not create a window!" << std::endl;
+            glfwTerminate();
+            return 1;
+        }
+        glfwSetWindowAspectRatio(g_window, config.options.screenWidth, config.options.screenHeight);
+        attach(true);
+
+        glfwMakeContextCurrent(g_window);
+        glfwSetKeyCallback(g_window, [](GLFWwindow*, int key, int, int action, int) {
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+                quit();
+            } else if (key == GLFW_KEY_LEFT_ALT && action == GLFW_RELEASE) {
+                attach(isDetached());
+            }
+        });
+
+        if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+            std::cerr << "ERROR: Could not setup glad!" << std::endl;
+            glfwTerminate();
+            return 1;
+        }
+        glEnable(GL_MULTISAMPLE);
 
 #ifdef DEBUG_OPENGL
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback, 0);
+        glEnable(GL_DEBUG_OUTPUT);
+        glDebugMessageCallback(MessageCallback, 0);
 #endif // DEBUG_OPENGL
 
-    auto scene{ initialize_scene(config) };
+        scene = initialize_scene(config);
+    }
 
     while (!shouldQuit()) {
         tick(scene);

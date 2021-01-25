@@ -11,7 +11,9 @@ Mesh::Mesh()
     , m_primitiveType{ GL_TRIANGLES }
     , m_indexType{ GL_UNSIGNED_INT }
     , m_indexOffset{ nullptr }
+    , m_instances{ 1 }
     , m_attributesMap{}
+    , m_attributes_string_map{}
     , m_buffers{}
 {
     glGenVertexArrays(1, &m_arrayObject);
@@ -26,10 +28,11 @@ Mesh::Mesh(const Mesh& mesh)
     , m_primitiveType{ mesh.m_primitiveType }
     , m_indexType{ mesh.m_indexType }
     , m_indexOffset{ mesh.m_indexOffset }
+    , m_instances{ mesh.m_instances }
     , m_attributesMap{ mesh.m_attributesMap }
+    , m_attributes_string_map(mesh.m_attributes_string_map)
     , m_buffers{ mesh.m_buffers }
 {
-    std::cout << "Mesh copy constructor" << std::endl;
     glGenVertexArrays(1, &m_arrayObject);
     bind();
 
@@ -46,17 +49,17 @@ Mesh::Mesh(Mesh&& mesh) noexcept
     , m_primitiveType{ std::exchange(mesh.m_primitiveType, GL_TRIANGLES) }
     , m_indexType{ std::exchange(mesh.m_indexType, GL_UNSIGNED_INT) }
     , m_indexOffset{ std::exchange(mesh.m_indexOffset, nullptr) }
+    , m_instances{ std::exchange(mesh.m_instances, 1) }
     , m_attributesMap{ std::exchange(mesh.m_attributesMap, {}) }
+    , m_attributes_string_map{ std::exchange(mesh.m_attributes_string_map, {}) }
     , m_buffers{ std::exchange(mesh.m_buffers, {}) }
 {
-    std::cout << "Mesh move constructor" << std::endl;
 }
 
 Mesh::~Mesh() { free(); }
 
 void Mesh::operator=(const Mesh& mesh)
 {
-    std::cout << "Mesh copy assignment" << std::endl;
     bind();
 
     for (auto& keyValue : m_buffers) {
@@ -70,7 +73,9 @@ void Mesh::operator=(const Mesh& mesh)
     m_primitiveType = mesh.m_primitiveType;
     m_indexType = mesh.m_indexType;
     m_indexOffset = mesh.m_indexOffset;
+    m_instances = mesh.m_instances;
     m_attributesMap = mesh.m_attributesMap;
+    m_attributes_string_map = mesh.m_attributes_string_map;
     m_buffers = mesh.m_buffers;
 
     for (auto& keyValue : m_buffers) {
@@ -82,7 +87,6 @@ void Mesh::operator=(const Mesh& mesh)
 
 void Mesh::operator=(Mesh&& mesh) noexcept
 {
-    std::cout << "Mesh move assignment" << std::endl;
     free();
 
     m_key = std::exchange(mesh.m_key, 0);
@@ -90,7 +94,9 @@ void Mesh::operator=(Mesh&& mesh) noexcept
     m_primitiveType = std::exchange(mesh.m_primitiveType, GL_TRIANGLES);
     m_indexType = std::exchange(mesh.m_indexType, GL_UNSIGNED_INT);
     m_indexOffset = std::exchange(mesh.m_indexOffset, nullptr);
+    m_instances = std::exchange(mesh.m_instances, 1);
     m_attributesMap = std::exchange(mesh.m_attributesMap, {});
+    m_attributes_string_map = std::exchange(mesh.m_attributes_string_map, {});
     m_buffers = std::exchange(mesh.m_buffers, {});
 }
 
@@ -179,9 +185,47 @@ void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveT
     m_primitiveType = primitiveType;
 }
 
+void Mesh::set_complex_attribute(const std::string& name, std::span<const VertexAttributeDesc> vertex_attributes,
+    GLsizeiptr size, GLenum usage, const void* data)
+{
+    bind();
+
+    auto buffer_location{ m_attributes_string_map.find(name) };
+    if (buffer_location != m_attributes_string_map.end()) {
+        auto buffer_key_value{ m_buffers.find(buffer_location->second) };
+        auto& buffer{ buffer_key_value->second };
+        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        m_buffers.erase(buffer_key_value);
+    }
+
+    auto buffer{ std::make_shared<ComplexVertexAttributeBuffer>(vertex_attributes, size, usage, data) };
+    buffer->bind();
+
+    unbind();
+    buffer->unbind();
+
+    auto key{ m_key++ };
+    m_attributes_string_map[name] = key;
+    m_buffers[key] = std::const_pointer_cast<const ComplexVertexAttributeBuffer>(buffer);
+}
+
+const VertexBufferVariant& Mesh::get_vertex_buffer(MeshAttributes type) const
+{
+    assert(m_attributesMap.contains(type));
+    return m_buffers.at(m_attributesMap.at(type));
+}
+
+const VertexBufferVariant& Mesh::get_vertex_buffer(const std::string& name) const
+{
+    assert(m_attributes_string_map.contains(name));
+    return m_buffers.at(m_attributes_string_map.at(name));
+}
+
 void Mesh::bind() const { glBindVertexArray(m_arrayObject); }
 
 void Mesh::unbind() const { glBindVertexArray(0); }
+
+void Mesh::set_num_instances(GLsizei instances) { m_instances = instances; }
 
 GLsizeiptr Mesh::getVertexCount() const
 {
@@ -217,9 +261,12 @@ GLenum Mesh::indexType() const { return m_indexType; }
 
 const void* Mesh::indexOffset() const { return m_indexOffset; }
 
+GLsizei Mesh::instances() const { return m_instances; }
+
 void Mesh::free()
 {
     m_attributesMap.clear();
+    m_attributes_string_map.clear();
     m_buffers.clear();
     glDeleteVertexArrays(1, &m_arrayObject);
 }

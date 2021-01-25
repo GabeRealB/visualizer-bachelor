@@ -1060,6 +1060,8 @@ void from_json(const nlohmann::json& j, NoopCommand& v) { j[NoopCommand::counter
 
 void to_json(nlohmann::json& j, const DrawCommand& v)
 {
+    j[DrawCommand::global_json] = v.global;
+    j[DrawCommand::global_size_json] = v.global_size;
     j[DrawCommand::cuboid_size_json] = v.cuboid_size;
     j[DrawCommand::start_position_json] = v.start_position;
     j[DrawCommand::fill_color_json] = v.fill_color;
@@ -1068,6 +1070,8 @@ void to_json(nlohmann::json& j, const DrawCommand& v)
 
 void from_json(const nlohmann::json& j, DrawCommand& v)
 {
+    j[DrawCommand::global_json].get_to(v.global);
+    j[DrawCommand::global_size_json].get_to(v.global_size);
     j[DrawCommand::cuboid_size_json].get_to(v.cuboid_size);
     j[DrawCommand::start_position_json].get_to(v.start_position);
     j[DrawCommand::fill_color_json].get_to(v.fill_color);
@@ -1076,6 +1080,8 @@ void from_json(const nlohmann::json& j, DrawCommand& v)
 
 void to_json(nlohmann::json& j, const DrawMultipleCommand& v)
 {
+    j[DrawMultipleCommand::global_json] = v.global;
+    j[DrawMultipleCommand::global_size_json] = v.global_size;
     j[DrawMultipleCommand::fill_color_json] = v.fill_color;
     j[DrawMultipleCommand::border_color_json] = v.border_color;
     j[DrawMultipleCommand::cuboid_sizes_json] = v.cuboid_sizes;
@@ -1084,6 +1090,8 @@ void to_json(nlohmann::json& j, const DrawMultipleCommand& v)
 
 void from_json(const nlohmann::json& j, DrawMultipleCommand& v)
 {
+    j[DrawMultipleCommand::global_json].get_to(v.global);
+    j[DrawMultipleCommand::global_size_json].get_to(v.global_size);
     j[DrawMultipleCommand::fill_color_json].get_to(v.fill_color);
     j[DrawMultipleCommand::border_color_json].get_to(v.border_color);
     j[DrawMultipleCommand::cuboid_sizes_json].get_to(v.cuboid_sizes);

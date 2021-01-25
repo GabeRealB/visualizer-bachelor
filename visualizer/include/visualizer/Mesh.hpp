@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <variant>
 
+#include <visualizer/ComplexVertexAttributeBuffer.hpp>
 #include <visualizer/VertexAttributeBuffer.hpp>
 
 namespace Visualizer {
@@ -22,6 +23,9 @@ enum class MeshAttributes : int {
     TextureCoordinate3 = 7,
     Indices = 8,
 };
+
+using VertexBufferVariant = std::variant<std::shared_ptr<const GenericBuffer>,
+    std::shared_ptr<const VertexAttributeBuffer>, std::shared_ptr<const ComplexVertexAttributeBuffer>>;
 
 /**
  * A wrapper around a VAO.
@@ -90,6 +94,12 @@ public:
      */
     void setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveType);
 
+    void set_complex_attribute(const std::string& name, std::span<const VertexAttributeDesc> vertex_attributes,
+        GLsizeiptr size, GLenum usage, const void* data);
+
+    const VertexBufferVariant& get_vertex_buffer(MeshAttributes type) const;
+    const VertexBufferVariant& get_vertex_buffer(const std::string& name) const;
+
     /**
      * @brief Binds the VAO to the current context.
      */
@@ -99,6 +109,8 @@ public:
      * @brief Unbinds the VAO from the current context.
      */
     void unbind() const;
+
+    void set_num_instances(GLsizei instances);
 
     /**
      * @brief Get the number of vertices.
@@ -146,6 +158,8 @@ public:
      */
     const void* indexOffset() const;
 
+    GLsizei instances() const;
+
 private:
     void free();
 
@@ -154,11 +168,11 @@ private:
     GLenum m_primitiveType;
     GLenum m_indexType;
     const void* m_indexOffset;
+    GLsizei m_instances;
 
     std::unordered_map<MeshAttributes, int> m_attributesMap;
-    std::unordered_map<int,
-        std::variant<std::shared_ptr<const GenericBuffer>, std::shared_ptr<const VertexAttributeBuffer>>>
-        m_buffers;
+    std::unordered_map<std::string, int> m_attributes_string_map;
+    std::unordered_map<int, VertexBufferVariant> m_buffers;
 };
 
 }

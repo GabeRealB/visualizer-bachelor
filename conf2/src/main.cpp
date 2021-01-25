@@ -90,5 +90,5 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.view_composition_shader_asset_name = "view_composition_shader";
 
     auto config = Config::generate_config(command_list, generation_options);
-    Visconfig::to_file(operation.output_path / "visconfig.json", config);
+    Visconfig::to_file(operation.output_path / "visconfig", config);
 }

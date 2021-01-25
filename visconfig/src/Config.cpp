@@ -7,12 +7,13 @@ namespace Visconfig {
 
 Config from_file(const std::filesystem::path& path)
 {
-    if (!std::filesystem::is_regular_file(path)) {
+    auto bin_path = path;
+    bin_path.replace_extension(".vbin");
+
+    if (!std::filesystem::is_regular_file(bin_path)) {
         std::abort();
     } else {
         try {
-            auto bin_path = path;
-            bin_path.replace_extension(".vbin");
             std::ifstream file{ bin_path, std::ios::in | std::ios::binary };
             file.unsetf(std::ios::skipws);
 
@@ -32,8 +33,13 @@ void to_file(const std::filesystem::path& path, const Config& config)
     try {
         nlohmann::json j{};
         j = config;
-        std::ofstream file{ path };
+
+#if !defined(NDEBUG) || defined(_DEBUG)
+        auto json_path = path;
+        json_path.replace_extension(".json");
+        std::ofstream file{ json_path };
         file << std::setw(4) << j << std::endl;
+#endif
 
         auto bin_path = path;
         bin_path.replace_extension(".vbin");

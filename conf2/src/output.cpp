@@ -143,9 +143,9 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
         assets.push_back(create_texture_asset(side_texture_name, side_texture_path, texture_attributes));
         assets.push_back(create_texture_asset(top_texture_name, top_texture_path, texture_attributes));
 
-        world.entities.push_back(generate_cuboid(world.entities.size(), view_idx, *cuboid, front_texture_name,
-            side_texture_name, top_texture_name, generation_options.cuboid_mesh_asset_name,
-            generation_options.cuboid_shader_asset_name));
+        world.entities.push_back(generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid,
+            front_texture_name, side_texture_name, top_texture_name, generation_options.cuboid_mesh_asset_name,
+            generation_options.cuboid_shader_asset_name, max_cuboid_size));
     }
 
     auto camera_distance = 1.2f
@@ -178,7 +178,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     extend_camera_switcher(coordinator_entity, camera_entity_id);
     extend_copy(coordinator_entity, framebuffer_multisample_name, framebuffer_name,
         Visconfig::Components::CopyOperationFilter::Nearest, copy_flags);
-    extend_composition(coordinator_entity, { 0.2f, 0.2f }, { 0.0f, 0.0f }, composition_src,
+    extend_composition(coordinator_entity, { 0.3f, 0.3f }, { 0.0f, 0.0f }, composition_src,
         generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
         view_idx, true);
 }

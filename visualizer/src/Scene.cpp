@@ -15,6 +15,8 @@
 #include <visualizer/Composition.hpp>
 #include <visualizer/Cube.hpp>
 #include <visualizer/CubeMovementSystem.hpp>
+#include <visualizer/CuboidCommandList.hpp>
+#include <visualizer/CuboidCommandSystem.hpp>
 #include <visualizer/FixedCamera.hpp>
 #include <visualizer/FixedCameraMovementSystem.hpp>
 #include <visualizer/FreeFly.hpp>
@@ -322,6 +324,7 @@ void register_component_descriptors(EntityDatabaseContext& database_context)
     database_context.register_component_desc<EntityActivation>();
     database_context.register_component_desc<MeshIteration>();
     database_context.register_component_desc<HeterogeneousIteration>();
+    database_context.register_component_desc<CuboidCommandList>();
     database_context.register_component_desc<Camera>();
     database_context.register_component_desc<FreeFly>();
     database_context.register_component_desc<FixedCamera>();
@@ -370,6 +373,9 @@ void add_entity(EntityDatabaseContext& database_context, std::unordered_map<std:
         case Visconfig::Components::ComponentType::ExplicitHeterogeneousIteration:
             archetype = archetype.with<HeterogeneousIteration>();
             break;
+        case Visconfig::Components::ComponentType::CuboidCommandList:
+            archetype = archetype.with<CuboidCommandList>();
+            break;
         case Visconfig::Components::ComponentType::Camera:
             archetype = archetype.with<Camera>();
             break;
@@ -409,7 +415,7 @@ void initialize_component(
 {
     auto meshAsset{ std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset(component.asset).data)) };
-    database_context.write_component(entity, std::move(meshAsset));
+    database_context.write_component(entity, std::make_shared<Mesh>(*meshAsset));
 }
 
 void initialize_component(EntityDatabaseContext& database_context, Entity entity,
@@ -1204,6 +1210,177 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
         entity, HeterogeneousIteration{ std::move(scales), std::move(positions), std::move(ticksPerIteration), 0, 0 });
 }
 
+CuboidCommand construct_command(const Visconfig::Components::NoopCommand& command)
+{
+    return CuboidCommand{
+        CuboidCommandType::NOOP,
+        NoopCommand{
+            command.counter,
+        },
+    };
+}
+
+CuboidCommand construct_command(const Visconfig::Components::DrawCommand& command)
+{
+    glm::vec3 cuboid_size = {
+        command.cuboid_size[0],
+        command.cuboid_size[1],
+        command.cuboid_size[2],
+    };
+    glm::vec3 start_position = {
+        command.start_position[0],
+        -command.start_position[1],
+        command.start_position[2],
+    };
+    glm::vec4 fill_color = {
+        command.fill_color[0] / 255.0f,
+        command.fill_color[1] / 255.0f,
+        command.fill_color[2] / 255.0f,
+        command.fill_color[3] / 255.0f,
+    };
+    glm::vec4 border_color = {
+        command.border_color[0] / 255.0f,
+        command.border_color[1] / 255.0f,
+        command.border_color[2] / 255.0f,
+        command.border_color[3] / 255.0f,
+    };
+
+    if (!command.global) {
+        start_position[0] -= command.global_size[0] / 2.0f;
+        start_position[0] += cuboid_size[0] / 2.0f;
+
+        start_position[1] += command.global_size[1] / 2.0f;
+        start_position[1] -= cuboid_size[1] / 2.0f;
+
+        start_position[2] -= command.global_size[2] / 2.0f;
+        start_position[2] += cuboid_size[2] / 2.0f;
+    }
+
+    return CuboidCommand{
+        CuboidCommandType::DRAW,
+        DrawCommand{
+            cuboid_size,
+            start_position,
+            fill_color,
+            border_color,
+        },
+    };
+}
+
+CuboidCommand construct_command(const Visconfig::Components::DrawMultipleCommand& command)
+{
+    glm::vec4 fill_color = {
+        command.fill_color[0] / 255.0f,
+        command.fill_color[1] / 255.0f,
+        command.fill_color[2] / 255.0f,
+        command.fill_color[3] / 255.0f,
+    };
+    glm::vec4 border_color = {
+        command.border_color[0] / 255.0f,
+        command.border_color[1] / 255.0f,
+        command.border_color[2] / 255.0f,
+        command.border_color[3] / 255.0f,
+    };
+    std::vector<glm::vec3> cuboid_sizes{};
+    std::vector<glm::vec3> start_positions{};
+
+    cuboid_sizes.reserve(command.cuboid_sizes.size());
+    start_positions.reserve(command.start_positions.size());
+
+    for (auto& size : command.cuboid_sizes) {
+        cuboid_sizes.emplace_back(size[0], size[1], size[2]);
+    }
+
+    for (auto& position : command.start_positions) {
+        start_positions.emplace_back(position[0], -position[1], position[2]);
+    }
+
+    if (!command.global) {
+        for (std::size_t i = 0; i < start_positions.size(); ++i) {
+            start_positions[i][0] -= command.global_size[0] / 2.0f;
+            start_positions[i][0] += cuboid_sizes[i][0] / 2.0f;
+
+            start_positions[i][1] += command.global_size[1] / 2.0f;
+            start_positions[i][1] -= cuboid_sizes[i][1] / 2.0f;
+
+            start_positions[i][2] -= command.global_size[2] / 2.0f;
+            start_positions[i][2] += cuboid_sizes[i][2] / 2.0f;
+        }
+    }
+
+    return CuboidCommand{
+        CuboidCommandType::DRAW_MULTIPLE,
+        DrawMultipleCommand{
+            fill_color,
+            border_color,
+            std::move(cuboid_sizes),
+            std::move(start_positions),
+        },
+    };
+}
+
+CuboidCommand construct_command(const Visconfig::Components::DeleteCommand& command)
+{
+    glm::vec4 fill_color = {
+        command.fill_color[0] / 255.0f,
+        command.fill_color[1] / 255.0f,
+        command.fill_color[2] / 255.0f,
+        command.fill_color[3] / 255.0f,
+    };
+    glm::vec4 border_color = {
+        command.border_color[0] / 255.0f,
+        command.border_color[1] / 255.0f,
+        command.border_color[2] / 255.0f,
+        command.border_color[3] / 255.0f,
+    };
+
+    return CuboidCommand{
+        CuboidCommandType::DELETE,
+        DeleteCommand{
+            fill_color,
+            border_color,
+        },
+    };
+}
+
+CuboidCommand construct_command(const Visconfig::Components::DeleteMultipleCommand& command)
+{
+    glm::vec4 fill_color = {
+        command.fill_color[0] / 255.0f,
+        command.fill_color[1] / 255.0f,
+        command.fill_color[2] / 255.0f,
+        command.fill_color[3] / 255.0f,
+    };
+    glm::vec4 border_color = {
+        command.border_color[0] / 255.0f,
+        command.border_color[1] / 255.0f,
+        command.border_color[2] / 255.0f,
+        command.border_color[3] / 255.0f,
+    };
+
+    return CuboidCommand{
+        CuboidCommandType::DELETE_MULTIPLE,
+        DeleteMultipleCommand{
+            command.counter,
+            fill_color,
+            border_color,
+        },
+    };
+}
+
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::CuboidCommandListComponent& component)
+{
+    std::vector<CuboidCommand> cuboid_commands{};
+    cuboid_commands.reserve(component.commands.size());
+
+    for (auto& command : component.commands) {
+        std::visit([&](auto&& command) { cuboid_commands.push_back(construct_command(command)); }, command.command);
+    }
+
+    database_context.write_component(entity, CuboidCommandList{ 0, 0, std::move(cuboid_commands) });
+}
+
 void initialize_component(
     EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CameraComponent& component)
 {
@@ -1393,6 +1570,10 @@ void initialize_entity(EntityDatabaseContext& database_context,
                 *std::static_pointer_cast<const Visconfig::Components::ExplicitHeterogeneousIterationComponent>(
                     component.data));
             break;
+        case Visconfig::Components::ComponentType::CuboidCommandList:
+            initialize_component(database_context, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::CuboidCommandListComponent>(component.data));
+            break;
         case Visconfig::Components::ComponentType::Camera:
             initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CameraComponent>(component.data));
@@ -1444,6 +1625,7 @@ World initialize_world(const Visconfig::World& world)
     auto systemManager{ ecs_world.addManager<SystemManager>() };
 
     systemManager->addSystem<CubeMovementSystem>("tick"sv);
+    systemManager->addSystem<CuboidCommandSystem>("tick"sv);
     systemManager->addSystem<CameraSwitchingSystem>("tick"sv);
     systemManager->addSystem<CameraTypeSwitchingSystem>("tick"sv);
     systemManager->addSystem<FreeFlyCameraMovementSystem>("tick"sv);

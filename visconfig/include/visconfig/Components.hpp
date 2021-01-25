@@ -253,11 +253,15 @@ struct NoopCommand {
 };
 
 struct DrawCommand {
+    bool global;
+    std::array<int, 3> global_size;
     std::array<int, 3> cuboid_size;
     std::array<int, 3> start_position;
     std::array<std::size_t, 4> fill_color;
     std::array<std::size_t, 4> border_color;
 
+    static constexpr const char* global_json{ "global" };
+    static constexpr const char* global_size_json{ "global_size" };
     static constexpr const char* cuboid_size_json{ "cuboid_size" };
     static constexpr const char* start_position_json{ "start_position" };
     static constexpr const char* fill_color_json{ "fill_color" };
@@ -265,11 +269,15 @@ struct DrawCommand {
 };
 
 struct DrawMultipleCommand {
+    bool global;
+    std::array<int, 3> global_size;
     std::array<std::size_t, 4> fill_color;
     std::array<std::size_t, 4> border_color;
     std::vector<std::array<int, 3>> cuboid_sizes;
     std::vector<std::array<int, 3>> start_positions;
 
+    static constexpr const char* global_json{ "global" };
+    static constexpr const char* global_size_json{ "global_size" };
     static constexpr const char* fill_color_json{ "fill_color" };
     static constexpr const char* border_color_json{ "border_color" };
     static constexpr const char* cuboid_sizes_json{ "cuboid_sizes" };
