@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cassert>
 #include <iostream>
 #include <map>
 #include <set>
@@ -250,6 +251,8 @@ public:
     }
 
     std::size_t get_num_cuboids() const { return m_cuboids.size(); }
+
+    std::span<const CuboidContainer> get_cuboids() const { return { m_cuboids.data(), m_cuboids.size() }; }
 
     std::vector<CuboidContainer> find_matching(const std::set<std::string>& requirements) const
     {

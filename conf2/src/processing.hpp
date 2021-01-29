@@ -1,12 +1,18 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <string>
 #include <tuple>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
 namespace Config {
+
+using CuboidSize = std::array<int, 3>;
+using CuboidPosition = std::array<int, 3>;
+using CuboidColor = std::array<std::size_t, 4>;
 
 enum class CuboidCommandType { NOOP, DRAW, DRAW_MULTIPLE, DELETE, DELETE_MULTIPLE };
 
@@ -15,6 +21,7 @@ struct NoopCommand {
 };
 
 struct DrawCommand {
+    std::size_t cuboid_idx;
     std::array<int, 3> cuboid_size;
     std::array<int, 3> start_position;
     std::array<std::size_t, 4> fill_color;
@@ -24,6 +31,7 @@ struct DrawCommand {
 struct DrawMultipleCommand {
     std::array<std::size_t, 4> fill_color;
     std::array<std::size_t, 4> border_color;
+    std::unordered_set<std::size_t> cuboid_indices;
     std::vector<std::array<int, 3>> cuboid_sizes;
     std::vector<std::array<int, 3>> start_positions;
 };
@@ -45,7 +53,13 @@ struct CuboidCommand {
 };
 
 struct CuboidCommandList {
+    CuboidColor active_fill_color;
+    CuboidColor inactive_fill_color;
+    CuboidColor active_border_color;
+    CuboidColor inactive_border_color;
     std::vector<CuboidCommand> commands;
+    std::vector<std::tuple<CuboidPosition, CuboidSize>> positions;
+    std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> position_index_map;
 };
 
 struct ViewCommandList {

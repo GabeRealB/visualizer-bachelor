@@ -253,53 +253,24 @@ struct NoopCommand {
 };
 
 struct DrawCommand {
-    bool global;
-    std::array<int, 3> global_size;
-    std::array<int, 3> cuboid_size;
-    std::array<int, 3> start_position;
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
+    std::size_t cuboid_idx;
 
-    static constexpr const char* global_json{ "global" };
-    static constexpr const char* global_size_json{ "global_size" };
-    static constexpr const char* cuboid_size_json{ "cuboid_size" };
-    static constexpr const char* start_position_json{ "start_position" };
-    static constexpr const char* fill_color_json{ "fill_color" };
-    static constexpr const char* border_color_json{ "border_color" };
+    static constexpr const char* cuboid_idx_json{ "cuboid_idx" };
 };
 
 struct DrawMultipleCommand {
-    bool global;
-    std::array<int, 3> global_size;
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
-    std::vector<std::array<int, 3>> cuboid_sizes;
-    std::vector<std::array<int, 3>> start_positions;
+    std::vector<std::size_t> cuboid_indices;
 
-    static constexpr const char* global_json{ "global" };
-    static constexpr const char* global_size_json{ "global_size" };
-    static constexpr const char* fill_color_json{ "fill_color" };
-    static constexpr const char* border_color_json{ "border_color" };
-    static constexpr const char* cuboid_sizes_json{ "cuboid_sizes" };
-    static constexpr const char* start_positions_json{ "start_positions" };
+    static constexpr const char* cuboid_indices_json{ "cuboid_indices" };
 };
 
 struct DeleteCommand {
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
-
-    static constexpr const char* fill_color_json{ "fill_color" };
-    static constexpr const char* border_color_json{ "border_color" };
 };
 
 struct DeleteMultipleCommand {
     std::size_t counter;
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
 
     static constexpr const char* counter_json{ "counter" };
-    static constexpr const char* fill_color_json{ "fill_color" };
-    static constexpr const char* border_color_json{ "border_color" };
 };
 
 struct CuboidCommand {
@@ -311,9 +282,15 @@ struct CuboidCommand {
 };
 
 struct CuboidCommandListComponent : public ComponentData {
+    bool global;
+    std::array<int, 3> global_size;
     std::vector<CuboidCommand> commands;
+    std::vector<std::tuple<std::array<int, 3>, std::array<int, 3>>> positions;
 
+    static constexpr const char* global_json{ "global" };
+    static constexpr const char* global_size_json{ "global_size" };
     static constexpr const char* commands_json{ "commands" };
+    static constexpr const char* positions_json{ "positions" };
 };
 
 struct CameraComponent : public ComponentData {

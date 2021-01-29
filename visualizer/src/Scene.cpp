@@ -1222,148 +1222,38 @@ CuboidCommand construct_command(const Visconfig::Components::NoopCommand& comman
 
 CuboidCommand construct_command(const Visconfig::Components::DrawCommand& command)
 {
-    glm::vec3 cuboid_size = {
-        command.cuboid_size[0],
-        command.cuboid_size[1],
-        command.cuboid_size[2],
-    };
-    glm::vec3 start_position = {
-        command.start_position[0],
-        -command.start_position[1],
-        command.start_position[2],
-    };
-    glm::vec4 fill_color = {
-        command.fill_color[0] / 255.0f,
-        command.fill_color[1] / 255.0f,
-        command.fill_color[2] / 255.0f,
-        command.fill_color[3] / 255.0f,
-    };
-    glm::vec4 border_color = {
-        command.border_color[0] / 255.0f,
-        command.border_color[1] / 255.0f,
-        command.border_color[2] / 255.0f,
-        command.border_color[3] / 255.0f,
-    };
-
-    if (!command.global) {
-        start_position[0] -= command.global_size[0] / 2.0f;
-        start_position[0] += cuboid_size[0] / 2.0f;
-
-        start_position[1] += command.global_size[1] / 2.0f;
-        start_position[1] -= cuboid_size[1] / 2.0f;
-
-        start_position[2] -= command.global_size[2] / 2.0f;
-        start_position[2] += cuboid_size[2] / 2.0f;
-    }
-
     return CuboidCommand{
         CuboidCommandType::DRAW,
         DrawCommand{
-            cuboid_size,
-            start_position,
-            fill_color,
-            border_color,
+            command.cuboid_idx,
         },
     };
 }
 
 CuboidCommand construct_command(const Visconfig::Components::DrawMultipleCommand& command)
 {
-    glm::vec4 fill_color = {
-        command.fill_color[0] / 255.0f,
-        command.fill_color[1] / 255.0f,
-        command.fill_color[2] / 255.0f,
-        command.fill_color[3] / 255.0f,
-    };
-    glm::vec4 border_color = {
-        command.border_color[0] / 255.0f,
-        command.border_color[1] / 255.0f,
-        command.border_color[2] / 255.0f,
-        command.border_color[3] / 255.0f,
-    };
-    std::vector<glm::vec3> cuboid_sizes{};
-    std::vector<glm::vec3> start_positions{};
-
-    cuboid_sizes.reserve(command.cuboid_sizes.size());
-    start_positions.reserve(command.start_positions.size());
-
-    for (auto& size : command.cuboid_sizes) {
-        cuboid_sizes.emplace_back(size[0], size[1], size[2]);
-    }
-
-    for (auto& position : command.start_positions) {
-        start_positions.emplace_back(position[0], -position[1], position[2]);
-    }
-
-    if (!command.global) {
-        for (std::size_t i = 0; i < start_positions.size(); ++i) {
-            start_positions[i][0] -= command.global_size[0] / 2.0f;
-            start_positions[i][0] += cuboid_sizes[i][0] / 2.0f;
-
-            start_positions[i][1] += command.global_size[1] / 2.0f;
-            start_positions[i][1] -= cuboid_sizes[i][1] / 2.0f;
-
-            start_positions[i][2] -= command.global_size[2] / 2.0f;
-            start_positions[i][2] += cuboid_sizes[i][2] / 2.0f;
-        }
-    }
-
     return CuboidCommand{
         CuboidCommandType::DRAW_MULTIPLE,
         DrawMultipleCommand{
-            fill_color,
-            border_color,
-            std::move(cuboid_sizes),
-            std::move(start_positions),
+            command.cuboid_indices,
         },
     };
 }
 
-CuboidCommand construct_command(const Visconfig::Components::DeleteCommand& command)
+CuboidCommand construct_command([[maybe_unused]] const Visconfig::Components::DeleteCommand& command)
 {
-    glm::vec4 fill_color = {
-        command.fill_color[0] / 255.0f,
-        command.fill_color[1] / 255.0f,
-        command.fill_color[2] / 255.0f,
-        command.fill_color[3] / 255.0f,
-    };
-    glm::vec4 border_color = {
-        command.border_color[0] / 255.0f,
-        command.border_color[1] / 255.0f,
-        command.border_color[2] / 255.0f,
-        command.border_color[3] / 255.0f,
-    };
-
     return CuboidCommand{
         CuboidCommandType::DELETE,
-        DeleteCommand{
-            fill_color,
-            border_color,
-        },
+        DeleteCommand{},
     };
 }
 
 CuboidCommand construct_command(const Visconfig::Components::DeleteMultipleCommand& command)
 {
-    glm::vec4 fill_color = {
-        command.fill_color[0] / 255.0f,
-        command.fill_color[1] / 255.0f,
-        command.fill_color[2] / 255.0f,
-        command.fill_color[3] / 255.0f,
-    };
-    glm::vec4 border_color = {
-        command.border_color[0] / 255.0f,
-        command.border_color[1] / 255.0f,
-        command.border_color[2] / 255.0f,
-        command.border_color[3] / 255.0f,
-    };
-
     return CuboidCommand{
         CuboidCommandType::DELETE_MULTIPLE,
         DeleteMultipleCommand{
             command.counter,
-            fill_color,
-            border_color,
         },
     };
 }
@@ -1377,6 +1267,156 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
     for (auto& command : component.commands) {
         std::visit([&](auto&& command) { cuboid_commands.push_back(construct_command(command)); }, command.command);
     }
+
+    glm::vec3 min_pos{ 0, 0, 0 };
+    glm::vec3 max_pos{ 0, 0, 0 };
+    glm::vec3 mid_point{ 0, 0, 0 };
+    glm::vec3 cuboid_size{ 0, 0, 0 };
+
+    if (!component.positions.empty()) {
+        auto& [size, position] = component.positions.front();
+
+        glm::vec3 vec_size = { size[0], size[1], size[2] };
+        glm::vec3 vec_pos = { position[0], -position[1], position[2] };
+
+        if (!component.global) {
+            vec_pos[0] -= component.global_size[0] / 2.0f;
+            vec_pos[0] += vec_size[0] / 2.0f;
+
+            vec_pos[1] += component.global_size[1] / 2.0f;
+            vec_pos[1] -= vec_size[1] / 2.0f;
+
+            vec_pos[2] -= component.global_size[2] / 2.0f;
+            vec_pos[2] += vec_size[2] / 2.0f;
+        }
+
+        min_pos = vec_pos;
+        max_pos = vec_pos;
+    }
+
+    std::vector<GLuint> enabled_cuboids{};
+    std::vector<glm::mat4> cuboid_model_matrices{};
+    enabled_cuboids.assign(component.positions.size(), 0);
+    cuboid_model_matrices.reserve(component.positions.size());
+
+    for (auto& cuboid_info : component.positions) {
+        auto& [position, size] = cuboid_info;
+
+        glm::vec3 vec_size = { size[0], size[1], size[2] };
+        glm::vec3 vec_pos = { position[0], -position[1], position[2] };
+
+        if (!component.global) {
+            vec_pos[0] -= component.global_size[0] / 2.0f;
+            vec_pos[0] += vec_size[0] / 2.0f;
+
+            vec_pos[1] += component.global_size[1] / 2.0f;
+            vec_pos[1] -= vec_size[1] / 2.0f;
+
+            vec_pos[2] -= component.global_size[2] / 2.0f;
+            vec_pos[2] += vec_size[2] / 2.0f;
+        }
+
+        if (min_pos[0] > vec_pos[0] - vec_size[0]) {
+            min_pos[0] = vec_pos[0] - vec_size[0];
+        }
+        if (min_pos[1] < vec_pos[1] + vec_size[1]) {
+            min_pos[1] = vec_pos[1] + vec_size[1];
+        }
+        if (min_pos[2] > vec_pos[2] - vec_size[2]) {
+            min_pos[2] = vec_pos[2] - vec_size[2];
+        }
+
+        if (max_pos[0] < vec_pos[0] + vec_size[0]) {
+            max_pos[0] = vec_pos[0] + vec_size[0];
+        }
+        if (max_pos[1] > vec_pos[1] - vec_size[1]) {
+            max_pos[1] = vec_pos[1] - vec_size[1];
+        }
+        if (max_pos[2] < vec_pos[2] + vec_size[2]) {
+            max_pos[2] = vec_pos[2] + vec_size[2];
+        }
+
+        cuboid_model_matrices.push_back(getModelMatrix({
+            glm::identity<glm::quat>(),
+            vec_pos,
+            vec_size,
+        }));
+    }
+
+    mid_point = (max_pos + min_pos) / 2.0f;
+
+    if (component.global) {
+        cuboid_size = { component.global_size[0], component.global_size[1], component.global_size[2] };
+    } else {
+        cuboid_size = (max_pos - min_pos) / 2.0f;
+    }
+
+    const std::array<VertexAttributeDesc, 1> enabled_buffer{
+        VertexAttributeDesc{
+            2,
+            1,
+            GL_UNSIGNED_INT,
+            GL_FALSE,
+            0,
+            (void*)0,
+            1,
+            VertexAttributeType::Integer,
+        },
+    };
+
+    const std::array<VertexAttributeDesc, 4> model_matrix_buffer{
+        VertexAttributeDesc{
+            3,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(glm::vec4),
+            (void*)0,
+            1,
+            VertexAttributeType::Real,
+        },
+        VertexAttributeDesc{
+            4,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(glm::vec4),
+            (void*)(1 * sizeof(glm::vec4)),
+            1,
+            VertexAttributeType::Real,
+        },
+        VertexAttributeDesc{
+            5,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(glm::vec4),
+            (void*)(2 * sizeof(glm::vec4)),
+            1,
+            VertexAttributeType::Real,
+        },
+        VertexAttributeDesc{
+            6,
+            4,
+            GL_FLOAT,
+            GL_FALSE,
+            4 * sizeof(glm::vec4),
+            (void*)(3 * sizeof(glm::vec4)),
+            1,
+            VertexAttributeType::Real,
+        },
+    };
+
+    auto& transform = database_context.fetch_component_unchecked<Transform>(entity);
+    transform.scale = cuboid_size;
+    transform.position = mid_point;
+
+    auto& mesh = database_context.fetch_component_unchecked<std::shared_ptr<Mesh>>(entity);
+    mesh->set_num_instances(cuboid_model_matrices.size());
+    mesh->set_complex_attribute("enabled_cuboids", enabled_buffer, enabled_cuboids.size() * sizeof(GLuint),
+        GL_DYNAMIC_DRAW, enabled_cuboids.data());
+    mesh->set_complex_attribute("model_matrix", model_matrix_buffer, cuboid_model_matrices.size() * sizeof(glm::mat4),
+        GL_STATIC_DRAW, glm::value_ptr(cuboid_model_matrices.front()));
 
     database_context.write_component(entity, CuboidCommandList{ 0, 0, std::move(cuboid_commands) });
 }

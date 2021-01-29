@@ -73,6 +73,10 @@ public:
      */
     virtual void unbind() const;
 
+    void* map(GLenum access);
+
+    bool unmap();
+
     /**
      * @brief Returns the id of the buffer.
      *

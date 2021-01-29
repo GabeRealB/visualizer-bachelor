@@ -466,12 +466,18 @@ void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent&
 
 void to_json(nlohmann::json& j, const CuboidCommandListComponent& v)
 {
+    j[CuboidCommandListComponent::global_json] = v.global;
+    j[CuboidCommandListComponent::global_size_json] = v.global_size;
     j[CuboidCommandListComponent::commands_json] = v.commands;
+    j[CuboidCommandListComponent::positions_json] = v.positions;
 }
 
 void from_json(const nlohmann::json& j, CuboidCommandListComponent& v)
 {
+    j[CuboidCommandListComponent::global_json].get_to(v.global);
+    j[CuboidCommandListComponent::global_size_json].get_to(v.global_size);
     j[CuboidCommandListComponent::commands_json].get_to(v.commands);
+    j[CuboidCommandListComponent::positions_json].get_to(v.positions);
 }
 
 void to_json(nlohmann::json& j, const CameraComponent& v)
@@ -1058,70 +1064,29 @@ void to_json(nlohmann::json& j, const NoopCommand& v) { j[NoopCommand::counter_j
 
 void from_json(const nlohmann::json& j, NoopCommand& v) { j[NoopCommand::counter_json].get_to(v.counter); }
 
-void to_json(nlohmann::json& j, const DrawCommand& v)
-{
-    j[DrawCommand::global_json] = v.global;
-    j[DrawCommand::global_size_json] = v.global_size;
-    j[DrawCommand::cuboid_size_json] = v.cuboid_size;
-    j[DrawCommand::start_position_json] = v.start_position;
-    j[DrawCommand::fill_color_json] = v.fill_color;
-    j[DrawCommand::border_color_json] = v.border_color;
-}
+void to_json(nlohmann::json& j, const DrawCommand& v) { j[DrawCommand::cuboid_idx_json] = v.cuboid_idx; }
 
-void from_json(const nlohmann::json& j, DrawCommand& v)
-{
-    j[DrawCommand::global_json].get_to(v.global);
-    j[DrawCommand::global_size_json].get_to(v.global_size);
-    j[DrawCommand::cuboid_size_json].get_to(v.cuboid_size);
-    j[DrawCommand::start_position_json].get_to(v.start_position);
-    j[DrawCommand::fill_color_json].get_to(v.fill_color);
-    j[DrawCommand::border_color_json].get_to(v.border_color);
-}
+void from_json(const nlohmann::json& j, DrawCommand& v) { j[DrawCommand::cuboid_idx_json].get_to(v.cuboid_idx); }
 
 void to_json(nlohmann::json& j, const DrawMultipleCommand& v)
 {
-    j[DrawMultipleCommand::global_json] = v.global;
-    j[DrawMultipleCommand::global_size_json] = v.global_size;
-    j[DrawMultipleCommand::fill_color_json] = v.fill_color;
-    j[DrawMultipleCommand::border_color_json] = v.border_color;
-    j[DrawMultipleCommand::cuboid_sizes_json] = v.cuboid_sizes;
-    j[DrawMultipleCommand::start_positions_json] = v.start_positions;
+    j[DrawMultipleCommand::cuboid_indices_json] = v.cuboid_indices;
 }
 
 void from_json(const nlohmann::json& j, DrawMultipleCommand& v)
 {
-    j[DrawMultipleCommand::global_json].get_to(v.global);
-    j[DrawMultipleCommand::global_size_json].get_to(v.global_size);
-    j[DrawMultipleCommand::fill_color_json].get_to(v.fill_color);
-    j[DrawMultipleCommand::border_color_json].get_to(v.border_color);
-    j[DrawMultipleCommand::cuboid_sizes_json].get_to(v.cuboid_sizes);
-    j[DrawMultipleCommand::start_positions_json].get_to(v.start_positions);
+    j[DrawMultipleCommand::cuboid_indices_json].get_to(v.cuboid_indices);
 }
 
-void to_json(nlohmann::json& j, const DeleteCommand& v)
-{
-    j[DeleteCommand::fill_color_json] = v.fill_color;
-    j[DeleteCommand::border_color_json] = v.border_color;
-}
+void to_json( [[maybe_unused]] nlohmann::json& j,  [[maybe_unused]] const DeleteCommand& v) {}
 
-void from_json(const nlohmann::json& j, DeleteCommand& v)
-{
-    j[DeleteCommand::fill_color_json].get_to(v.fill_color);
-    j[DeleteCommand::border_color_json].get_to(v.border_color);
-}
+void from_json( [[maybe_unused]] const nlohmann::json& j,  [[maybe_unused]] DeleteCommand& v) {}
 
-void to_json(nlohmann::json& j, const DeleteMultipleCommand& v)
-{
-    j[DeleteMultipleCommand::counter_json] = v.counter;
-    j[DeleteMultipleCommand::fill_color_json] = v.fill_color;
-    j[DeleteMultipleCommand::border_color_json] = v.border_color;
-}
+void to_json(nlohmann::json& j, const DeleteMultipleCommand& v) { j[DeleteMultipleCommand::counter_json] = v.counter; }
 
 void from_json(const nlohmann::json& j, DeleteMultipleCommand& v)
 {
     j[DeleteMultipleCommand::counter_json].get_to(v.counter);
-    j[DeleteMultipleCommand::fill_color_json].get_to(v.fill_color);
-    j[DeleteMultipleCommand::border_color_json].get_to(v.border_color);
 }
 
 void to_json(nlohmann::json& j, const CuboidCommand& v)

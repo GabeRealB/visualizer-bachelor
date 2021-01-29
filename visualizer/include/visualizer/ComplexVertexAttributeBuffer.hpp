@@ -7,6 +7,8 @@
 
 namespace Visualizer {
 
+enum class VertexAttributeType { Real, Integer, Long };
+
 struct VertexAttributeDesc {
     GLuint index;
     GLint element_size;
@@ -15,6 +17,7 @@ struct VertexAttributeDesc {
     GLsizei stride;
     const void* offset;
     GLuint divisor;
+    VertexAttributeType type;
 };
 
 class ComplexVertexAttributeBuffer : public GenericBuffer {
@@ -23,8 +26,8 @@ public:
 
     ComplexVertexAttributeBuffer(
         std::span<const VertexAttributeDesc> vertex_attribute_pointers, GLsizeiptr size, GLenum usage);
-    ComplexVertexAttributeBuffer(std::span<const VertexAttributeDesc> vertex_attribute_pointers,
-        GLsizeiptr size, GLenum usage, const void* data);
+    ComplexVertexAttributeBuffer(std::span<const VertexAttributeDesc> vertex_attribute_pointers, GLsizeiptr size,
+        GLenum usage, const void* data);
 
     ComplexVertexAttributeBuffer(const ComplexVertexAttributeBuffer& buffer);
     ComplexVertexAttributeBuffer(ComplexVertexAttributeBuffer&& buffer) noexcept;
@@ -44,6 +47,7 @@ public:
     std::span<const GLsizei> strides() const;
     std::span<const void* const> offsets() const;
     std::span<const GLuint> divisors() const;
+    std::span<const VertexAttributeType> types() const;
 
 private:
     std::vector<GLuint> m_indices;
@@ -53,6 +57,7 @@ private:
     std::vector<GLsizei> m_strides;
     std::vector<const void*> m_offsets;
     std::vector<GLuint> m_divisors;
+    std::vector<VertexAttributeType> m_types;
 };
 
 }

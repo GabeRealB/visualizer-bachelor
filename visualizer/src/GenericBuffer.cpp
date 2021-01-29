@@ -75,6 +75,19 @@ void GenericBuffer::bind() const { glBindBuffer(m_target, m_id); }
 
 void GenericBuffer::unbind() const { glBindBuffer(m_target, 0); }
 
+void* GenericBuffer::map(GLenum access)
+{
+    GenericBuffer::bind();
+    return glMapBuffer(m_target, access);
+}
+
+bool GenericBuffer::unmap()
+{
+    auto result = glUnmapBuffer(m_target);
+    GenericBuffer::unbind();
+    return result;
+}
+
 GLuint GenericBuffer::id() const { return m_id; }
 
 GLenum GenericBuffer::target() const { return m_target; }

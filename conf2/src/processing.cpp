@@ -52,8 +52,7 @@ using CuboidContainerTupleVec = std::tuple<std::size_t, std::vector<CuboidContai
 using ContainerList = std::vector<std::variant<std::monostate, CuboidContainerTupleVec>>;
 
 void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, const ContainerList& container_list,
-    VariableMap& variable_map, [[maybe_unused]] VariableType variable_type, [[maybe_unused]] std::size_t end_idx,
-    std::size_t idx)
+    VariableMap& variable_map, VariableType variable_type, std::size_t end_idx, std::size_t idx)
 {
     auto noop_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
@@ -89,8 +88,21 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     1 + std::get<1>(position_data[1]) - start_position[1],
                     1 + std::get<1>(position_data[2]) - start_position[2],
                 };
-                command_list[startIdx + i].commands.push_back({ CuboidCommandType::DRAW,
+
+                auto& cuboid_list = command_list[startIdx + i];
+
+                std::size_t cuboid_idx;
+                if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
+                    cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
+                } else {
+                    cuboid_idx = cuboid_list.positions.size();
+                    cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
+                    cuboid_list.positions.emplace_back(start_position, cuboid_size);
+                }
+
+                cuboid_list.commands.push_back({ CuboidCommandType::DRAW,
                     DrawCommand{
+                        cuboid_idx,
                         cuboid_size,
                         start_position,
                         cuboids[i].fill_color,
@@ -118,18 +130,31 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     1 + std::get<1>(position_data[2]) - start_position[2],
                 };
 
-                auto& cuboid_commands = command_list[startIdx + i].commands;
+                auto& cuboid_list = command_list[startIdx + i];
+
+                std::size_t cuboid_idx;
+                if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
+                    cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
+                } else {
+                    cuboid_idx = cuboid_list.positions.size();
+                    cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
+                    cuboid_list.positions.emplace_back(start_position, cuboid_size);
+                }
+
+                auto& cuboid_commands = cuboid_list.commands;
 
                 if (cuboid_commands.empty() || cuboid_commands.back().type != CuboidCommandType::DRAW_MULTIPLE) {
                     cuboid_commands.push_back({ CuboidCommandType::DRAW_MULTIPLE,
                         DrawMultipleCommand{
                             cuboids[i].fill_color,
                             cuboids[i].active_color,
+                            { cuboid_idx },
                             { cuboid_size },
                             { start_position },
                         } });
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
+                    command.cuboid_indices.insert(cuboid_idx);
                     command.cuboid_sizes.push_back(cuboid_size);
                     command.start_positions.push_back(start_position);
                 }
@@ -259,8 +284,13 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
     command_list.view_name = view_name;
     command_list.cuboids.reserve(view_container.get_num_cuboids());
 
-    for (std::size_t i = 0; i < view_container.get_num_cuboids(); i++) {
-        command_list.cuboids.push_back({});
+    for (auto& cuboid_container : view_container.get_cuboids()) {
+        CuboidCommandList cuboid_command_list{};
+        cuboid_command_list.active_fill_color = cuboid_container.fill_color;
+        cuboid_command_list.inactive_fill_color = { 0, 0, 0, 0 };
+        cuboid_command_list.active_border_color = cuboid_container.active_color;
+        cuboid_command_list.inactive_border_color = cuboid_container.unused_color;
+        command_list.cuboids.push_back(std::move(cuboid_command_list));
     }
 
     ContainerList container_list{};

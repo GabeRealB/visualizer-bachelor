@@ -18,6 +18,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
     , m_strides{}
     , m_offsets{}
     , m_divisors{}
+    , m_types{}
 {
     m_indices.reserve(vertex_attribute_pointers.size());
     m_element_sizes.reserve(vertex_attribute_pointers.size());
@@ -26,6 +27,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
     m_strides.reserve(vertex_attribute_pointers.size());
     m_offsets.reserve(vertex_attribute_pointers.size());
     m_divisors.reserve(vertex_attribute_pointers.size());
+    m_types.reserve(vertex_attribute_pointers.size());
 
     for (auto& attribute : vertex_attribute_pointers) {
         m_indices.push_back(attribute.index);
@@ -35,6 +37,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
         m_strides.push_back(attribute.stride);
         m_offsets.push_back(attribute.offset);
         m_divisors.push_back(attribute.divisor);
+        m_types.push_back(attribute.type);
     }
 }
 
@@ -47,6 +50,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(const ComplexVertexAt
     , m_strides{ buffer.m_strides }
     , m_offsets{ buffer.m_offsets }
     , m_divisors{ buffer.m_divisors }
+    , m_types{ buffer.m_types }
 {
 }
 
@@ -59,6 +63,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(ComplexVertexAttribut
     , m_strides{ std::exchange(buffer.m_strides, {}) }
     , m_offsets{ std::exchange(buffer.m_offsets, {}) }
     , m_divisors{ std::exchange(buffer.m_divisors, {}) }
+    , m_types{ std::exchange(buffer.m_types, {}) }
 {
 }
 
@@ -73,6 +78,7 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(const Comp
         m_strides = buffer.m_strides;
         m_offsets = buffer.m_offsets;
         m_divisors = buffer.m_divisors;
+        m_types = buffer.m_types;
     }
 
     return *this;
@@ -89,6 +95,7 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(ComplexVer
         m_strides = std::exchange(buffer.m_strides, {});
         m_offsets = std::exchange(buffer.m_offsets, {});
         m_divisors = std::exchange(buffer.m_divisors, {});
+        m_types = std::exchange(buffer.m_types, {});
     }
 
     return *this;
@@ -99,8 +106,19 @@ void ComplexVertexAttributeBuffer::bind() const
     GenericBuffer::bind();
     for (std::size_t i = 0; i < m_indices.size(); ++i) {
         glEnableVertexAttribArray(m_indices[i]);
-        glVertexAttribPointer(
-            m_indices[i], m_element_sizes[i], m_element_types[i], m_normalized[i], m_strides[i], m_offsets[i]);
+
+        switch (m_types[i]) {
+        case VertexAttributeType::Real:
+            glVertexAttribPointer(
+                m_indices[i], m_element_sizes[i], m_element_types[i], m_normalized[i], m_strides[i], m_offsets[i]);
+            break;
+        case VertexAttributeType::Integer:
+            glVertexAttribIPointer(m_indices[i], m_element_sizes[i], m_element_types[i], m_strides[i], m_offsets[i]);
+            break;
+        case VertexAttributeType::Long:
+            glVertexAttribLPointer(m_indices[i], m_element_sizes[i], m_element_types[i], m_strides[i], m_offsets[i]);
+            break;
+        }
         glVertexAttribDivisor(m_indices[i], m_divisors[i]);
     }
 }
@@ -143,6 +161,11 @@ std::span<const void* const> ComplexVertexAttributeBuffer::offsets() const
 std::span<const GLuint> ComplexVertexAttributeBuffer::divisors() const
 {
     return { m_divisors.data(), m_divisors.size() };
+}
+
+std::span<const VertexAttributeType> ComplexVertexAttributeBuffer::types() const
+{
+    return { m_types.data(), m_types.size() };
 }
 
 }

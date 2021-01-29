@@ -24,8 +24,8 @@ enum class MeshAttributes : int {
     Indices = 8,
 };
 
-using VertexBufferVariant = std::variant<std::shared_ptr<const GenericBuffer>,
-    std::shared_ptr<const VertexAttributeBuffer>, std::shared_ptr<const ComplexVertexAttributeBuffer>>;
+using VertexBufferVariant = std::variant<std::shared_ptr<GenericBuffer>, std::shared_ptr<VertexAttributeBuffer>,
+    std::shared_ptr<ComplexVertexAttributeBuffer>>;
 
 /**
  * A wrapper around a VAO.
@@ -97,7 +97,10 @@ public:
     void set_complex_attribute(const std::string& name, std::span<const VertexAttributeDesc> vertex_attributes,
         GLsizeiptr size, GLenum usage, const void* data);
 
+    VertexBufferVariant& get_vertex_buffer(MeshAttributes type);
     const VertexBufferVariant& get_vertex_buffer(MeshAttributes type) const;
+
+    VertexBufferVariant& get_vertex_buffer(const std::string& name);
     const VertexBufferVariant& get_vertex_buffer(const std::string& name) const;
 
     /**

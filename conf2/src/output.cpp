@@ -175,10 +175,16 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     };
     std::vector<std::string> composition_src = { render_texture_name };
 
+    constexpr auto window_start_x = -0.5f;
+    constexpr auto window_start_y = 0.5f;
+    constexpr auto window_stepping = 0.2f;
+    auto window_pos_x = window_start_x + (view_idx * window_stepping);
+    auto window_pos_y = window_start_y - (view_idx * window_stepping);
+
     extend_camera_switcher(coordinator_entity, camera_entity_id);
     extend_copy(coordinator_entity, framebuffer_multisample_name, framebuffer_name,
         Visconfig::Components::CopyOperationFilter::Nearest, copy_flags);
-    extend_composition(coordinator_entity, { 0.3f, 0.3f }, { 0.0f, 0.0f }, composition_src,
+    extend_composition(coordinator_entity, { 0.3f, 0.3f }, { window_pos_x, window_pos_y }, composition_src,
         generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
         view_idx, true);
 }

@@ -126,7 +126,7 @@ void Mesh::setVertices(const glm::vec4* vertices, GLsizeiptr count)
 
     auto key{ m_key++ };
     m_attributesMap[MeshAttributes::Vertices] = key;
-    m_buffers[key] = std::const_pointer_cast<const VertexAttributeBuffer>(ptr);
+    m_buffers[key] = ptr;
 }
 
 void Mesh::setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count)
@@ -155,7 +155,7 @@ void Mesh::setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count
 
     auto key{ m_key++ };
     m_attributesMap[MeshAttributes::TextureCoordinate0] = key;
-    m_buffers[key] = std::const_pointer_cast<const VertexAttributeBuffer>(ptr);
+    m_buffers[key] = ptr;
 }
 
 void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveType)
@@ -179,7 +179,7 @@ void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveT
 
     auto key{ m_key++ };
     m_attributesMap[MeshAttributes::Indices] = key;
-    m_buffers[key] = std::const_pointer_cast<const GenericBuffer>(ptr);
+    m_buffers[key] = ptr;
 
     m_indexType = GL_UNSIGNED_INT;
     m_primitiveType = primitiveType;
@@ -206,13 +206,25 @@ void Mesh::set_complex_attribute(const std::string& name, std::span<const Vertex
 
     auto key{ m_key++ };
     m_attributes_string_map[name] = key;
-    m_buffers[key] = std::const_pointer_cast<const ComplexVertexAttributeBuffer>(buffer);
+    m_buffers[key] = buffer;
+}
+
+VertexBufferVariant& Mesh::get_vertex_buffer(MeshAttributes type)
+{
+    assert(m_attributesMap.contains(type));
+    return m_buffers.at(m_attributesMap.at(type));
 }
 
 const VertexBufferVariant& Mesh::get_vertex_buffer(MeshAttributes type) const
 {
     assert(m_attributesMap.contains(type));
     return m_buffers.at(m_attributesMap.at(type));
+}
+
+VertexBufferVariant& Mesh::get_vertex_buffer(const std::string& name)
+{
+    assert(m_attributes_string_map.contains(name));
+    return m_buffers.at(m_attributes_string_map.at(name));
 }
 
 const VertexBufferVariant& Mesh::get_vertex_buffer(const std::string& name) const

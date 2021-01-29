@@ -72,9 +72,10 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
     return entity;
 }
 
-Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global, const CuboidCommandList& command_list,
-    const std::string& front_texture, const std::string& side_texture, const std::string& top_texture,
-    const std::string& mesh_name, const std::string& shader_asset_name, std::array<int, 3> global_size)
+Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
+    const CuboidCommandList& command_list, const std::string& front_texture, const std::string& side_texture,
+    const std::string& top_texture, const std::string& mesh_name, const std::string& shader_asset_name,
+    std::array<int, 3> global_size)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -114,8 +115,10 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto texture_front_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto texture_side_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto texture_top_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
-    auto border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
-    auto fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto inactive_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
 
     texture_front_attribute->asset = front_texture;
     texture_front_attribute->slot = 0;
@@ -126,8 +129,30 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     texture_top_attribute->asset = top_texture;
     texture_top_attribute->slot = 2;
 
-    border_color_attribute->value = { 0.0f, 0.0f, 0.0f, 0.0f };
-    fill_color_attribute->value = { 0.0f, 0.0f, 0.0f, 0.0f };
+    active_fill_color_attribute->value = {
+        command_list.active_fill_color[0] / 255.0f,
+        command_list.active_fill_color[1] / 255.0f,
+        command_list.active_fill_color[2] / 255.0f,
+        command_list.active_fill_color[3] / 255.0f,
+    };
+    inactive_fill_color_attribute->value = {
+        command_list.inactive_fill_color[0] / 255.0f,
+        command_list.inactive_fill_color[1] / 255.0f,
+        command_list.inactive_fill_color[2] / 255.0f,
+        command_list.inactive_fill_color[3] / 255.0f,
+    };
+    active_border_color_attribute->value = {
+        command_list.active_border_color[0] / 255.0f,
+        command_list.active_border_color[1] / 255.0f,
+        command_list.active_border_color[2] / 255.0f,
+        command_list.active_border_color[3] / 255.0f,
+    };
+    inactive_border_color_attribute->value = {
+        command_list.inactive_border_color[0] / 255.0f,
+        command_list.inactive_border_color[1] / 255.0f,
+        command_list.inactive_border_color[2] / 255.0f,
+        command_list.inactive_border_color[3] / 255.0f,
+    };
 
     material.asset = shader_asset_name;
     material.attributes.insert_or_assign("grid_texture_front",
@@ -139,12 +164,18 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     material.attributes.insert_or_assign("grid_texture_top",
         Visconfig::Components::MaterialAttribute{
             Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false });
-    material.attributes.insert_or_assign("border_color",
+    material.attributes.insert_or_assign("active_fill_color",
         Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, border_color_attribute, false });
-    material.attributes.insert_or_assign("fill_color",
+            Visconfig::Components::MaterialAttributeType::Vec4, active_fill_color_attribute, false });
+    material.attributes.insert_or_assign("inactive_fill_color",
         Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, fill_color_attribute, false });
+            Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false });
+    material.attributes.insert_or_assign("active_border_color",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, active_border_color_attribute, false });
+    material.attributes.insert_or_assign("inactive_border_color",
+        Visconfig::Components::MaterialAttribute{
+            Visconfig::Components::MaterialAttributeType::Vec4, inactive_border_color_attribute, false });
 
     layer.mask = 1llu << view_idx;
 
@@ -160,7 +191,10 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     transform.position[1] = 0;
     transform.position[2] = 0;
 
+    cuboid_command_list.global = global;
+    cuboid_command_list.global_size = global_size;
     cuboid_command_list.commands.reserve(command_list.commands.size());
+    cuboid_command_list.positions.reserve(command_list.positions.size());
 
     for (auto& command : command_list.commands) {
         auto visconfig_command = Visconfig::Components::CuboidCommand{};
@@ -181,12 +215,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawCommand{
-                    global,
-                    global_size,
-                    command.cuboid_size,
-                    command.start_position,
-                    command.fill_color,
-                    command.border_color,
+                    command.cuboid_idx,
                 };
             }
             (std::get<DrawCommand>(command.command));
@@ -196,24 +225,16 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawMultipleCommand{
-                    global,
-                    global_size,
-                    command.fill_color,
-                    command.border_color,
-                    command.cuboid_sizes,
-                    command.start_positions,
+                    std::vector<std::size_t>{ command.cuboid_indices.begin(), command.cuboid_indices.end() },
                 };
             }
             (std::get<DrawMultipleCommand>(command.command));
             break;
         case CuboidCommandType::DELETE:
             visconfig_command.type = Visconfig::Components::CuboidCommandType::DELETE;
-            visconfig_command.command = [](auto&& command) -> auto
+            visconfig_command.command = []([[maybe_unused]] auto&& command) -> auto
             {
-                return Visconfig::Components::DeleteCommand{
-                    command.fill_color,
-                    command.border_color,
-                };
+                return Visconfig::Components::DeleteCommand{};
             }
             (std::get<DeleteCommand>(command.command));
             break;
@@ -223,8 +244,6 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             {
                 return Visconfig::Components::DeleteMultipleCommand{
                     command.counter,
-                    command.fill_color,
-                    command.border_color,
                 };
             }
             (std::get<DeleteMultipleCommand>(command.command));
@@ -232,6 +251,10 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         }
 
         cuboid_command_list.commands.push_back(visconfig_command);
+    }
+
+    for (auto& position : command_list.positions) {
+        cuboid_command_list.positions.push_back(position);
     }
 
     return entity;

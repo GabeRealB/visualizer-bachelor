@@ -78,87 +78,58 @@ void CuboidCommandSystem::run(void*)
     }
 }
 
-bool step_iteration(
-    const NoopCommand& command, std::shared_ptr<Mesh>&, Material&, Transform&, std::size_t command_counter)
-{
-    return command_counter + 1 >= command.counter;
-}
-
-bool step_iteration(
-    const DrawCommand& command, std::shared_ptr<Mesh>& mesh, Material& material, Transform& transform, std::size_t)
-{
-    material.m_materialVariables.set("fill_color", command.fill_color);
-    material.m_materialVariables.set("border_color", command.border_color);
-
-    transform.position = command.start_position;
-    transform.scale = command.cuboid_size;
-
-    auto model_matrix = getModelMatrix(transform);
-
-    const std::array<VertexAttributeDesc, 4> model_matrix_buffer{
-        VertexAttributeDesc{ 2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)0, 1 },
-        VertexAttributeDesc{ 3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(1 * sizeof(glm::vec4)), 1 },
-        VertexAttributeDesc{ 4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(2 * sizeof(glm::vec4)), 1 },
-        VertexAttributeDesc{ 5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(3 * sizeof(glm::vec4)), 1 },
-    };
-
-    mesh->set_num_instances(1);
-    mesh->set_complex_attribute(
-        "model_matrix", model_matrix_buffer, sizeof(glm::mat4), GL_STATIC_DRAW, glm::value_ptr(model_matrix));
-
-    return true;
-}
-
-bool step_iteration(
-    const DrawMultipleCommand& command, std::shared_ptr<Mesh>& mesh, Material& material, Transform&, std::size_t)
-{
-    if (command.cuboid_sizes.size() == 0) {
-        return true;
-    }
-
-    material.m_materialVariables.set("fill_color", command.fill_color);
-    material.m_materialVariables.set("border_color", command.border_color);
-
-    std::vector<glm::mat4> model_matrices{};
-    model_matrices.reserve(command.start_positions.size());
-
-    for (std::size_t i = 0; i < command.start_positions.size(); ++i) {
-        model_matrices.push_back(getModelMatrix({
-            glm::identity<glm::quat>(),
-            command.start_positions[i],
-            command.cuboid_sizes[i],
-        }));
-    }
-
-    const std::array<VertexAttributeDesc, 4> model_matrix_buffer{
-        VertexAttributeDesc{ 2, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)0, 1 },
-        VertexAttributeDesc{ 3, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(1 * sizeof(glm::vec4)), 1 },
-        VertexAttributeDesc{ 4, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(2 * sizeof(glm::vec4)), 1 },
-        VertexAttributeDesc{ 5, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(glm::vec4), (void*)(3 * sizeof(glm::vec4)), 1 },
-    };
-
-    mesh->set_num_instances(command.cuboid_sizes.size());
-    mesh->set_complex_attribute("model_matrix", model_matrix_buffer, command.cuboid_sizes.size() * sizeof(glm::mat4),
-        GL_STATIC_DRAW, glm::value_ptr(model_matrices.front()));
-
-    return true;
-}
-
-bool step_iteration(const DeleteCommand& command, std::shared_ptr<Mesh>&, Material& material, Transform&, std::size_t)
-{
-    material.m_materialVariables.set("fill_color", command.fill_color);
-    material.m_materialVariables.set("border_color", command.border_color);
-
-    return true;
-}
-
-bool step_iteration(const DeleteMultipleCommand& command, std::shared_ptr<Mesh>&, Material& material, Transform&,
+bool step_iteration(const NoopCommand& command, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&,
     std::size_t command_counter)
 {
-    material.m_materialVariables.set("fill_color", command.fill_color);
-    material.m_materialVariables.set("border_color", command.border_color);
-
     return command_counter + 1 >= command.counter;
+}
+
+bool step_iteration(const DrawCommand& command, const CuboidCommand& previous, std::shared_ptr<Mesh>& mesh, Material&,
+    Transform&, std::size_t)
+{
+    auto& enabled_buffer
+        = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
+    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
+    auto& previous_command = std::get<DrawCommand>(previous.command);
+
+    buffer_ptr[previous_command.cuboid_idx] = 0;
+    buffer_ptr[command.cuboid_idx] = 1;
+
+    enabled_buffer->unmap();
+    return true;
+}
+
+bool step_iteration(const DrawMultipleCommand& command, const CuboidCommand& previous, std::shared_ptr<Mesh>& mesh,
+    Material&, Transform&, std::size_t)
+{
+    auto& enabled_buffer
+        = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
+    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
+    auto& previous_command = std::get<DrawMultipleCommand>(previous.command);
+
+    for (auto idx : previous_command.cuboid_indices) {
+        buffer_ptr[idx] = 0;
+    }
+
+    for (auto idx : command.cuboid_indices) {
+        buffer_ptr[idx] = 1;
+    }
+
+    enabled_buffer->unmap();
+
+    return true;
+}
+
+bool step_iteration(
+    const DeleteCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&, std::size_t)
+{
+    return true;
+}
+
+bool step_iteration(
+    const DeleteMultipleCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&, std::size_t)
+{
+    return true;
 }
 
 void step_iteration(
@@ -170,10 +141,22 @@ void step_iteration(
 
     bool step_command = false;
     const auto& command = command_list.commands[command_list.current_index];
+    const auto& previous_command = [&]() -> auto&
+    {
+        if (command_list.current_index == 0) {
+            return command_list.commands[command_list.commands.size() - 3];
+        } else if (command_list.current_index % 3 == 0) {
+            return command_list.commands[command_list.current_index - 3];
+        } else {
+            auto offset = command_list.current_index % 3;
+            return command_list.commands[command_list.current_index - offset];
+        }
+    }
+    ();
 
     step_command = std::visit(
         [&](auto&& command) -> auto {
-            return step_iteration(command, mesh, material, transform, command_list.command_counter);
+            return step_iteration(command, previous_command, mesh, material, transform, command_list.command_counter);
         },
         command.command);
 
