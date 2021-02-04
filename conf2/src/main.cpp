@@ -1,5 +1,4 @@
 #include "output.hpp"
-#include "processing.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -59,7 +58,7 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     Config::GenerationOptions generation_options{};
     generation_options.screen_width = 1200;
     generation_options.screen_height = 900;
-    generation_options.screen_msaa_samples = 16;
+    generation_options.screen_msaa_samples = 32;
     generation_options.screen_fullscreen = false;
 
     generation_options.render_resolution_multiplier = 2;

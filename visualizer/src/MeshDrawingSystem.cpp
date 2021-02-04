@@ -171,12 +171,8 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_BLEND);
-    // glEnable(GL_DEPTH_TEST);
-    // glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // glDepthMask(GL_FALSE);
     glDepthFunc(GL_NOTEQUAL);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     ShaderEnvironment camera_variables{};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
@@ -184,16 +180,19 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     for (auto& mesh_info : mesh_list) {
         auto& mesh{ std::get<1>(mesh_info) };
         auto& material{ std::get<2>(mesh_info) };
-        // auto& model_matrix{ std::get<3>(mesh_info) };
 
         if (last_program != material->m_shader) {
+            constexpr float orthographic_far_factor = 1.4f;
+            constexpr float orthographic_near_factor = 3.5f;
+            auto orthographic_depth = 1 - std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
+            auto orthographic_factor = std::lerp(orthographic_far_factor, orthographic_near_factor, orthographic_depth);
+
             last_program = material->m_shader;
             camera_variables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+            camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
             camera_variables.set("view_projection_matrix", view_projection_matrix);
             material->m_shader->bind();
         }
-
-        // camera_variables.set("model_matrix", model_matrix);
 
         last_program->apply(camera_variables);
         last_program->apply(material->m_materialVariables);

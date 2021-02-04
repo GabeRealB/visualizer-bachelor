@@ -1,5 +1,6 @@
 #version 410 core
 
+@program float 1 far_plane
 @material vec4 1 active_fill_color
 @material vec4 1 inactive_fill_color
 @material vec4 1 active_border_color
@@ -7,6 +8,8 @@
 @material sampler2D 1 grid_texture_front
 @material sampler2D 1 grid_texture_side
 @material sampler2D 1 grid_texture_top
+
+uniform float far_plane;
 
 uniform vec4 active_fill_color;
 uniform vec4 inactive_fill_color;
@@ -25,12 +28,30 @@ out vec4 out_color;
 void main() {
     vec4 texture_color = vec4(0.0f);
 
+    float camera_distance = (gl_FragCoord.z / gl_FragCoord.w) / far_plane;
+    float border_thickness = mix(0.0f, 0.1f, camera_distance);
+
+    vec2 tex_coords = texture_coordinates;
+
+    if (tex_coords.x < border_thickness) {
+        tex_coords.x = 0.0f;
+    }
+    if (tex_coords.x > 1 - border_thickness) {
+        tex_coords.x = 1.0f;
+    }
+    if (tex_coords.y < border_thickness) {
+        tex_coords.y = 0.0f;
+    }
+    if (tex_coords.y > 1 - border_thickness) {
+        tex_coords.y = 1.0f;
+    }
+
     if (side == 0) {
-        texture_color = vec4(texture(grid_texture_front, texture_coordinates).xyz, 1.0f);
+        texture_color = vec4(texture(grid_texture_front, tex_coords).xyz, 1.0f);
     } else if (side == 1) {
-        texture_color = vec4(texture(grid_texture_top, texture_coordinates).xyz, 1.0f);
+        texture_color = vec4(texture(grid_texture_top, tex_coords).xyz, 1.0f);
     } else if (side == 2) {
-        texture_color = vec4(texture(grid_texture_side, texture_coordinates).xyz, 1.0f);
+        texture_color = vec4(texture(grid_texture_side, tex_coords).xyz, 1.0f);
     }
 
     if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
