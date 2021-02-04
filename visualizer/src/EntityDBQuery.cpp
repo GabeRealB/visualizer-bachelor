@@ -141,10 +141,12 @@ EntityDBWindow::EntityDBWindow(std::vector<Entity>&& entities, std::vector<std::
     , m_component_type_map{ std::move(component_type_map) }
     , m_entity_index_map{}
 {
+#ifndef NDEBUG
     assert(m_components.size() == m_component_type_map.size());
     for (const auto& component_vec : m_components) {
         assert(component_vec.size() == m_entities.size());
     }
+#endif
 
     m_entity_index_map.reserve(m_entities.size());
     for (std::size_t i{ 0 }; i < m_entities.size(); ++i) {

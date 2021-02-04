@@ -28,7 +28,7 @@ ComponentType EntityDatabaseImpl::register_component_desc(
     ComponentType component_type, ComponentDescriptor component_desc)
 {
     assert(!has_component(component_type));
-    auto [pos, success] = m_component_descriptors.insert({ component_type, component_desc });
+    [[maybe_unused]] auto [pos, success] = m_component_descriptors.insert({ component_type, component_desc });
     assert(success);
     return component_type;
 }
@@ -41,9 +41,11 @@ const ComponentDescriptor& EntityDatabaseImpl::fetch_component_desc(ComponentTyp
 
 Entity EntityDatabaseImpl::init_entity(const EntityArchetype& archetype)
 {
+#ifndef NDEBUG
     for (auto component_type : archetype.component_types()) {
         assert(has_component(component_type));
     }
+#endif
     auto entity{ generate_new_entity() };
     auto& entity_container{ fetch_or_init_entity_container(archetype) };
     m_entities.emplace(entity, m_archetype_map.at(archetype));
@@ -69,10 +71,12 @@ Entity EntityDatabaseImpl::init_entity(const EntityBuilder& entity_builder)
 
 Entity EntityDatabaseImpl::init_entity_copy(Entity entity, const EntityArchetype& archetype)
 {
+#ifndef NDEBUG
     assert(has_entity(entity));
     for (auto component_type : archetype.component_types()) {
         assert(has_component(component_type));
     }
+#endif
     auto new_entity{ generate_new_entity() };
     auto& entity_container{ fetch_or_init_entity_container(archetype) };
     const auto& src_entity_container{ fetch_entity_container(entity) };
@@ -106,10 +110,12 @@ void EntityDatabaseImpl::erase_entity(Entity entity)
 
 void EntityDatabaseImpl::move_entity(Entity entity, const EntityArchetype& archetype)
 {
+#ifndef NDEBUG
     assert(has_entity(entity));
     for (auto component_type : archetype.component_types()) {
         assert(has_component(component_type));
     }
+#endif
     auto& dst_entity_container{ fetch_or_init_entity_container(archetype) };
     auto& src_entity_container{ fetch_entity_container(entity) };
     if (&dst_entity_container != &src_entity_container) {
@@ -427,9 +433,11 @@ EntityContainer& EntityDatabaseImpl::fetch_or_init_entity_container(const Entity
     if (m_archetype_map.contains(archetype)) {
         return m_entity_containers.at(m_archetype_map.at(archetype));
     } else {
+#ifndef NDEBUG
         for (auto component_type : archetype.component_types()) {
             assert(has_component(component_type));
         }
+#endif
         EntityContainerId container_id;
         if (m_free_container_ids.empty()) {
             container_id = m_last_container_id++;
