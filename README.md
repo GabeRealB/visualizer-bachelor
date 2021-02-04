@@ -10,8 +10,16 @@
 git submodule update --init --recurse
 ./vcpkg/bootstrap-vcpkg.sh
 ./vcpkg/vcpkg install --feature-flags=manifests
-printf "gemm_mdh.json" > ./mdh2vis/mdh_path.txt
+printf "configs/config_gemm_blocked.json" > ./conf2/config_path.txt
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
 cmake --build .
+```
+
+## Usage
+
+```bash
+cd build/visualizer
+../conf2/src/conf2 generate
+./visualizer_main
 ```
