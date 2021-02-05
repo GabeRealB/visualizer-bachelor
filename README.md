@@ -7,10 +7,10 @@
 ## Building
 
 ```bash
-git submodule update --init --recurse
+git submodule update --init --recursive
 ./vcpkg/bootstrap-vcpkg.sh
 ./vcpkg/vcpkg install --feature-flags=manifests
-printf "configs/config_gemm_blocked.json" > ./conf2/config_path.txt
+printf "configs/config_gemm_blocked_32x32x32_simple.json" > ./conf2/config_path.txt
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake ..
 cmake --build .
@@ -19,7 +19,8 @@ cmake --build .
 ## Usage
 
 ```bash
-cd build/visualizer
-../conf2/src/conf2 generate
+cd build
+./conf2/src/conf2 generate -o ./visualizer
+cd visualizer
 ./visualizer_main
 ```
