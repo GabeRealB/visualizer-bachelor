@@ -8,9 +8,8 @@
 #include <iostream>
 
 #include <visconfig/Config.hpp>
-
+#include <visualizer/AssetDatabase.hpp>
 #include <visualizer/Scene.hpp>
-#include <visualizer/Shader.hpp>
 
 GLFWwindow* createWindow(Visconfig::Config& config);
 void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length,
@@ -86,7 +85,6 @@ void getRelativeMousePosition(double& xPos, double& yPos)
 
 int run(const std::filesystem::path& configurationPath)
 {
-    Scene scene;
     {
         auto config{ Visconfig::from_file(configurationPath) };
 
@@ -135,16 +133,17 @@ int run(const std::filesystem::path& configurationPath)
         glDebugMessageCallback(MessageCallback, 0);
 #endif // DEBUG_OPENGL
 
-        scene = initialize_scene(config);
+        Scene scene = initialize_scene(config);
+        while (!shouldQuit()) {
+            tick(scene);
+            draw(scene);
+
+            glfwSwapBuffers(g_window);
+            glfwPollEvents();
+        }
     }
 
-    while (!shouldQuit()) {
-        tick(scene);
-        draw(scene);
-
-        glfwSwapBuffers(g_window);
-        glfwPollEvents();
-    }
+    AssetDatabase::clear();
 
     glfwDestroyWindow(g_window);
     glfwTerminate();

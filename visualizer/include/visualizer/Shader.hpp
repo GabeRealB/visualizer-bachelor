@@ -55,7 +55,8 @@ enum class ParameterType : std::size_t {
     Mat4x3 = 23,
     Mat4x4 = 24,
     Sampler2D = 25,
-    MaxIndex = Sampler2D
+    Sampler2DMultisample = 26,
+    MaxIndex = Sampler2DMultisample
 };
 
 template <typename T> struct ShaderTypeMapping {
@@ -192,6 +193,11 @@ template <> struct ShaderTypeMapping<TextureSampler<Texture2D>> {
     static constexpr ParameterType mappedType{ ParameterType::Sampler2D };
 };
 
+template <> struct ShaderTypeMapping<TextureSampler<Texture2DMultisample>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::Sampler2DMultisample };
+};
+
 using ParameterDeclaration = std::tuple<ParameterQualifier, ParameterType, std::size_t, std::string>;
 
 class Shader {
@@ -233,7 +239,8 @@ public:
     std::span<std::string_view> parameters() const;
 
     template <typename T>
-    requires ShaderTypeMapping<T>::hasMapping std::optional<T> get(std::string_view name, std::size_t idx = 0) const
+    requires ShaderTypeMapping<T>::hasMapping std::optional<T> get(std::string_view name, std::size_t idx = 0)
+    const
     {
         if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {
             auto parameterInfo{ pos->second };
@@ -256,7 +263,8 @@ public:
     }
 
     template <typename T, std::size_t Size>
-    requires ShaderTypeMapping<T>::hasMapping std::optional<std::array<T, Size>> get(std::string_view name) const
+    requires ShaderTypeMapping<T>::hasMapping std::optional<std::array<T, Size>> get(std::string_view name)
+    const
     {
         auto dataPtr{ getPtr<T>(name, Size) };
 
@@ -377,8 +385,8 @@ public:
     std::span<const ParameterDeclaration> parameters() const;
 
     template <typename... Args>
-    requires SameType<Shader, Args...>&& NoCVRefs<Args...> static std::shared_ptr<ShaderProgram> create(
-        const Args&... args)
+    requires SameType<Shader, Args...> && NoCVRefs<Args...>
+    static std::shared_ptr<ShaderProgram> create(const Args&... args)
     {
         auto program{ std::make_shared<ShaderProgram>() };
         if (program->m_program == 0) {
@@ -423,7 +431,8 @@ public:
                 }
                 program->m_parameterLocations.insert_or_assign(std::get<3>(parameter), location);
 
-                if (std::get<1>(parameter) == ParameterType::Sampler2D) {
+                if (std::get<1>(parameter) == ParameterType::Sampler2D
+                    || std::get<1>(parameter) == ParameterType::Sampler2DMultisample) {
                     glUniform1i(location, textures++);
                 }
             }

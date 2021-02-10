@@ -1,10 +1,10 @@
 #include <visualizer/CompositingSystem.hpp>
 
-#include <algorithm>
-
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <cassert>
 
 #include <visualizer/Composition.hpp>
 #include <visualizer/Visualizer.hpp>
@@ -121,28 +121,31 @@ void CompositingSystem::run(void*)
             }
         });
 
-        m_composition_entity_query.query_db_window(database_context).for_each<Composition>([&](Composition* composition) {
-            for (auto& operation : composition->operations) {
-                operation.material.m_shader->bind();
-                operation.material.m_materialVariables.set("transMatrix", getModelMatrix(operation.transform));
+        m_composition_entity_query.query_db_window(database_context)
+            .for_each<Composition>([&](Composition* composition) {
+                for (auto& operation : composition->operations) {
+                    operation.material.m_shader->bind();
+                    operation.material.m_materialVariables.set("transMatrix", getModelMatrix(operation.transform));
 
-                std::size_t i{ 0 };
-                for (const auto& source : operation.source) {
-                    TextureSampler<Texture2D> sampler{ source, static_cast<TextureSlot>(i) };
-                    operation.material.m_materialVariables.set("view_" + std::to_string(i), sampler);
-                    i++;
+                    std::size_t i{ 0 };
+                    for (const auto& source : operation.source) {
+                        TextureSampler<Texture2D> sampler{ source, static_cast<TextureSlot>(i) };
+                        operation.material.m_materialVariables.set("view_" + std::to_string(i), sampler);
+                        i++;
+                    }
+
+                    operation.material.m_shader->apply(operation.material.m_materialVariables);
+
+                    operation.destination->bind(FramebufferBinding::ReadWrite);
+
+                    assert(glGetError() == GL_NO_ERROR);
+                    glDrawElements(m_quad.primitiveType(), static_cast<GLsizei>(m_quad.getIndexCount()),
+                        m_quad.indexType(), nullptr);
+                    assert(glGetError() == GL_NO_ERROR);
+
+                    operation.material.m_shader->unbind();
                 }
-
-                operation.material.m_shader->apply(operation.material.m_materialVariables);
-
-                operation.destination->bind(FramebufferBinding::ReadWrite);
-
-                glDrawElements(
-                    m_quad.primitiveType(), static_cast<GLsizei>(m_quad.getIndexCount()), m_quad.indexType(), nullptr);
-
-                operation.material.m_shader->unbind();
-            }
-        });
+            });
 
         m_quad.unbind();
     });

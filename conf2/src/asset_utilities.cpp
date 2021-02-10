@@ -282,6 +282,61 @@ Visconfig::Asset create_cuboid_mesh_asset(const std::string& asset_name)
 
     return asset;
 }
+Visconfig::Asset create_fullscreen_quad_mesh_asset(const std::string& asset_name)
+{
+    auto mesh_data{ std::make_shared<Visconfig::Assets::MeshAsset>() };
+    Visconfig::Asset asset{ asset_name, Visconfig::Assets::AssetType::Mesh, mesh_data };
+
+    constexpr std::array<float, 2> vertices[]{
+        { -1.0f, -1.0f }, // lower-left
+        { 1.0f, -1.0f }, // lower-right
+        { 1.0f, 1.0f }, // upper-right
+        { -1.0f, 1.0f }, // upper-left
+    };
+
+    constexpr std::array<float, 2> uvs[]{
+        { 0.0f, 0.0f }, // lower-left
+        { 1.0f, 0.0f }, // lower-right
+        { 1.0f, 1.0f }, // upper-right
+        { 0.0f, 1.0f }, // upper-left
+    };
+
+    constexpr uint32_t indices[]{ 0, 1, 2, 0, 2, 3 };
+
+    std::vector<std::byte> vertex_buffer(sizeof(vertices), std::byte{});
+    std::memcpy(vertex_buffer.data(), vertices, sizeof(vertices));
+
+    std::vector<std::byte> uv_buffer(sizeof(uvs), std::byte{});
+    std::memcpy(uv_buffer.data(), uvs, sizeof(uvs));
+
+    mesh_data->indices = std::vector<std::uint32_t>{ std::begin(indices), std::end(indices) };
+    mesh_data->simple_attributes.insert({ "vertices",
+        {
+            .normalized = false,
+            .size = sizeof(vertices),
+            .index = 0,
+            .stride = 0,
+            .offset = 0,
+            .usage = Visconfig::Assets::MeshAttributeUsage::StaticDraw,
+            .data = std::move(vertex_buffer),
+            .element_size = Visconfig::Assets::MeshAttributeElementSize::Two,
+            .element_type = Visconfig::Assets::MeshAttributeElementType::Float,
+        } });
+    mesh_data->simple_attributes.insert({ "uv_0",
+        {
+            .normalized = false,
+            .size = sizeof(uvs),
+            .index = 1,
+            .stride = 0,
+            .offset = 0,
+            .usage = Visconfig::Assets::MeshAttributeUsage::StaticDraw,
+            .data = std::move(uv_buffer),
+            .element_size = Visconfig::Assets::MeshAttributeElementSize::Two,
+            .element_type = Visconfig::Assets::MeshAttributeElementType::Float,
+        } });
+
+    return asset;
+}
 
 Visconfig::Asset create_default_framebuffer_asset(const std::string& asset_name)
 {

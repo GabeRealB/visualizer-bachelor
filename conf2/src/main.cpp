@@ -80,12 +80,17 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.cuboid_shader_vertex_path = "assets/shaders/cuboid.vs.glsl";
     generation_options.cuboid_shader_fragment_path = "assets/shaders/cuboid.fs.glsl";
 
+    generation_options.cuboid_oit_blend_shader_vertex_path = "assets/shaders/cuboid_oit_blend.vs.glsl";
+    generation_options.cuboid_oit_blend_shader_fragment_path = "assets/shaders/cuboid_oit_blend.fs.glsl";
+
     generation_options.view_composition_shader_vertex_path = "assets/shaders/compositing.vs.glsl";
     generation_options.view_composition_shader_fragment_path = "assets/shaders/compositing.fs.glsl";
 
     generation_options.cuboid_mesh_asset_name = "cuboid_mesh";
     generation_options.cuboid_shader_asset_name = "cuboid_shader";
     generation_options.default_framebuffer_asset_name = "default_framebuffer";
+    generation_options.fullscreen_quad_mesh_asset_name = "fullscreen_quad_mesh";
+    generation_options.cuboid_oit_blend_shader_asset_name = "cuboid_oit_blend_shader";
     generation_options.view_composition_shader_asset_name = "view_composition_shader";
 
     auto config = Config::generate_config(command_list, generation_options);

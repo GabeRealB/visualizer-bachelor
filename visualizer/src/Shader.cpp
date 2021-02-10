@@ -1,5 +1,6 @@
 #include <visualizer/Shader.hpp>
 
+#include <cassert>
 #include <charconv>
 #include <fstream>
 #include <iostream>
@@ -42,7 +43,7 @@ constexpr std::array<std::string_view, 2> sParameterQualifierNames{ "@program"sv
 constexpr std::array<ParameterQualifier, 2> sParameterQualifierMap{ ParameterQualifier::Program,
     ParameterQualifier::Material };
 
-constexpr std::array<std::string_view, 26> sParameterTypeNames{
+constexpr std::array<std::string_view, 27> sParameterTypeNames{
     "bool"sv,
     "int"sv,
     "uint"sv,
@@ -69,6 +70,7 @@ constexpr std::array<std::string_view, 26> sParameterTypeNames{
     "mat4x3"sv,
     "mat4x4"sv,
     "sampler2D"sv,
+    "sampler2DMS"sv,
 };
 
 Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
@@ -112,6 +114,7 @@ Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
         shaderFile.append(line);
     }
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (m_shaderType) {
     case ShaderType::VertexShader:
         m_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -123,6 +126,7 @@ Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
         m_parameters.clear();
         return;
     }
+    assert(glGetError() == GL_NO_ERROR);
 
     auto shaderDataPtr{ shaderFile.data() };
     glShaderSource(m_shader, 1, &shaderDataPtr, nullptr);
@@ -157,7 +161,9 @@ Shader& Shader::operator=(Shader&& other) noexcept
 {
     if (this != &other) {
         if (m_shader != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteShader(m_shader);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         m_shader = std::exchange(other.m_shader, 0);
@@ -188,7 +194,7 @@ std::optional<Shader> Shader::create(const std::filesystem::path& shaderPath, Sh
  *************************************** ShaderEnvironment ***************************************
  **************************************************************************************************/
 
-constexpr std::array<std::tuple<std::size_t, std::size_t>, 26> sTypeSizeAlignmentPairs{
+constexpr std::array<std::tuple<std::size_t, std::size_t>, 27> sTypeSizeAlignmentPairs{
     std::tuple<std::size_t, std::size_t>{ sizeof(GLboolean), alignof(GLboolean) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLint), alignof(GLint) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLuint), alignof(GLuint) },
@@ -215,6 +221,8 @@ constexpr std::array<std::tuple<std::size_t, std::size_t>, 26> sTypeSizeAlignmen
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x3), alignof(glm::mat4x3) },
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x4), alignof(glm::mat4x4) },
     std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
+    std::tuple<std::size_t, std::size_t>{
+        sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
 };
 
 ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier filter)
@@ -316,168 +324,224 @@ ShaderEnvironment::~ShaderEnvironment()
  ***************************************** ShaderProgram *****************************************
  **************************************************************************************************/
 
-constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 26> sTypeApplyFuncs{
+constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 27> sTypeApplyFuncs{
     /**************************************** Scalars ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform1iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLint>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform1iv(location, static_cast<GLsizei>(size), val);
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLuint>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform1uiv(location, static_cast<GLsizei>(size), val);
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLfloat>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform1fv(location, static_cast<GLsizei>(size), val);
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** BVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform2iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform3iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::bvec4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform4iv(location, static_cast<GLsizei>(size), reinterpret_cast<GLint*>(glm::value_ptr(*val)));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** IVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform2iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform3iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::ivec4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform4iv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** UVecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform2uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform3uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::uvec4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform4uiv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** VecN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform2fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform3fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::vec4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniform4fv(location, static_cast<GLsizei>(size), glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** Mat2xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix2x3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat2x4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix2x4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** Mat3xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix3x2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat3x4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix3x4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** Mat4xN ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x2>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix4x2fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x3>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix4x3fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<glm::mat4x4>(name, size) };
         if (val != nullptr) {
+            assert(glGetError() == GL_NO_ERROR);
             glUniformMatrix4fv(location, static_cast<GLsizei>(size), false, glm::value_ptr(*val));
+            assert(glGetError() == GL_NO_ERROR);
         }
     },
     /**************************************** SamplerN ****************************************/
     [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<TextureSampler<Texture2D>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureSampler<Texture2DMultisample>>(name, size) };
         if (val != nullptr) {
             val->bind();
         }
@@ -490,6 +554,7 @@ ShaderProgram::ShaderProgram()
     , m_parameters{}
     , m_parameterLocations{}
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
@@ -498,13 +563,16 @@ ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
     , m_parameters{ std::exchange(other.m_parameters, {}) }
     , m_parameterLocations{ std::exchange(other.m_parameterLocations, {}) }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ShaderProgram::~ShaderProgram()
 {
     unbind();
     if (m_program != 0) {
+        assert(glGetError() == GL_NO_ERROR);
         glDeleteProgram(m_program);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
@@ -513,7 +581,9 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept
     if (this != &other) {
         unbind();
         if (m_program != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteProgram(m_program);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         m_bound = std::exchange(other.m_bound, false);
@@ -527,14 +597,18 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept
 void ShaderProgram::bind()
 {
     if (!m_bound) {
+        assert(glGetError() == GL_NO_ERROR);
         glUseProgram(m_program);
+        assert(glGetError() == GL_NO_ERROR);
         m_bound = true;
     }
 }
 void ShaderProgram::unbind()
 {
     if (m_bound) {
+        assert(glGetError() == GL_NO_ERROR);
         glUseProgram(0);
+        assert(glGetError() == GL_NO_ERROR);
         m_bound = false;
     }
 }

@@ -26,7 +26,9 @@ in vec2 texture_coordinates;
 in vec4 vs_position;
 in vec3 vs_normal;
 
-out vec4 out_color;
+layout(location = 0) out vec4 accum;
+layout(location = 1) out float revealage;
+layout(location = 2) out vec3 modulate;
 
 vec3 compute_diffuse_reflection(vec3 diffuse, vec3 vs_normal, vec3 vs_point_to_light) {
     return diffuse * max(dot(vs_normal, vs_point_to_light), 0);
@@ -49,6 +51,34 @@ vec4 compute_blinn_phong(vec3 vs_normal, vec3 vs_view, vec4 diffuse_color) {
     vec3 color = ambient + light_intensity * (diffuse_reflection + specular_reflection);
 
     return vec4(color, diffuse_color.a);
+}
+
+/* Src: https://casual-effects.blogspot.com/2015/03/colored-blended-order-independent.html */
+void write_pixel(vec4 premultiplied_reflect, vec3 transmit, float csZ) {
+    /* NEW: Perform this operation before modifying the coverage to account for transmission. */
+    modulate = premultiplied_reflect.a * (vec3(1.0) - transmit);
+
+    /* Modulate the net coverage for composition by the transmission. This does not affect the color channels of the
+       transparent surface because the caller's BSDF model should have already taken into account if transmission modulates
+       reflection. See
+
+       McGuire and Enderton, Colored Stochastic Shadow Maps, ACM I3D, February 2011
+       http://graphics.cs.williams.edu/papers/CSSM/
+
+       for a full explanation and derivation.*/
+    premultiplied_reflect.a *= 1.0 - (transmit.r + transmit.g + transmit.b) * (1.0 / 3.0);
+
+    // Intermediate terms to be cubed
+    float tmp = (premultiplied_reflect.a * 8.0 + 0.01) * (-gl_FragCoord.z * 0.95 + 1.0);
+
+    /* If a lot of the scene is close to the far plane, then gl_FragCoord.z does not
+       provide enough discrimination. Add this term to compensate:
+
+       tmp /= sqrt(abs(csZ)); */
+
+    float w    = clamp(tmp * tmp * tmp * 1e3, 1e-2, 3e2);
+    accum     = premultiplied_reflect * w;
+    revealage = premultiplied_reflect.a;
 }
 
 void main() {
@@ -98,9 +128,15 @@ void main() {
 
     vec3 n = normalize(vs_normal);
     vec3 p = normalize(-vs_position).xyz;
-    out_color = compute_blinn_phong(n, p, diffuse_color);
+    vec4 color = compute_blinn_phong(n, p, diffuse_color);
 
-    if (out_color.a == 0.0f) {
+    color.r *= color.a;
+    color.g *= color.a;
+    color.b *= color.a;
+
+    if (color.a == 0.0f) {
         discard;
     }
+
+    write_pixel(color, vec3(0), 0);
 }

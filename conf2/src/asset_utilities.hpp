@@ -9,6 +9,7 @@
 namespace Config {
 
 Visconfig::Asset create_cuboid_mesh_asset(const std::string& asset_name);
+Visconfig::Asset create_fullscreen_quad_mesh_asset(const std::string& asset_name);
 Visconfig::Asset create_default_framebuffer_asset(const std::string& asset_name);
 Visconfig::Asset create_shader_asset(const std::string& asset_name, const std::filesystem::path& vertex_shader,
     const std::filesystem::path& fragment_shader);

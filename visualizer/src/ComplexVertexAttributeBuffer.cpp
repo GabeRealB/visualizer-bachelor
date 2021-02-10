@@ -1,11 +1,14 @@
 #include <visualizer/ComplexVertexAttributeBuffer.hpp>
 
+#include <cassert>
+
 namespace Visualizer {
 
 ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
     std::span<const VertexAttributeDesc> vertex_attribute_pointers, GLsizeiptr size, GLenum usage)
     : ComplexVertexAttributeBuffer{ vertex_attribute_pointers, size, usage, nullptr }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
@@ -20,6 +23,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
     , m_divisors{}
     , m_types{}
 {
+    assert(glGetError() == GL_NO_ERROR);
     m_indices.reserve(vertex_attribute_pointers.size());
     m_element_sizes.reserve(vertex_attribute_pointers.size());
     m_element_types.reserve(vertex_attribute_pointers.size());
@@ -39,6 +43,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(
         m_divisors.push_back(attribute.divisor);
         m_types.push_back(attribute.type);
     }
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(const ComplexVertexAttributeBuffer& buffer)
@@ -52,6 +57,7 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(const ComplexVertexAt
     , m_divisors{ buffer.m_divisors }
     , m_types{ buffer.m_types }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(ComplexVertexAttributeBuffer&& buffer) noexcept
@@ -65,11 +71,13 @@ ComplexVertexAttributeBuffer::ComplexVertexAttributeBuffer(ComplexVertexAttribut
     , m_divisors{ std::exchange(buffer.m_divisors, {}) }
     , m_types{ std::exchange(buffer.m_types, {}) }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(const ComplexVertexAttributeBuffer& buffer)
 {
     if (this != &buffer) {
+        assert(glGetError() == GL_NO_ERROR);
         static_cast<GenericBuffer&>(*this) = static_cast<const GenericBuffer&>(buffer);
         m_indices = buffer.m_indices;
         m_element_sizes = buffer.m_element_sizes;
@@ -79,6 +87,7 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(const Comp
         m_offsets = buffer.m_offsets;
         m_divisors = buffer.m_divisors;
         m_types = buffer.m_types;
+        assert(glGetError() == GL_NO_ERROR);
     }
 
     return *this;
@@ -87,6 +96,7 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(const Comp
 ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(ComplexVertexAttributeBuffer&& buffer) noexcept
 {
     if (this != &buffer) {
+        assert(glGetError() == GL_NO_ERROR);
         static_cast<GenericBuffer&>(*this) = static_cast<GenericBuffer&&>(std::move(buffer));
         m_indices = std::exchange(buffer.m_indices, {});
         m_element_sizes = std::exchange(buffer.m_element_sizes, {});
@@ -96,6 +106,7 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(ComplexVer
         m_offsets = std::exchange(buffer.m_offsets, {});
         m_divisors = std::exchange(buffer.m_divisors, {});
         m_types = std::exchange(buffer.m_types, {});
+        assert(glGetError() == GL_NO_ERROR);
     }
 
     return *this;
@@ -105,6 +116,7 @@ void ComplexVertexAttributeBuffer::bind() const
 {
     GenericBuffer::bind();
     for (std::size_t i = 0; i < m_indices.size(); ++i) {
+        assert(glGetError() == GL_NO_ERROR);
         glEnableVertexAttribArray(m_indices[i]);
 
         switch (m_types[i]) {
@@ -120,13 +132,16 @@ void ComplexVertexAttributeBuffer::bind() const
             break;
         }
         glVertexAttribDivisor(m_indices[i], m_divisors[i]);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
 void ComplexVertexAttributeBuffer::unbind() const
 {
     for (std::size_t i = 0; i < m_indices.size(); ++i) {
+        assert(glGetError() == GL_NO_ERROR);
         glDisableVertexAttribArray(m_indices[i]);
+        assert(glGetError() == GL_NO_ERROR);
     }
     GenericBuffer::unbind();
 }

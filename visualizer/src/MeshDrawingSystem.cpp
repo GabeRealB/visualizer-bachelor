@@ -1,7 +1,9 @@
 #include <visualizer/MeshDrawingSystem.hpp>
 
+#include <cassert>
 #include <memory>
 
+#include <visualizer/AssetDatabase.hpp>
 #include <visualizer/Camera.hpp>
 #include <visualizer/Mesh.hpp>
 #include <visualizer/Parent.hpp>
@@ -11,6 +13,9 @@
 namespace Visualizer {
 
 using MeshList = std::vector<std::tuple<Entity, const std::shared_ptr<Mesh>*, const Material*, glm::mat4>>;
+
+using RenderFunction = void(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
+    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 
 void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
     const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
@@ -157,25 +162,42 @@ void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffe
 void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
     const glm::mat4& view_matrix, const glm::mat4& projection_matrix)
 {
+    static std::weak_ptr<ShaderProgram> oit_blend_shader_weak = std::static_pointer_cast<ShaderProgram>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_oit_blend_shader").data));
+    static std::weak_ptr<Mesh> fullscreen_quad_mesh_weak = std::static_pointer_cast<Mesh>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset("fullscreen_quad_mesh").data));
+
     target->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ target->viewport() };
 
+    constexpr std::array<float, 4> accum_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
+    constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
+    constexpr std::array<float, 4> inactive_border_color = { 0.05f, 0.05f, 0.05f, 1.0f };
+    constexpr std::array<float, 4> background_color = { 0.2f, 0.2f, 0.2f, 0.0f };
+
+    glClearBufferfv(GL_COLOR, 0, accum_clear_color.data());
+    glClearBufferfv(GL_COLOR, 1, revealage_clear_color.data());
+
     if (camera.m_active) {
-        glClearColor(0.4f, 0.05f, 0.05f, 1.0f);
+        glClearBufferfv(GL_COLOR, 2, active_border_color.data());
     } else {
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClearBufferfv(GL_COLOR, 2, inactive_border_color.data());
     }
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_SCISSOR_TEST);
     glScissor(camera_viewport.x + 10, camera_viewport.y + 10, camera_viewport.width - 20, camera_viewport.height - 20);
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    glClearBufferfv(GL_COLOR, 2, background_color.data());
 
     glEnable(GL_BLEND);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_NOTEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBlendFunci(0, GL_ONE, GL_ONE);
+    glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+    glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
     ShaderEnvironment camera_variables{};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
@@ -203,14 +225,56 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
 
         auto tmp{ mesh->get() };
         tmp->bind();
+        assert(glGetError() == GL_NO_ERROR);
         glDrawElementsInstanced(tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(),
             nullptr, tmp->instances());
+        assert(glGetError() == GL_NO_ERROR);
         tmp->unbind();
     }
 
     if (last_program != nullptr) {
         last_program->unbind();
     }
+    
+    auto oit_blend_shader = oit_blend_shader_weak.lock();
+    auto fullscreen_quad_mesh = fullscreen_quad_mesh_weak.lock();
+
+    glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_ONE);
+
+    auto& oit_blend_target = camera.m_renderTargets.at("cuboid_oid_blend");
+    oit_blend_target->bind(FramebufferBinding::ReadWrite);
+
+    ShaderEnvironment blend_variables{ *oit_blend_shader, ParameterQualifier::Material };
+
+    auto accum_texture = std::static_pointer_cast<Texture2DMultisample>(
+        std::const_pointer_cast<Texture>(target->texture(FramebufferAttachment::Color0)));
+    auto revealage_texture = std::static_pointer_cast<Texture2DMultisample>(
+        std::const_pointer_cast<Texture>(target->texture(FramebufferAttachment::Color1)));
+
+    TextureSampler<Texture2DMultisample> accum_sampler = { accum_texture, TextureSlot::Slot0 };
+    TextureSampler<Texture2DMultisample> revealage_sampler = { revealage_texture, TextureSlot::Slot1 };
+
+    blend_variables.set("accum_texture", accum_sampler);
+    blend_variables.set("revealage_texture", revealage_sampler);
+
+    oit_blend_shader->bind();
+    oit_blend_shader->apply(blend_variables);
+
+    fullscreen_quad_mesh->bind();
+
+    assert(glGetError() == GL_NO_ERROR);
+    glDrawElements(fullscreen_quad_mesh->primitiveType(), static_cast<GLsizei>(fullscreen_quad_mesh->getIndexCount()),
+        fullscreen_quad_mesh->indexType(), nullptr);
+    assert(glGetError() == GL_NO_ERROR);
+
+    fullscreen_quad_mesh->unbind();
+    oit_blend_shader->unbind();
+
+    /// Todo: Implement automatic destructors
+    blend_variables.getPtr<TextureSampler<Texture2DMultisample>>("accum_texture", 1)->~TextureSampler();
+    blend_variables.getPtr<TextureSampler<Texture2DMultisample>>("revealage_texture", 1)->~TextureSampler();
+
+    oit_blend_target->unbind(FramebufferBinding::ReadWrite);
 
     glDisable(GL_SCISSOR_TEST);
 

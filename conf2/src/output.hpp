@@ -33,12 +33,17 @@ struct GenerationOptions {
     std::filesystem::path cuboid_shader_vertex_path;
     std::filesystem::path cuboid_shader_fragment_path;
 
+    std::filesystem::path cuboid_oit_blend_shader_vertex_path;
+    std::filesystem::path cuboid_oit_blend_shader_fragment_path;
+
     std::filesystem::path view_composition_shader_vertex_path;
     std::filesystem::path view_composition_shader_fragment_path;
 
     std::string cuboid_mesh_asset_name;
     std::string cuboid_shader_asset_name;
     std::string default_framebuffer_asset_name;
+    std::string fullscreen_quad_mesh_asset_name;
+    std::string cuboid_oit_blend_shader_asset_name;
     std::string view_composition_shader_asset_name;
 };
 

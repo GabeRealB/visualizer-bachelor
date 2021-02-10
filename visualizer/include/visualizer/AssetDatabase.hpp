@@ -16,6 +16,8 @@ class AssetDatabase final {
 public:
     AssetDatabase() = delete;
 
+    static void clear();
+
     static bool hasAsset(std::string_view name);
 
     static Asset getAsset(std::string_view name);

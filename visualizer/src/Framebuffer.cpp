@@ -1,6 +1,7 @@
 #include <visualizer/Framebuffer.hpp>
 
 #include <GLFW/glfw3.h>
+#include <cassert>
 #include <iostream>
 #include <utility>
 
@@ -10,7 +11,9 @@ Framebuffer::Framebuffer()
     : m_id{ 0 }
     , m_buffers{}
 {
+    assert(glGetError() == GL_NO_ERROR);
     glGenFramebuffers(1, &m_id);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 Framebuffer::Framebuffer(std::nullptr_t)
@@ -28,7 +31,9 @@ Framebuffer::Framebuffer(Framebuffer&& other) noexcept
 Framebuffer::~Framebuffer()
 {
     if (m_id != 0) {
+        assert(glGetError() == GL_NO_ERROR);
         glDeleteFramebuffers(1, &m_id);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
@@ -36,7 +41,9 @@ Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept
 {
     if (this != &other) {
         if (m_id != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteFramebuffers(1, &m_id);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         m_id = std::exchange(other.m_id, 0);
@@ -122,6 +129,7 @@ std::optional<FramebufferBufferType> Framebuffer::bufferType(FramebufferAttachme
 
 void Framebuffer::bind(FramebufferBinding binding) const
 {
+    assert(glGetError() == GL_NO_ERROR);
     switch (binding) {
     case FramebufferBinding::Read:
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_id);
@@ -135,13 +143,16 @@ void Framebuffer::bind(FramebufferBinding binding) const
     default:
         return;
     }
+    assert(glGetError() == GL_NO_ERROR);
 
     auto view{ viewport() };
     glViewport(view.x, view.y, view.width, view.height);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Framebuffer::unbind(FramebufferBinding binding) const
 {
+    assert(glGetError() == GL_NO_ERROR);
     switch (binding) {
     case FramebufferBinding::Read:
         glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
@@ -155,6 +166,7 @@ void Framebuffer::unbind(FramebufferBinding binding) const
     default:
         return;
     }
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Framebuffer::copyTo(
@@ -203,8 +215,10 @@ void Framebuffer::copyTo(
     bind(FramebufferBinding::Read);
     framebuffer.bind(FramebufferBinding::Write);
 
+    assert(glGetError() == GL_NO_ERROR);
     glBlitFramebuffer(srcPort.x, srcPort.y, srcPort.x + srcPort.width, srcPort.y + srcPort.height, dstPort.x, dstPort.y,
         dstPort.x + dstPort.width, dstPort.y + dstPort.height, glMask, glFilter);
+    assert(glGetError() == GL_NO_ERROR);
 
     framebuffer.unbind(FramebufferBinding::Write);
     unbind(FramebufferBinding::Read);
@@ -256,6 +270,7 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
     texture->bind(TextureSlot::TmpSlot);
     texture->unbind(TextureSlot::TmpSlot);
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (texture->type()) {
     case TextureType::Texture2D:
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentGl, GL_TEXTURE_2D, texture->id(), 0);
@@ -264,6 +279,7 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentGl, GL_TEXTURE_2D_MULTISAMPLE, texture->id(), 0);
         break;
     }
+    assert(glGetError() == GL_NO_ERROR);
 
     m_buffers.insert_or_assign(attachment, std::move(texture));
     unbind(FramebufferBinding::ReadWrite);
@@ -303,7 +319,9 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
     }
 
     bind(FramebufferBinding::ReadWrite);
+    assert(glGetError() == GL_NO_ERROR);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentGl, GL_RENDERBUFFER, renderbuffer->id());
+    assert(glGetError() == GL_NO_ERROR);
     m_buffers.insert_or_assign(attachment, std::move(renderbuffer));
     unbind(FramebufferBinding::ReadWrite);
 }
@@ -340,7 +358,9 @@ void Framebuffer::removeBuffer(FramebufferAttachment attachment)
         }
 
         bind(FramebufferBinding::ReadWrite);
+        assert(glGetError() == GL_NO_ERROR);
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachmentGl, GL_RENDERBUFFER, 0);
+        assert(glGetError() == GL_NO_ERROR);
         unbind(FramebufferBinding::ReadWrite);
 
         m_buffers.erase(pos);

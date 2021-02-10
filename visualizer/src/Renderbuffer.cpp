@@ -1,5 +1,6 @@
 #include <visualizer/Renderbuffer.hpp>
 
+#include <cassert>
 #include <utility>
 
 namespace Visualizer {
@@ -8,7 +9,9 @@ Renderbuffer::Renderbuffer()
     : m_id{ 0 }
     , m_samples{ 0 }
 {
+    assert(glGetError() == GL_NO_ERROR);
     glGenRenderbuffers(1, &m_id);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 Renderbuffer::Renderbuffer(Renderbuffer&& other) noexcept
@@ -20,7 +23,9 @@ Renderbuffer::Renderbuffer(Renderbuffer&& other) noexcept
 Renderbuffer::~Renderbuffer()
 {
     if (m_id != 0) {
+        assert(glGetError() == GL_NO_ERROR);
         glDeleteRenderbuffers(1, &m_id);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
@@ -28,7 +33,9 @@ Renderbuffer& Renderbuffer::operator=(Renderbuffer&& other) noexcept
 {
     if (this != &other) {
         if (m_id != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteRenderbuffers(1, &m_id);
+            assert(glGetError() == GL_NO_ERROR);
         }
         m_id = std::exchange(other.m_id, 0);
         m_samples = std::exchange(other.m_samples, 0);
@@ -40,9 +47,19 @@ GLuint Renderbuffer::id() const { return m_id; }
 
 GLsizei Renderbuffer::samples() const { return m_samples; }
 
-void Renderbuffer::bind() const { glBindRenderbuffer(GL_RENDERBUFFER, m_id); }
+void Renderbuffer::bind() const
+{
+    assert(glGetError() == GL_NO_ERROR);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_id);
+    assert(glGetError() == GL_NO_ERROR);
+}
 
-void Renderbuffer::unbind() const { glBindRenderbuffer(GL_RENDERBUFFER, 0); }
+void Renderbuffer::unbind() const
+{
+    assert(glGetError() == GL_NO_ERROR);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
 
 void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei height, GLsizei samples)
 {
@@ -158,7 +175,9 @@ void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei h
     m_samples = samples;
 
     bind();
+    assert(glGetError() == GL_NO_ERROR);
     glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, formatGl, width, height);
+    assert(glGetError() == GL_NO_ERROR);
     unbind();
 }
 

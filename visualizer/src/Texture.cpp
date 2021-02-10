@@ -4,6 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <cassert>
 #include <utility>
 
 namespace Visualizer {
@@ -13,7 +14,9 @@ Texture2D::Texture2D()
     , m_width{ 0 }
     , m_height{ 0 }
 {
+    assert(glGetError() == GL_NO_ERROR);
     glGenTextures(1, &m_id);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 Texture2D::Texture2D(Texture2D&& other) noexcept
@@ -26,7 +29,9 @@ Texture2D::Texture2D(Texture2D&& other) noexcept
 Texture2D::~Texture2D()
 {
     if (m_id != 0) {
+        assert(glGetError() == GL_NO_ERROR);
         glDeleteTextures(1, &m_id);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
@@ -83,7 +88,9 @@ Texture2D& Texture2D::operator=(Texture2D&& other) noexcept
 {
     if (this != &other) {
         if (m_id != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteTextures(1, &m_id);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         m_id = std::exchange(other.m_id, 0);
@@ -107,6 +114,7 @@ void Texture2D::bind(TextureSlot slot)
         return;
     }
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (slot) {
     case TextureSlot::Slot0:
         glActiveTexture(GL_TEXTURE0);
@@ -161,6 +169,8 @@ void Texture2D::bind(TextureSlot slot)
     }
 
     glBindTexture(GL_TEXTURE_2D, m_id);
+    auto error = glGetError();
+    assert(error == GL_NO_ERROR);
 }
 
 void Texture2D::unbind(TextureSlot slot)
@@ -169,6 +179,7 @@ void Texture2D::unbind(TextureSlot slot)
         return;
     }
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (slot) {
     case TextureSlot::Slot0:
         glActiveTexture(GL_TEXTURE0);
@@ -223,11 +234,13 @@ void Texture2D::unbind(TextureSlot slot)
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Texture2D::addAttribute(TextureMinificationFilter filter)
 {
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     switch (filter) {
     case TextureMinificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -250,12 +263,14 @@ void Texture2D::addAttribute(TextureMinificationFilter filter)
     default:
         break;
     }
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 
 void Texture2D::addAttribute(TextureMagnificationFilter filter)
 {
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     switch (filter) {
     case TextureMagnificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -266,6 +281,7 @@ void Texture2D::addAttribute(TextureMagnificationFilter filter)
     default:
         break;
     }
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 
@@ -494,9 +510,11 @@ void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFor
     m_height = height;
 
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
     glTexImage2D(GL_TEXTURE_2D, mipmapLevel, internalFormatGl, width, height, border, formatGl, GL_UNSIGNED_BYTE, data);
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 
@@ -506,7 +524,9 @@ Texture2DMultisample::Texture2DMultisample()
     , m_width{ 0 }
     , m_height{ 0 }
 {
+    assert(glGetError() == GL_NO_ERROR);
     glGenTextures(1, &m_id);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 Texture2DMultisample::Texture2DMultisample(Texture2DMultisample&& other) noexcept
@@ -520,7 +540,9 @@ Texture2DMultisample::Texture2DMultisample(Texture2DMultisample&& other) noexcep
 Texture2DMultisample::~Texture2DMultisample()
 {
     if (m_id != 0) {
+        assert(glGetError() == GL_NO_ERROR);
         glDeleteTextures(1, &m_id);
+        assert(glGetError() == GL_NO_ERROR);
     }
 }
 
@@ -528,7 +550,9 @@ Texture2DMultisample& Texture2DMultisample::operator=(Texture2DMultisample&& oth
 {
     if (this != &other) {
         if (m_id != 0) {
+            assert(glGetError() == GL_NO_ERROR);
             glDeleteTextures(1, &m_id);
+            assert(glGetError() == GL_NO_ERROR);
         }
 
         m_id = std::exchange(other.m_id, 0);
@@ -555,6 +579,7 @@ void Texture2DMultisample::bind(TextureSlot slot)
         return;
     }
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (slot) {
     case TextureSlot::Slot0:
         glActiveTexture(GL_TEXTURE0);
@@ -609,6 +634,7 @@ void Texture2DMultisample::bind(TextureSlot slot)
     }
 
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_id);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Texture2DMultisample::unbind(TextureSlot slot)
@@ -617,6 +643,7 @@ void Texture2DMultisample::unbind(TextureSlot slot)
         return;
     }
 
+    assert(glGetError() == GL_NO_ERROR);
     switch (slot) {
     case TextureSlot::Slot0:
         glActiveTexture(GL_TEXTURE0);
@@ -671,11 +698,13 @@ void Texture2DMultisample::unbind(TextureSlot slot)
     }
 
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Texture2DMultisample::addAttribute(TextureMinificationFilter filter)
 {
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     switch (filter) {
     case TextureMinificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -698,12 +727,14 @@ void Texture2DMultisample::addAttribute(TextureMinificationFilter filter)
     default:
         break;
     }
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 
 void Texture2DMultisample::addAttribute(TextureMagnificationFilter filter)
 {
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     switch (filter) {
     case TextureMagnificationFilter::Nearest:
         glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -714,6 +745,7 @@ void Texture2DMultisample::addAttribute(TextureMagnificationFilter filter)
     default:
         break;
     }
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 
@@ -936,9 +968,11 @@ void Texture2DMultisample::initialize(
     m_height = height;
 
     bind(TextureSlot::TmpSlot);
+    assert(glGetError() == GL_NO_ERROR);
     glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_LEVEL, 0);
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormatGl, width, height, GL_TRUE);
+    assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);
 }
 

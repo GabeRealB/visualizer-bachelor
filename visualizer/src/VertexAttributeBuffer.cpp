@@ -1,6 +1,7 @@
 #include <visualizer/VertexAttributeBuffer.hpp>
 
 #include <utility>
+#include <cassert>
 
 namespace Visualizer {
 
@@ -8,6 +9,7 @@ VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GL
     GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage)
     : VertexAttributeBuffer{ index, elementSize, elementType, normalized, stride, offset, size, usage, nullptr }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GLenum elementType, GLboolean normalized,
@@ -20,6 +22,7 @@ VertexAttributeBuffer::VertexAttributeBuffer(GLuint index, GLint elementSize, GL
     , m_stride{ stride }
     , m_offset{ offset }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 VertexAttributeBuffer::VertexAttributeBuffer(const VertexAttributeBuffer& buffer)
@@ -31,6 +34,7 @@ VertexAttributeBuffer::VertexAttributeBuffer(const VertexAttributeBuffer& buffer
     , m_stride{ buffer.m_stride }
     , m_offset{ buffer.m_offset }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 VertexAttributeBuffer::VertexAttributeBuffer(VertexAttributeBuffer&& buffer) noexcept
@@ -42,10 +46,12 @@ VertexAttributeBuffer::VertexAttributeBuffer(VertexAttributeBuffer&& buffer) noe
     , m_stride{ std::exchange(buffer.m_stride, 0) }
     , m_offset{ std::exchange(buffer.m_offset, nullptr) }
 {
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void VertexAttributeBuffer::operator=(const VertexAttributeBuffer& buffer)
 {
+    assert(glGetError() == GL_NO_ERROR);
     static_cast<GenericBuffer&>(*this) = static_cast<const GenericBuffer&>(buffer);
     m_index = buffer.m_index;
     m_elementSize = buffer.m_elementSize;
@@ -53,10 +59,12 @@ void VertexAttributeBuffer::operator=(const VertexAttributeBuffer& buffer)
     m_normalized = buffer.m_normalized;
     m_stride = buffer.m_stride;
     m_offset = buffer.m_offset;
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void VertexAttributeBuffer::operator=(VertexAttributeBuffer&& buffer) noexcept
 {
+    assert(glGetError() == GL_NO_ERROR);
     static_cast<GenericBuffer&>(*this) = static_cast<GenericBuffer&&>(std::move(buffer));
     m_index = std::exchange(buffer.m_index, 0);
     m_elementSize = std::exchange(buffer.m_elementSize, 1);
@@ -64,18 +72,23 @@ void VertexAttributeBuffer::operator=(VertexAttributeBuffer&& buffer) noexcept
     m_normalized = std::exchange(buffer.m_normalized, false);
     m_stride = std::exchange(buffer.m_stride, 0);
     m_offset = std::exchange(buffer.m_offset, nullptr);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void VertexAttributeBuffer::bind() const
 {
     GenericBuffer::bind();
+    assert(glGetError() == GL_NO_ERROR);
     glEnableVertexAttribArray(m_index);
     glVertexAttribPointer(m_index, m_elementSize, m_elementType, m_normalized, m_stride, m_offset);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void VertexAttributeBuffer::unbind() const
 {
+    assert(glGetError() == GL_NO_ERROR);
     glDisableVertexAttribArray(m_index);
+    assert(glGetError() == GL_NO_ERROR);
     GenericBuffer::unbind();
 }
 
