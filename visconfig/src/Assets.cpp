@@ -239,16 +239,18 @@ void from_json(const nlohmann::json& j, FramebufferDestination& v)
 
 void to_json(nlohmann::json& j, const MeshAsset& v)
 {
-    j[MeshAsset::verticesJson] = v.vertices;
-    j[MeshAsset::indicesJson] = v.indices;
-    j[MeshAsset::texture_coords0Json] = v.texture_coords0;
+    j[MeshAsset::vertices_json] = v.vertices;
+    j[MeshAsset::indices_json] = v.indices;
+    j[MeshAsset::texture_coords0_json] = v.texture_coords0;
+    j[MeshAsset::simple_attributes_json] = v.simple_attributes;
 }
 
 void from_json(const nlohmann::json& j, MeshAsset& v)
 {
-    j[MeshAsset::verticesJson].get_to(v.vertices);
-    j[MeshAsset::indicesJson].get_to(v.indices);
-    j[MeshAsset::texture_coords0Json].get_to(v.texture_coords0);
+    j[MeshAsset::vertices_json].get_to(v.vertices);
+    j[MeshAsset::indices_json].get_to(v.indices);
+    j[MeshAsset::texture_coords0_json].get_to(v.texture_coords0);
+    j[MeshAsset::simple_attributes_json].get_to(v.simple_attributes);
 }
 
 void to_json(nlohmann::json& j, const TextureFileAsset& v)

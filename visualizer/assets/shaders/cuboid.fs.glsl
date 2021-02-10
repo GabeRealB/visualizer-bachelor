@@ -23,7 +23,33 @@ uniform sampler2D grid_texture_top;
 flat in int side;
 flat in uint enabled;
 in vec2 texture_coordinates;
+in vec4 vs_position;
+in vec3 vs_normal;
+
 out vec4 out_color;
+
+vec3 compute_diffuse_reflection(vec3 diffuse, vec3 vs_normal, vec3 vs_point_to_light) {
+    return diffuse * max(dot(vs_normal, vs_point_to_light), 0);
+}
+
+vec3 compute_specular_reflection(vec3 specular, int specular_exponent, vec3 vs_reflection, vec3 vs_point_to_light) {
+    return specular * pow(max(dot(vs_reflection, vs_point_to_light), 0), specular_exponent);
+}
+
+vec4 compute_blinn_phong(vec3 vs_normal, vec3 vs_view, vec4 diffuse_color) {
+    vec3 ambient = vec3(0.2f);
+
+    vec3 light_direction = vec3(0.0f, 0.0f, 1.0f);
+    vec3 h = normalize(-light_direction + vs_view);
+
+    vec3 light_intensity = vec3(0.4f);
+    vec3 diffuse_reflection = compute_diffuse_reflection(diffuse_color.xyz, vs_normal, -light_direction);
+    vec3 specular_reflection = compute_specular_reflection(vec3(0.1), 1, h, vs_normal);
+
+    vec3 color = ambient + light_intensity * (diffuse_reflection + specular_reflection);
+
+    return vec4(color, diffuse_color.a);
+}
 
 void main() {
     vec4 texture_color = vec4(0.0f);
@@ -54,19 +80,25 @@ void main() {
         texture_color = vec4(texture(grid_texture_side, tex_coords).xyz, 1.0f);
     }
 
+    vec4 diffuse_color;
+
     if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
         if (enabled == 1) {
-            out_color = active_border_color;
+            diffuse_color = active_border_color;
         } else {
-            out_color = inactive_border_color;
+            diffuse_color = inactive_border_color;
         }
     } else {
         if (enabled == 1) {
-            out_color = active_fill_color;
+            diffuse_color = active_fill_color;
         } else {
-            out_color = inactive_fill_color;
+            diffuse_color = inactive_fill_color;
         }
     }
+
+    vec3 n = normalize(vs_normal);
+    vec3 p = normalize(-vs_position).xyz;
+    out_color = compute_blinn_phong(n, p, diffuse_color);
 
     if (out_color.a == 0.0f) {
         discard;

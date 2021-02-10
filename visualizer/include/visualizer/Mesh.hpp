@@ -94,6 +94,9 @@ public:
      */
     void setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveType);
 
+    void set_simple_attribute(const std::string& name, GLuint index, GLint element_size, GLenum element_type,
+        GLboolean normalized, GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage, const void* data);
+
     void set_complex_attribute(const std::string& name, std::span<const VertexAttributeDesc> vertex_attributes,
         GLsizeiptr size, GLenum usage, const void* data);
 

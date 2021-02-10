@@ -2,8 +2,10 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
@@ -26,14 +28,61 @@ struct AssetData {
 void to_json(nlohmann::json& j, const std::shared_ptr<AssetData>& v, AssetType type);
 void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType type);
 
+enum class MeshAttributeElementSize {
+    One,
+    Two,
+    Three,
+    Four,
+    BGRA,
+};
+
+enum class MeshAttributeElementType {
+    Byte,
+    UByte,
+    Short,
+    UShort,
+    Int,
+    UInt,
+    HFloat,
+    Float,
+    Double,
+    Fixed,
+};
+
+enum class MeshAttributeUsage {
+    StreamDraw,
+    StreamRead,
+    StreamCopy,
+    StaticDraw,
+    StaticRead,
+    StaticCopy,
+    DynamicDraw,
+    DynamicRead,
+    DynamicCopy,
+};
+
+struct SimpleMeshAttribute {
+    bool normalized;
+    std::size_t size;
+    unsigned int index;
+    std::size_t stride;
+    std::size_t offset;
+    MeshAttributeUsage usage;
+    std::vector<std::byte> data;
+    MeshAttributeElementSize element_size;
+    MeshAttributeElementType element_type;
+};
+
 struct MeshAsset : public AssetData {
     std::vector<std::array<float, 4>> vertices;
     std::vector<std::uint32_t> indices;
     std::vector<std::array<float, 4>> texture_coords0;
+    std::map<std::string, SimpleMeshAttribute> simple_attributes;
 
-    static constexpr const char* verticesJson{ "vertices" };
-    static constexpr const char* indicesJson{ "indices" };
-    static constexpr const char* texture_coords0Json{ "texture_coords0" };
+    static constexpr const char* vertices_json{ "vertices" };
+    static constexpr const char* indices_json{ "indices" };
+    static constexpr const char* texture_coords0_json{ "texture_coords0" };
+    static constexpr const char* simple_attributes_json{ "simple_attributes" };
 };
 
 enum class TextureFormat { R, RG, RGB, RGBA, R8, RGBA16F };
@@ -127,6 +176,42 @@ struct DefaultFramebufferAsset : public AssetData {
 
 /*Enums*/
 
+NLOHMANN_JSON_SERIALIZE_ENUM(MeshAttributeElementSize,
+    {
+        { MeshAttributeElementSize::One, "1" },
+        { MeshAttributeElementSize::Two, "2" },
+        { MeshAttributeElementSize::Three, "3" },
+        { MeshAttributeElementSize::Four, "4" },
+        { MeshAttributeElementSize::BGRA, "BGRA" },
+    })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(MeshAttributeElementType,
+    {
+        { MeshAttributeElementType::Byte, "byte" },
+        { MeshAttributeElementType::UByte, "u_byte" },
+        { MeshAttributeElementType::Short, "short" },
+        { MeshAttributeElementType::UShort, "u_short" },
+        { MeshAttributeElementType::Int, "int" },
+        { MeshAttributeElementType::UInt, "u_int" },
+        { MeshAttributeElementType::HFloat, "h_float" },
+        { MeshAttributeElementType::Float, "float" },
+        { MeshAttributeElementType::Double, "double" },
+        { MeshAttributeElementType::Fixed, "fixed" },
+    })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(MeshAttributeUsage,
+    {
+        { MeshAttributeUsage::StreamDraw, "stream_draw" },
+        { MeshAttributeUsage::StreamRead, "stream_read" },
+        { MeshAttributeUsage::StreamCopy, "stream_copy" },
+        { MeshAttributeUsage::StaticDraw, "static_draw" },
+        { MeshAttributeUsage::StaticRead, "static_read" },
+        { MeshAttributeUsage::StaticCopy, "static_copy" },
+        { MeshAttributeUsage::DynamicDraw, "dynamic_draw" },
+        { MeshAttributeUsage::DynamicRead, "dynamic_read" },
+        { MeshAttributeUsage::DynamicCopy, "dynamic_copy" },
+    })
+
 void to_json(nlohmann::json& j, const AssetType& v);
 void from_json(const nlohmann::json& j, AssetType& v);
 
@@ -172,6 +257,9 @@ void to_json(nlohmann::json& j, const DefaultFramebufferAsset& v);
 void from_json(const nlohmann::json& j, DefaultFramebufferAsset& v);
 
 /*Internal Structs*/
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    SimpleMeshAttribute, normalized, size, index, stride, offset, usage, data, element_size, element_type)
+
 void to_json(nlohmann::json& j, const FramebufferAttachment& v);
 void from_json(const nlohmann::json& j, FramebufferAttachment& v);
 

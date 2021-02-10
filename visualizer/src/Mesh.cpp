@@ -185,6 +185,31 @@ void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveT
     m_primitiveType = primitiveType;
 }
 
+void Mesh::set_simple_attribute(const std::string& name, GLuint index, GLint element_size, GLenum element_type,
+    GLboolean normalized, GLsizei stride, const void* offset, GLsizeiptr size, GLenum usage, const void* data)
+{
+    bind();
+
+    auto buffer_location{ m_attributes_string_map.find(name) };
+    if (buffer_location != m_attributes_string_map.end()) {
+        auto buffer_key_value{ m_buffers.find(buffer_location->second) };
+        auto& buffer{ buffer_key_value->second };
+        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        m_buffers.erase(buffer_key_value);
+    }
+
+    auto buffer{ std::make_shared<VertexAttributeBuffer>(
+        index, element_size, element_type, normalized, stride, offset, size, usage, data) };
+    buffer->bind();
+
+    unbind();
+    buffer->unbind();
+
+    auto key{ m_key++ };
+    m_attributes_string_map[name] = key;
+    m_buffers[key] = buffer;
+}
+
 void Mesh::set_complex_attribute(const std::string& name, std::span<const VertexAttributeDesc> vertex_attributes,
     GLsizeiptr size, GLenum usage, const void* data)
 {

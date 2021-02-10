@@ -72,6 +72,102 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsse
     mesh->setIndices(indices.data(), static_cast<GLsizeiptr>(indices.size()), GL_TRIANGLES);
     mesh->setTextureCoordinates0(tex_coords0.data(), static_cast<GLsizeiptr>(tex_coords0.size()));
 
+    for (auto& simple_attribute : asset.simple_attributes) {
+        GLuint index = static_cast<GLuint>(simple_attribute.second.index);
+        GLint element_size;
+        GLenum element_type;
+        GLboolean normalized = simple_attribute.second.normalized ? GL_TRUE : GL_FALSE;
+        GLsizei stride = static_cast<GLsizei>(simple_attribute.second.stride);
+        const void* offset = reinterpret_cast<const void*>(simple_attribute.second.offset);
+        GLsizeiptr size = static_cast<GLsizeiptr>(simple_attribute.second.size);
+        GLenum usage;
+        const void* data = simple_attribute.second.data.data();
+
+        switch (simple_attribute.second.element_size) {
+        case Visconfig::Assets::MeshAttributeElementSize::One:
+            element_size = 1;
+            break;
+        case Visconfig::Assets::MeshAttributeElementSize::Two:
+            element_size = 2;
+            break;
+        case Visconfig::Assets::MeshAttributeElementSize::Three:
+            element_size = 3;
+            break;
+        case Visconfig::Assets::MeshAttributeElementSize::Four:
+            element_size = 4;
+            break;
+        case Visconfig::Assets::MeshAttributeElementSize::BGRA:
+            element_size = GL_BGRA;
+            break;
+        }
+
+        switch (simple_attribute.second.element_type) {
+        case Visconfig::Assets::MeshAttributeElementType::Byte:
+            element_type = GL_BYTE;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::UByte:
+            element_type = GL_UNSIGNED_BYTE;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::Short:
+            element_type = GL_SHORT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::UShort:
+            element_type = GL_UNSIGNED_SHORT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::Int:
+            element_type = GL_INT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::UInt:
+            element_type = GL_UNSIGNED_INT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::HFloat:
+            element_type = GL_HALF_FLOAT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::Float:
+            element_type = GL_FLOAT;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::Double:
+            element_type = GL_DOUBLE;
+            break;
+        case Visconfig::Assets::MeshAttributeElementType::Fixed:
+            element_type = GL_FIXED;
+            break;
+        }
+
+        switch (simple_attribute.second.usage) {
+        case Visconfig::Assets::MeshAttributeUsage::StreamDraw:
+            usage = GL_STREAM_DRAW;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::StreamRead:
+            usage = GL_STREAM_READ;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::StreamCopy:
+            usage = GL_STREAM_COPY;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::StaticDraw:
+            usage = GL_STATIC_DRAW;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::StaticRead:
+            usage = GL_STATIC_READ;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::StaticCopy:
+            usage = GL_STATIC_COPY;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::DynamicDraw:
+            usage = GL_DYNAMIC_DRAW;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::DynamicRead:
+            usage = GL_DYNAMIC_READ;
+            break;
+        case Visconfig::Assets::MeshAttributeUsage::DynamicCopy:
+            usage = GL_DYNAMIC_COPY;
+            break;
+        }
+
+        mesh->set_simple_attribute(
+            simple_attribute.first, index, element_size, element_type, normalized, stride, offset, size, usage, data);
+    }
+
     AssetDatabase::setAsset(name, { getTypeId<Mesh>(), std::move(mesh) });
 }
 
@@ -1353,7 +1449,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
 
     const std::array<VertexAttributeDesc, 1> enabled_buffer{
         VertexAttributeDesc{
-            2,
+            3,
             1,
             GL_UNSIGNED_INT,
             GL_FALSE,
@@ -1366,7 +1462,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
 
     const std::array<VertexAttributeDesc, 4> model_matrix_buffer{
         VertexAttributeDesc{
-            3,
+            4,
             4,
             GL_FLOAT,
             GL_FALSE,
@@ -1376,7 +1472,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             VertexAttributeType::Real,
         },
         VertexAttributeDesc{
-            4,
+            5,
             4,
             GL_FLOAT,
             GL_FALSE,
@@ -1386,7 +1482,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             VertexAttributeType::Real,
         },
         VertexAttributeDesc{
-            5,
+            6,
             4,
             GL_FLOAT,
             GL_FALSE,
@@ -1396,7 +1492,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             VertexAttributeType::Real,
         },
         VertexAttributeDesc{
-            6,
+            7,
             4,
             GL_FLOAT,
             GL_FALSE,

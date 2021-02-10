@@ -13,9 +13,9 @@ namespace Visualizer {
 using MeshList = std::vector<std::tuple<Entity, const std::shared_ptr<Mesh>*, const Material*, glm::mat4>>;
 
 void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_projection_matrix);
+    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_projection_matrix);
+    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 
 MeshDrawingSystem::MeshDrawingSystem()
     : m_mesh_query{ EntityDBQuery{}.with_component<std::shared_ptr<Mesh>, Material, Transform, RenderLayer>() }
@@ -54,7 +54,6 @@ void MeshDrawingSystem::run(void*)
                         -camera->orthographicHeight / 2.0f, camera->orthographicHeight / 2.0f, -camera->far / 2.0f,
                         camera->far / 2.0f);
                 }
-                auto view_projection_matrix = projection_matrix * view_matrix;
 
                 MeshList mesh_list{};
 
@@ -83,13 +82,14 @@ void MeshDrawingSystem::run(void*)
                     [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,
                         const RenderLayer* layer) -> bool { return (*layer & camera->m_visibleLayers); });
 
-                cuboid_render_pipeline(*camera, camera->m_renderTargets["cuboid"], mesh_list, view_projection_matrix);
+                cuboid_render_pipeline(
+                    *camera, camera->m_renderTargets["cuboid"], mesh_list, view_matrix, projection_matrix);
             });
     });
 }
 
 void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_projection_matrix)
+    const glm::mat4& view_matrix, const glm::mat4& projection_matrix)
 {
     target->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ target->viewport() };
@@ -116,6 +116,8 @@ void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffe
 
     ShaderEnvironment camera_variables{};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
+
+    auto view_projection_matrix = projection_matrix * view_matrix;
 
     for (auto& mesh_info : mesh_list) {
         auto& mesh{ std::get<1>(mesh_info) };
@@ -153,7 +155,7 @@ void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffe
 }
 
 void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_projection_matrix)
+    const glm::mat4& view_matrix, const glm::mat4& projection_matrix)
 {
     target->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ target->viewport() };
@@ -171,6 +173,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
     glDepthFunc(GL_NOTEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -190,7 +193,8 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
             last_program = material->m_shader;
             camera_variables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
             camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
-            camera_variables.set("view_projection_matrix", view_projection_matrix);
+            camera_variables.set("view_matrix", view_matrix);
+            camera_variables.set("projection_matrix", projection_matrix);
             material->m_shader->bind();
         }
 

@@ -1,6 +1,7 @@
 #include "asset_utilities.hpp"
 
 #include <cmath>
+#include <numbers>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
@@ -74,6 +75,128 @@ Visconfig::Asset create_cuboid_mesh_asset(const std::string& asset_name)
         vertices[6],
     };
 
+    /*
+    constexpr std::array<float, 3> normals[]{
+        { -1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3 }, // lower-left-front
+        { 1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3 }, // lower-right-front
+        { 1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3 }, // top-right-front
+        { -1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3 }, // top-left-front
+
+        { -1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3 }, // lower-left-back
+        { 1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3 }, // lower-right-back
+        { 1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3 }, // top-right-back
+        { -1.0f / std::numbers::sqrt3, 1.0f / std::numbers::sqrt3, -1.0f / std::numbers::sqrt3 }, // top-left-back
+    };
+
+    constexpr std::array<float, 3> flattened_normals[]{
+        // front
+        normals[0],
+        normals[1],
+        normals[2],
+        normals[0],
+        normals[2],
+        normals[3],
+
+        // top
+        normals[3],
+        normals[2],
+        normals[6],
+        normals[3],
+        normals[6],
+        normals[7],
+
+        // right
+        normals[1],
+        normals[5],
+        normals[6],
+        normals[1],
+        normals[6],
+        normals[2],
+
+        // left
+        normals[4],
+        normals[0],
+        normals[3],
+        normals[4],
+        normals[3],
+        normals[7],
+
+        // bottom
+        normals[4],
+        normals[5],
+        normals[1],
+        normals[4],
+        normals[1],
+        normals[0],
+
+        // back
+        normals[5],
+        normals[4],
+        normals[7],
+        normals[5],
+        normals[7],
+        normals[6],
+    };
+    */
+    constexpr std::array<float, 3> normals[]{
+        { 0.0f, 0.0f, 1.0f }, // front
+        { 0.0f, 1.0f, 0.0f }, // top
+        { 1.0f, 0.0f, 0.0f }, // right
+        { -1.0f, 0.0f, 0.0f }, // left
+        { 0.0f, -1.0f, 0.0f }, // bottom
+        { 0.0f, 0.0f, -1.0f }, // back
+    };
+
+    constexpr std::array<float, 3> flattened_normals[]{
+        // front
+        normals[0],
+        normals[0],
+        normals[0],
+        normals[0],
+        normals[0],
+        normals[0],
+
+        // top
+        normals[1],
+        normals[1],
+        normals[1],
+        normals[1],
+        normals[1],
+        normals[1],
+
+        // right
+        normals[2],
+        normals[2],
+        normals[2],
+        normals[2],
+        normals[2],
+        normals[2],
+
+        // left
+        normals[3],
+        normals[3],
+        normals[3],
+        normals[3],
+        normals[3],
+        normals[3],
+
+        // bottom
+        normals[4],
+        normals[4],
+        normals[4],
+        normals[4],
+        normals[4],
+        normals[4],
+
+        // back
+        normals[5],
+        normals[5],
+        normals[5],
+        normals[5],
+        normals[5],
+        normals[5],
+    };
+
     constexpr std::array<float, 3> tex_coords[]{
         { 0.0f, 0.0f, 0.0f }, // lower-left
         { 1.0f, 0.0f, 0.0f }, // lower-right
@@ -134,11 +257,28 @@ Visconfig::Asset create_cuboid_mesh_asset(const std::string& asset_name)
     constexpr uint32_t indices[]{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
         24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35 };
 
+    constexpr std::size_t normals_buffer_size = sizeof(flattened_normals);
+
+    std::vector<std::byte> normals_buffer(normals_buffer_size, std::byte{});
+    std::memcpy(normals_buffer.data(), flattened_normals, normals_buffer_size);
+
     mesh_data->vertices
         = std::vector<std::array<float, 4>>{ std::begin(flattened_vertices), std::end(flattened_vertices) };
     mesh_data->indices = std::vector<std::uint32_t>{ std::begin(indices), std::end(indices) };
     mesh_data->texture_coords0
         = std::vector<std::array<float, 4>>{ std::begin(flattened_tex_coords), std::end(flattened_tex_coords) };
+    mesh_data->simple_attributes.insert({ "normals",
+        {
+            .normalized = false,
+            .size = normals_buffer_size,
+            .index = 2,
+            .stride = 0,
+            .offset = 0,
+            .usage = Visconfig::Assets::MeshAttributeUsage::StaticDraw,
+            .data = std::move(normals_buffer),
+            .element_size = Visconfig::Assets::MeshAttributeElementSize::Three,
+            .element_type = Visconfig::Assets::MeshAttributeElementType::Float,
+        } });
 
     return asset;
 }
