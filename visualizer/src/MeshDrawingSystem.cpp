@@ -170,12 +170,15 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     target->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ target->viewport() };
 
+    constexpr std::array<GLenum, 3> buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    
     constexpr std::array<float, 4> accum_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> inactive_border_color = { 0.05f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> background_color = { 0.2f, 0.2f, 0.2f, 0.0f };
 
+    glDrawBuffers(3, buffers.data());
     glClearBufferfv(GL_COLOR, 0, accum_clear_color.data());
     glClearBufferfv(GL_COLOR, 1, revealage_clear_color.data());
 
@@ -235,7 +238,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     if (last_program != nullptr) {
         last_program->unbind();
     }
-    
+
     auto oit_blend_shader = oit_blend_shader_weak.lock();
     auto fullscreen_quad_mesh = fullscreen_quad_mesh_weak.lock();
 
