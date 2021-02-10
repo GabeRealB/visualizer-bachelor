@@ -99,6 +99,8 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsse
         case Visconfig::Assets::MeshAttributeElementSize::BGRA:
             element_size = GL_BGRA;
             break;
+        default:
+            element_size = 0;
         }
 
         switch (simple_attribute.second.element_type) {
@@ -132,6 +134,8 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsse
         case Visconfig::Assets::MeshAttributeElementType::Fixed:
             element_type = GL_FIXED;
             break;
+        default:
+            element_type = 0;
         }
 
         switch (simple_attribute.second.usage) {
@@ -162,6 +166,8 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsse
         case Visconfig::Assets::MeshAttributeUsage::DynamicCopy:
             usage = GL_DYNAMIC_COPY;
             break;
+        default:
+            usage = 0;
         }
 
         mesh->set_simple_attribute(

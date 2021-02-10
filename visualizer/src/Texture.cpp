@@ -169,8 +169,7 @@ void Texture2D::bind(TextureSlot slot)
     }
 
     glBindTexture(GL_TEXTURE_2D, m_id);
-    auto error = glGetError();
-    assert(error == GL_NO_ERROR);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void Texture2D::unbind(TextureSlot slot)
@@ -963,7 +962,10 @@ void Texture2DMultisample::initialize(
         return;
     }
 
-    m_samples = samples;
+    GLint max_samples;
+    glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
+
+    m_samples = samples < max_samples ? samples : max_samples;
     m_width = width;
     m_height = height;
 
