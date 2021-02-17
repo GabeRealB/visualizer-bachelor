@@ -63,7 +63,10 @@ struct CuboidCommandList {
 };
 
 struct ViewCommandList {
+    float size;
+    bool movable;
     std::string view_name;
+    std::array<float, 2> position;
     std::vector<CuboidCommandList> cuboids;
 };
 

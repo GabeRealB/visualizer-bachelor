@@ -52,14 +52,14 @@ def generate(config, template, output):
     # Extract views
     for name, view in config_data["CUBES"].items():
         cuboids = []
-        mapping_color_zip = zip(view["mapping"], view["COLOR"])
-        for mapping, color in mapping_color_zip:
+        view_zip = zip(view["mapping"], view["COLOR"])
+        for mapping, color in view_zip:
             cuboids.append({"mapping": mapping, "color": color})
-        views[name] = cuboids
+        views[name] = {"cuboids": cuboids, "arrangement": view["arrangement"]}
 
     # Generate cuboid mappings
     for view_name, view in views.items():
-        for cuboid in view:
+        for cuboid in view["cuboids"]:
             mappings = []
             mapping_info = cuboid["mapping"]
 
@@ -92,7 +92,16 @@ def generate(config, template, output):
             .format(container_name) \
             .expandtabs(4)
 
-        for cuboid in view:
+        code_str = code_str + """\t{}.set_size({});\n""" \
+            .format(container_name, view["arrangement"]["size"])
+
+        code_str = code_str + """\t{}.set_movable({});\n""" \
+            .format(container_name, str(view["arrangement"]["movable"]).lower())
+
+        code_str = code_str + """\t{}.set_position({}, {});\n""" \
+            .format(container_name, view["arrangement"]["position"][0], view["arrangement"]["position"][1])
+
+        for cuboid in view["cuboids"]:
             cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")
             fill_color = ", ".join([str(c) for c in cuboid["color"][0]])
             unused_color = ", ".join([str(c) for c in cuboid["color"][1]])
@@ -104,7 +113,7 @@ def generate(config, template, output):
                 .expandtabs(4)
 
             requirements_name = "r_" + str(uuid.uuid4()).replace("-", "_")
-            requirements = ",".join(map(lambda v:  """ "{}" """.format(v), cuboid["mapping"][0]))
+            requirements = ",".join(map(lambda v: """ "{}" """.format(v), cuboid["mapping"][0]))
             code_str = code_str + """\tauto {} = {};\n""" \
                 .format(requirements_name, set_constr_template.format(requirements)) \
                 .expandtabs(4)

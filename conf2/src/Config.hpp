@@ -244,6 +244,22 @@ public:
     ViewContainer& operator=(const ViewContainer& other) = default;
     ViewContainer& operator=(ViewContainer&& other) noexcept = default;
 
+    float size() const { return m_size; }
+
+    bool movable() const { return m_movable; }
+
+    std::array<float, 2> position() const { return m_position; }
+
+    void set_size(float size) { m_size = size; }
+
+    void set_movable(bool movable) { m_movable = movable; }
+
+    void set_position(float x, float y)
+    {
+        m_position[0] = x;
+        m_position[1] = y;
+    }
+
     void add_cuboid(const CuboidContainer& cuboid, const std::set<std::string>& requirements)
     {
         m_cuboids.push_back(cuboid);
@@ -266,6 +282,9 @@ public:
     }
 
 private:
+    float m_size;
+    bool m_movable;
+    std::array<float, 2> m_position;
     std::vector<CuboidContainer> m_cuboids;
     std::vector<std::set<std::string>> m_variable_requirements;
 };

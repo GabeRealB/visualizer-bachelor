@@ -171,7 +171,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     auto camera_viewport{ target->viewport() };
 
     constexpr std::array<GLenum, 3> buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-    
+
     constexpr std::array<float, 4> accum_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
