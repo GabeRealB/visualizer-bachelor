@@ -448,9 +448,14 @@ private:
     std::unordered_map<std::string_view, GLuint> m_parameterLocations;
 };
 
-struct Material {
-    ShaderEnvironment m_materialVariables;
+struct MaterialPass {
+    ShaderEnvironment m_material_variables;
     std::shared_ptr<ShaderProgram> m_shader;
+};
+
+struct Material {
+    std::string m_pipeline;
+    std::vector<MaterialPass> m_passes;
 };
 
 }

@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <visualizer/Framebuffer.hpp>
 #include <visualizer/RenderLayer.hpp>
@@ -21,7 +22,7 @@ struct Camera {
     float orthographicHeight;
     RenderLayer m_visibleLayers;
     std::shared_ptr<Framebuffer> m_renderTarget;
-    std::unordered_map<std::string, std::shared_ptr<Framebuffer>> m_renderTargets;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<Framebuffer>>> m_renderTargets;
 };
 
 }

@@ -199,54 +199,6 @@ void from_json(const nlohmann::json& j, ComponentType& v)
     }
 }
 
-std::unordered_map<MaterialAttributeType, std::string> sMaterialAttributeTypeStringNameMap{
-    { MaterialAttributeType::Bool, "bool" },
-    { MaterialAttributeType::Int, "int" },
-    { MaterialAttributeType::UInt, "uint" },
-    { MaterialAttributeType::Float, "float" },
-    { MaterialAttributeType::BVec2, "bvec2" },
-    { MaterialAttributeType::BVec3, "bvec3" },
-    { MaterialAttributeType::BVec4, "bvec4" },
-    { MaterialAttributeType::IVec2, "ivec2" },
-    { MaterialAttributeType::IVec3, "ivec3" },
-    { MaterialAttributeType::IVec4, "ivec4" },
-    { MaterialAttributeType::UVec2, "uvec2" },
-    { MaterialAttributeType::UVec3, "uvec3" },
-    { MaterialAttributeType::UVec4, "uvec4" },
-    { MaterialAttributeType::Vec2, "vec2" },
-    { MaterialAttributeType::Vec3, "vec3" },
-    { MaterialAttributeType::Vec4, "vec4" },
-    { MaterialAttributeType::Mat2x2, "mat2x2" },
-    { MaterialAttributeType::Mat2x3, "mat2x3" },
-    { MaterialAttributeType::Mat2x4, "mat2x4" },
-    { MaterialAttributeType::Mat3x2, "mat3x2" },
-    { MaterialAttributeType::Mat3x3, "mat3x3" },
-    { MaterialAttributeType::Mat3x4, "mat3x4" },
-    { MaterialAttributeType::Mat4x2, "mat4x2" },
-    { MaterialAttributeType::Mat4x3, "mat4x3" },
-    { MaterialAttributeType::Mat4x4, "mat4x4" },
-    { MaterialAttributeType::Sampler2D, "sampler2D" },
-};
-
-void to_json(nlohmann::json& j, const MaterialAttributeType& v) { j = sMaterialAttributeTypeStringNameMap[v]; }
-
-void from_json(const nlohmann::json& j, MaterialAttributeType& v)
-{
-    std::string type{};
-    j.get_to(type);
-
-    auto predicate{ [&](const decltype(sMaterialAttributeTypeStringNameMap)::value_type& pair) {
-        return pair.second == type;
-    } };
-    if (auto pos{ std::find_if(
-            sMaterialAttributeTypeStringNameMap.begin(), sMaterialAttributeTypeStringNameMap.end(), predicate) };
-        pos != sMaterialAttributeTypeStringNameMap.end()) {
-        v = pos->first;
-    } else {
-        std::abort();
-    }
-}
-
 std::unordered_map<IterationOrder, std::string> sIterationOrderStringNameMap{
     { IterationOrder::XYZ, "xyz" },
     { IterationOrder::XZY, "xzy" },
@@ -364,17 +316,7 @@ void to_json(nlohmann::json& j, const ParentComponent& v) { j[ParentComponent::i
 
 void from_json(const nlohmann::json& j, ParentComponent& v) { j[ParentComponent::idJson].get_to(v.id); }
 
-void to_json(nlohmann::json& j, const MaterialComponent& v)
-{
-    j[MaterialComponent::assetJson] = v.asset;
-    j[MaterialComponent::attributesJson] = v.attributes;
-}
-
-void from_json(const nlohmann::json& j, MaterialComponent& v)
-{
-    j[MaterialComponent::assetJson].get_to(v.asset);
-    j[MaterialComponent::attributesJson].get_to(v.attributes);
-}
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MaterialComponent, pipeline, passes)
 
 void to_json(nlohmann::json& j, const LayerComponent& v) { j[LayerComponent::maskJson] = v.mask; }
 
@@ -739,6 +681,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<MaterialAttributeData>& v,
     case MaterialAttributeType::Sampler2D:
         to_json(j, *std::static_pointer_cast<Sampler2DMaterialAttribute>(v));
         break;
+    case MaterialAttributeType::Sampler2DMS:
+        to_json(j, *std::static_pointer_cast<Sampler2DMSMaterialAttribute>(v));
+        break;
     }
 }
 
@@ -1023,6 +968,11 @@ void from_json(
     } break;
     case MaterialAttributeType::Sampler2D: {
         auto ptr{ std::make_shared<Sampler2DMaterialAttribute>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<MaterialAttributeData>(ptr);
+    } break;
+    case MaterialAttributeType::Sampler2DMS: {
+        auto ptr{ std::make_shared<Sampler2DMSMaterialAttribute>() };
         from_json(j, *ptr);
         v = std::static_pointer_cast<MaterialAttributeData>(ptr);
     } break;

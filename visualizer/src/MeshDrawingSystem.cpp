@@ -14,13 +14,13 @@ namespace Visualizer {
 
 using MeshList = std::vector<std::tuple<Entity, const std::shared_ptr<Mesh>*, const Material*, glm::mat4>>;
 
-using RenderFunction = void(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
+using RenderFunction = void(const Camera& camera, const std::vector<std::shared_ptr<Framebuffer>>& targets,
+    const MeshList& mesh_list, const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 
-void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
-void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
+void cube_render_pipeline(const Camera& camera, const std::vector<std::shared_ptr<Framebuffer>>& targets,
+    const MeshList& mesh_list, const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
+void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_ptr<Framebuffer>>& targets,
+    const MeshList& mesh_list, const glm::mat4& view_matrix, const glm::mat4& projection_matrix);
 
 MeshDrawingSystem::MeshDrawingSystem()
     : m_mesh_query{ EntityDBQuery{}.with_component<std::shared_ptr<Mesh>, Material, Transform, RenderLayer>() }
@@ -40,13 +40,6 @@ void MeshDrawingSystem::run(void*)
 
         m_camera_query.query_db_window(database_context)
             .for_each<Camera, Transform>([&](Camera* camera, Transform* transform) {
-                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                for (auto& target : camera->m_renderTargets) {
-                    target.second->bind(FramebufferBinding::Write);
-                    glClear(GL_COLOR_BUFFER_BIT);
-                    target.second->unbind(FramebufferBinding::Write);
-                }
-
                 auto view_matrix{ glm::identity<glm::mat4>() };
                 view_matrix = glm::toMat4(glm::inverse(transform->rotation))
                     * glm::translate(view_matrix, -transform->position);
@@ -129,17 +122,17 @@ void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffe
         auto& material{ std::get<2>(mesh_info) };
         auto& model_matrix{ std::get<3>(mesh_info) };
 
-        if (last_program != material->m_shader) {
-            last_program = material->m_shader;
-            camera_variables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+        if (last_program != material->m_passes[0].m_shader) {
+            last_program = material->m_passes[0].m_shader;
+            camera_variables = ShaderEnvironment{ *material->m_passes[0].m_shader, ParameterQualifier::Program };
             camera_variables.set("viewProjectionMatrix", view_projection_matrix);
-            material->m_shader->bind();
+            material->m_passes[0].m_shader->bind();
         }
 
         camera_variables.set("modelMatrix", model_matrix);
 
         last_program->apply(camera_variables);
-        last_program->apply(material->m_materialVariables);
+        last_program->apply(material->m_passes[0].m_material_variables);
 
         auto tmp{ mesh->get() };
         tmp->bind();
@@ -159,16 +152,17 @@ void cube_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffe
     glDisable(GL_BLEND);
 }
 
-void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuffer>& target, const MeshList& mesh_list,
-    const glm::mat4& view_matrix, const glm::mat4& projection_matrix)
+void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_ptr<Framebuffer>>& targets,
+    const MeshList& mesh_list, const glm::mat4& view_matrix, const glm::mat4& projection_matrix)
 {
-    static std::weak_ptr<ShaderProgram> oit_blend_shader_weak = std::static_pointer_cast<ShaderProgram>(
-        std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_oit_blend_shader").data));
     static std::weak_ptr<Mesh> fullscreen_quad_mesh_weak = std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset("fullscreen_quad_mesh").data));
 
-    target->bind(FramebufferBinding::ReadWrite);
-    auto camera_viewport{ target->viewport() };
+    constexpr std::size_t transparent_pass_idx = 0;
+    constexpr std::size_t oit_blend_pass_idx = 1;
+
+    targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
+    auto camera_viewport{ targets[transparent_pass_idx]->viewport() };
 
     constexpr std::array<GLenum, 3> buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
@@ -205,26 +199,28 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
     ShaderEnvironment camera_variables{};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
 
+    // transparent pass
     for (auto& mesh_info : mesh_list) {
         auto& mesh{ std::get<1>(mesh_info) };
         auto& material{ std::get<2>(mesh_info) };
 
-        if (last_program != material->m_shader) {
+        if (last_program != material->m_passes[transparent_pass_idx].m_shader) {
             constexpr float orthographic_far_factor = 1.4f;
             constexpr float orthographic_near_factor = 3.5f;
             auto orthographic_depth = 1 - std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
             auto orthographic_factor = std::lerp(orthographic_far_factor, orthographic_near_factor, orthographic_depth);
 
-            last_program = material->m_shader;
-            camera_variables = ShaderEnvironment{ *material->m_shader, ParameterQualifier::Program };
+            last_program = material->m_passes[transparent_pass_idx].m_shader;
+            camera_variables
+                = ShaderEnvironment{ *material->m_passes[transparent_pass_idx].m_shader, ParameterQualifier::Program };
             camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
             camera_variables.set("view_matrix", view_matrix);
             camera_variables.set("projection_matrix", projection_matrix);
-            material->m_shader->bind();
+            material->m_passes[transparent_pass_idx].m_shader->bind();
         }
 
         last_program->apply(camera_variables);
-        last_program->apply(material->m_materialVariables);
+        last_program->apply(material->m_passes[transparent_pass_idx].m_material_variables);
 
         auto tmp{ mesh->get() };
         tmp->bind();
@@ -239,26 +235,16 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
         last_program->unbind();
     }
 
-    auto oit_blend_shader = oit_blend_shader_weak.lock();
+    // oit-blend pass
     auto fullscreen_quad_mesh = fullscreen_quad_mesh_weak.lock();
 
     glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_ONE);
 
-    auto& oit_blend_target = camera.m_renderTargets.at("cuboid_oid_blend");
+    auto& oit_blend_shader = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_shader;
+    auto& blend_variables = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_material_variables;
+
+    auto& oit_blend_target = targets[oit_blend_pass_idx];
     oit_blend_target->bind(FramebufferBinding::ReadWrite);
-
-    ShaderEnvironment blend_variables{ *oit_blend_shader, ParameterQualifier::Material };
-
-    auto accum_texture = std::static_pointer_cast<Texture2DMultisample>(
-        std::const_pointer_cast<Texture>(target->texture(FramebufferAttachment::Color0)));
-    auto revealage_texture = std::static_pointer_cast<Texture2DMultisample>(
-        std::const_pointer_cast<Texture>(target->texture(FramebufferAttachment::Color1)));
-
-    TextureSampler<Texture2DMultisample> accum_sampler = { accum_texture, TextureSlot::Slot0 };
-    TextureSampler<Texture2DMultisample> revealage_sampler = { revealage_texture, TextureSlot::Slot1 };
-
-    blend_variables.set("accum_texture", accum_sampler);
-    blend_variables.set("revealage_texture", revealage_sampler);
 
     oit_blend_shader->bind();
     oit_blend_shader->apply(blend_variables);
@@ -272,10 +258,6 @@ void cuboid_render_pipeline(const Camera& camera, const std::shared_ptr<Framebuf
 
     fullscreen_quad_mesh->unbind();
     oit_blend_shader->unbind();
-
-    /// Todo: Implement automatic destructors
-    blend_variables.getPtr<TextureSampler<Texture2DMultisample>>("accum_texture", 1)->~TextureSampler();
-    blend_variables.getPtr<TextureSampler<Texture2DMultisample>>("revealage_texture", 1)->~TextureSampler();
 
     oit_blend_target->unbind(FramebufferBinding::ReadWrite);
 

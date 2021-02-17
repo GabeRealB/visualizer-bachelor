@@ -39,6 +39,7 @@ struct GenerationOptions {
     std::filesystem::path view_composition_shader_vertex_path;
     std::filesystem::path view_composition_shader_fragment_path;
 
+    std::string cuboid_pipeline_name;
     std::string cuboid_mesh_asset_name;
     std::string cuboid_shader_asset_name;
     std::string default_framebuffer_asset_name;

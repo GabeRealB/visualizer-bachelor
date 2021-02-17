@@ -19,7 +19,7 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
 
 Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_entity_id, std::size_t view_idx,
     float fov, float aspect, float near, float far, float distance, float orthographic_width, float orthographic_height,
-    const std::map<std::string, std::string>& targets, bool fixed, bool perspective, bool active)
+    const std::map<std::string, std::vector<std::string>>& targets, bool fixed, bool perspective, bool active)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -74,7 +74,8 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
 
 Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
     const CuboidCommandList& command_list, const std::string& front_texture, const std::string& side_texture,
-    const std::string& top_texture, const std::string& mesh_name, const std::string& shader_asset_name,
+    const std::string& top_texture, const std::string& accum_texture, const std::string& revealage_texture,
+    const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
     std::array<int, 3> global_size)
 {
     Visconfig::Entity entity{};
@@ -115,6 +116,8 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto texture_front_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto texture_side_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto texture_top_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
+    auto accum_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
+    auto revealage_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
@@ -128,6 +131,12 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     texture_top_attribute->asset = top_texture;
     texture_top_attribute->slot = 2;
+
+    accum_texture_attribute->asset = accum_texture;
+    accum_texture_attribute->slot = 0;
+
+    revealage_texture_attribute->asset = revealage_texture;
+    revealage_texture_attribute->slot = 1;
 
     active_fill_color_attribute->value = {
         command_list.active_fill_color[0] / 255.0f,
@@ -154,28 +163,65 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         command_list.inactive_border_color[3] / 255.0f,
     };
 
-    material.asset = shader_asset_name;
-    material.attributes.insert_or_assign("grid_texture_front",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Sampler2D, texture_front_attribute, false });
-    material.attributes.insert_or_assign("grid_texture_side",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Sampler2D, texture_side_attribute, false });
-    material.attributes.insert_or_assign("grid_texture_top",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false });
-    material.attributes.insert_or_assign("active_fill_color",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, active_fill_color_attribute, false });
-    material.attributes.insert_or_assign("inactive_fill_color",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false });
-    material.attributes.insert_or_assign("active_border_color",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, active_border_color_attribute, false });
-    material.attributes.insert_or_assign("inactive_border_color",
-        Visconfig::Components::MaterialAttribute{
-            Visconfig::Components::MaterialAttributeType::Vec4, inactive_border_color_attribute, false });
+    std::vector<Visconfig::Components::MaterialPass> material_passes{};
+
+    // transparent pass
+    material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[0],
+        {
+            {
+                "grid_texture_front",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_front_attribute, false },
+            },
+            {
+                "grid_texture_side",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_side_attribute, false },
+            },
+            {
+                "grid_texture_top",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false },
+            },
+            {
+                "active_fill_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, active_fill_color_attribute, false },
+            },
+            {
+                "inactive_fill_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false },
+            },
+            {
+                "active_border_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, active_border_color_attribute, false },
+            },
+            {
+                "inactive_border_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, inactive_border_color_attribute, false },
+            },
+        } });
+
+    // blend pass
+    material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[1],
+        {
+            {
+                "accum_texture",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2DMS, accum_texture_attribute, false },
+            },
+            {
+                "revealage_texture",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2DMS, revealage_texture_attribute, false },
+            },
+        } });
+
+    material.pipeline = pipeline_name;
+    material.passes = material_passes;
 
     layer.mask = 1llu << view_idx;
 

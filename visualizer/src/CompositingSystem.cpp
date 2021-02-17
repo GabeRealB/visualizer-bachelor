@@ -124,17 +124,18 @@ void CompositingSystem::run(void*)
         m_composition_entity_query.query_db_window(database_context)
             .for_each<Composition>([&](Composition* composition) {
                 for (auto& operation : composition->operations) {
-                    operation.material.m_shader->bind();
-                    operation.material.m_materialVariables.set("transMatrix", getModelMatrix(operation.transform));
+                    operation.material.m_passes[0].m_shader->bind();
+                    operation.material.m_passes[0].m_material_variables.set(
+                        "transMatrix", getModelMatrix(operation.transform));
 
                     std::size_t i{ 0 };
                     for (const auto& source : operation.source) {
                         TextureSampler<Texture2D> sampler{ source, static_cast<TextureSlot>(i) };
-                        operation.material.m_materialVariables.set("view_" + std::to_string(i), sampler);
+                        operation.material.m_passes[0].m_material_variables.set("view_" + std::to_string(i), sampler);
                         i++;
                     }
 
-                    operation.material.m_shader->apply(operation.material.m_materialVariables);
+                    operation.material.m_passes[0].m_shader->apply(operation.material.m_passes[0].m_material_variables);
 
                     operation.destination->bind(FramebufferBinding::ReadWrite);
 
@@ -143,7 +144,7 @@ void CompositingSystem::run(void*)
                         m_quad.indexType(), nullptr);
                     assert(glGetError() == GL_NO_ERROR);
 
-                    operation.material.m_shader->unbind();
+                    operation.material.m_passes[0].m_shader->unbind();
                 }
             });
 

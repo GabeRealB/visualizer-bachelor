@@ -169,9 +169,12 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
         assets.push_back(create_texture_asset(side_texture_name, side_texture_path, texture_attributes));
         assets.push_back(create_texture_asset(top_texture_name, top_texture_path, texture_attributes));
 
-        world.entities.push_back(generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid,
-            front_texture_name, side_texture_name, top_texture_name, generation_options.cuboid_mesh_asset_name,
-            generation_options.cuboid_shader_asset_name, max_cuboid_size));
+        world.entities.push_back(
+            generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name, side_texture_name,
+                top_texture_name, accumulation_multisample_texture_name, revealage_multisample_texture_name,
+                generation_options.cuboid_mesh_asset_name, generation_options.cuboid_pipeline_name,
+                { generation_options.cuboid_shader_asset_name, generation_options.cuboid_oit_blend_shader_asset_name },
+                max_cuboid_size));
     }
 
     auto camera_distance = 1.2f
@@ -184,9 +187,9 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto camera_fixed = view_idx != 0;
     auto camera_perspective = max_cuboid_size[2] != 0 && max_cuboid_size[2] != 1;
     auto camera_active = view_idx == 0;
-    std::map<std::string, std::string> camera_targets = {
-        { "cuboid", framebuffer_multisample_name },
-        { "cuboid_oid_blend", oit_blend_framebuffer_multisample_name },
+    std::map<std::string, std::vector<std::string>> camera_targets = {
+        { generation_options.cuboid_pipeline_name,
+            { framebuffer_multisample_name, oit_blend_framebuffer_multisample_name } },
     };
 
     auto camera_entity_id = world.entities.size();

@@ -81,6 +81,7 @@ enum class MaterialAttributeType {
     Mat4x3,
     Mat4x4,
     Sampler2D,
+    Sampler2DMS,
 };
 
 struct MaterialAttributeData {
@@ -104,6 +105,11 @@ struct Sampler2DMaterialAttribute : MaterialAttributeData {
 
     static constexpr const char* assetJson{ "asset" };
     static constexpr const char* slotJson{ "slot" };
+};
+
+struct Sampler2DMSMaterialAttribute : MaterialAttributeData {
+    std::string asset;
+    std::size_t slot;
 };
 
 using BoolMaterialAttribute = TMaterialAttribute<bool>;
@@ -168,12 +174,14 @@ struct MaterialAttribute {
     static constexpr const char* isArrayJson{ "is_array" };
 };
 
-struct MaterialComponent : public ComponentData {
+struct MaterialPass {
     std::string asset;
     std::unordered_map<std::string, MaterialAttribute> attributes;
+};
 
-    static constexpr const char* assetJson{ "asset" };
-    static constexpr const char* attributesJson{ "attributes" };
+struct MaterialComponent : public ComponentData {
+    std::string pipeline;
+    std::vector<MaterialPass> passes;
 };
 
 struct LayerComponent : public ComponentData {
@@ -304,7 +312,7 @@ struct CameraComponent : public ComponentData {
     float orthographicWidth;
     float orthographicHeight;
     std::bitset<64> layerMask;
-    std::unordered_map<std::string, std::string> targets;
+    std::unordered_map<std::string, std::vector<std::string>> targets;
 
     static constexpr const char* activeJson{ "active" };
     static constexpr const char* fixedJson{ "fixed" };
@@ -400,8 +408,36 @@ struct CopyComponent : public ComponentData {
 void to_json(nlohmann::json& j, const ComponentType& v);
 void from_json(const nlohmann::json& j, ComponentType& v);
 
-void to_json(nlohmann::json& j, const MaterialAttributeType& v);
-void from_json(const nlohmann::json& j, MaterialAttributeType& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(MaterialAttributeType,
+    {
+        { MaterialAttributeType::Bool, "bool" },
+        { MaterialAttributeType::Int, "int" },
+        { MaterialAttributeType::UInt, "uint" },
+        { MaterialAttributeType::Float, "float" },
+        { MaterialAttributeType::BVec2, "bvec2" },
+        { MaterialAttributeType::BVec3, "bvec3" },
+        { MaterialAttributeType::BVec4, "bvec4" },
+        { MaterialAttributeType::IVec2, "ivec2" },
+        { MaterialAttributeType::IVec3, "ivec3" },
+        { MaterialAttributeType::IVec4, "ivec4" },
+        { MaterialAttributeType::UVec2, "uvec2" },
+        { MaterialAttributeType::UVec3, "uvec3" },
+        { MaterialAttributeType::UVec4, "uvec4" },
+        { MaterialAttributeType::Vec2, "vec2" },
+        { MaterialAttributeType::Vec3, "vec3" },
+        { MaterialAttributeType::Vec4, "vec4" },
+        { MaterialAttributeType::Mat2x2, "mat2x2" },
+        { MaterialAttributeType::Mat2x3, "mat2x3" },
+        { MaterialAttributeType::Mat2x4, "mat2x4" },
+        { MaterialAttributeType::Mat3x2, "mat3x2" },
+        { MaterialAttributeType::Mat3x3, "mat3x3" },
+        { MaterialAttributeType::Mat3x4, "mat3x4" },
+        { MaterialAttributeType::Mat4x2, "mat4x2" },
+        { MaterialAttributeType::Mat4x3, "mat4x3" },
+        { MaterialAttributeType::Mat4x4, "mat4x4" },
+        { MaterialAttributeType::Sampler2D, "sampler2D" },
+        { MaterialAttributeType::Sampler2DMS, "sampler2DMS" },
+    })
 
 void to_json(nlohmann::json& j, const IterationOrder& v);
 void from_json(const nlohmann::json& j, IterationOrder& v);
@@ -501,8 +537,12 @@ void from_json(
 void to_json(nlohmann::json& j, const MaterialAttribute& v);
 void from_json(const nlohmann::json& j, MaterialAttribute& v);
 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MaterialPass, asset, attributes)
+
 void to_json(nlohmann::json& j, const Sampler2DMaterialAttribute& v);
 void from_json(const nlohmann::json& j, Sampler2DMaterialAttribute& v);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Sampler2DMSMaterialAttribute, asset, slot)
 
 void to_json(nlohmann::json& j, const NoopCommand& v);
 void from_json(const nlohmann::json& j, NoopCommand& v);

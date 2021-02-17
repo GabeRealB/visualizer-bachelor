@@ -86,6 +86,7 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.view_composition_shader_vertex_path = "assets/shaders/compositing.vs.glsl";
     generation_options.view_composition_shader_fragment_path = "assets/shaders/compositing.fs.glsl";
 
+    generation_options.cuboid_pipeline_name = "cuboid";
     generation_options.cuboid_mesh_asset_name = "cuboid_mesh";
     generation_options.cuboid_shader_asset_name = "cuboid_shader";
     generation_options.default_framebuffer_asset_name = "default_framebuffer";
