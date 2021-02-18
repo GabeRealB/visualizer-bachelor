@@ -172,7 +172,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> inactive_border_color = { 0.05f, 0.05f, 0.05f, 1.0f };
-    constexpr std::array<float, 4> background_color = { 0.2f, 0.2f, 0.2f, 1.0f };
+    constexpr std::array<float, 4> background_color = { 0.25f, 0.25f, 0.25f, 1.0f };
     constexpr std::array<float, 4> depth_value = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     glDrawBuffers(3, oit_buffers.data());

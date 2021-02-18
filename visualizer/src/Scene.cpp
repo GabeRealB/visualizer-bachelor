@@ -22,6 +22,7 @@
 #include <visualizer/FreeFly.hpp>
 #include <visualizer/FreeFlyCameraMovementSystem.hpp>
 #include <visualizer/Iteration.hpp>
+#include <visualizer/MaterialWindowSystem.hpp>
 #include <visualizer/MeshDrawingSystem.hpp>
 #include <visualizer/Parent.hpp>
 #include <visualizer/SystemManager.hpp>
@@ -1803,6 +1804,7 @@ World initialize_world(const Visconfig::World& world)
     systemManager->addSystem<FreeFlyCameraMovementSystem>("tick"sv);
     systemManager->addSystem<FixedCameraMovementSystem>("tick"sv);
 
+    systemManager->addSystem<MaterialWindowSystem>("draw"sv);
     systemManager->addSystem<MeshDrawingSystem>("draw"sv);
     systemManager->addSystem<CompositingSystem>("composite"sv);
 

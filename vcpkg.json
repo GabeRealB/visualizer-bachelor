@@ -8,6 +8,10 @@
     "glfw3",
     "glm",
     "nlohmann-json",
-    "stb"
+    "stb",
+    {
+      "name": "imgui",
+      "features": [ "glfw-binding", "opengl3-glad-binding", "freetype", "docking-experimental" ]
+    }
   ]
 }

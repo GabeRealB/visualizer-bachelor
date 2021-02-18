@@ -5,6 +5,9 @@
 #include <GLFW/glfw3.h>
 #include <filesystem>
 #include <fstream>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <iostream>
 
 #include <visconfig/Config.hpp>
@@ -20,6 +23,7 @@ namespace Visualizer {
 GLFWwindow* g_window{ nullptr };
 bool g_shouldQuit{ false };
 bool g_detached{ false };
+std::size_t g_freeze_counter{ 0 };
 
 void quit() { g_shouldQuit = true; }
 
@@ -49,7 +53,20 @@ void attach(bool attached)
     g_detached = !attached;
 }
 
+void freeze(bool frozen)
+{
+    if (frozen) {
+        g_freeze_counter++;
+    } else {
+        if (g_freeze_counter != 0) {
+            g_freeze_counter--;
+        }
+    }
+}
+
 bool isDetached() { return g_detached; }
+
+bool is_frozen() { return g_freeze_counter != 0; }
 
 void getRelativeMousePosition(double& xPos, double& yPos)
 {
@@ -133,17 +150,50 @@ int run(const std::filesystem::path& configurationPath)
         glDebugMessageCallback(MessageCallback, 0);
 #endif // DEBUG_OPENGL
 
+        // Setup Dear ImGui context
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        (void)io;
+
+        // Setup Dear ImGui style
+        ImGui::StyleColorsDark();
+
+        // Setup Platform/Renderer backends
+        ImGui_ImplGlfw_InitForOpenGL(g_window, true);
+        ImGui_ImplOpenGL3_Init("#version 410");
+
         Scene scene = initialize_scene(config);
         while (!shouldQuit()) {
+            glfwPollEvents();
+
+            // Start the Dear ImGui frame
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
             tick(scene);
             draw(scene);
 
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+            // Update and Render additional Platform Windows
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+            }
+
             glfwSwapBuffers(g_window);
-            glfwPollEvents();
         }
     }
 
     AssetDatabase::clear();
+
+    // Cleanup
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwDestroyWindow(g_window);
     glfwTerminate();

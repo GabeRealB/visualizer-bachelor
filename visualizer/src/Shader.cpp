@@ -315,6 +315,16 @@ std::span<std::string_view> ShaderEnvironment::parameters() const
     return { const_cast<std::string_view*>(m_parameterNames.data()), m_parameterNames.size() };
 }
 
+ParameterType ShaderEnvironment::parameter_type(std::string_view name) const
+{
+    if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {
+        return pos->second.type;
+    } else {
+        assert(false);
+        return ParameterType::MaxIndex;
+    }
+}
+
 ShaderEnvironment::~ShaderEnvironment()
 {
     /// TODO: Destruct inners

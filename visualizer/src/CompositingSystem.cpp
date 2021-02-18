@@ -53,7 +53,7 @@ void CompositingSystem::run(void*)
     m_quad.bind();
 
     m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
-        if (isDetached()) {
+        if (isDetached() && ! is_frozen()) {
             auto queryResult{ m_draggable_entity_query.query_db_window(database_context) };
 
             auto window{ glfwGetCurrentContext() };

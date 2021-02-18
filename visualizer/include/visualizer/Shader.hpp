@@ -238,6 +238,8 @@ public:
 
     std::span<std::string_view> parameters() const;
 
+    ParameterType parameter_type(std::string_view name) const;
+
     template <typename T>
     requires ShaderTypeMapping<T>::hasMapping std::optional<T> get(std::string_view name, std::size_t idx = 0)
     const

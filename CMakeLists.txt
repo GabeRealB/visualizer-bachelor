@@ -70,6 +70,7 @@ find_package(glad CONFIG REQUIRED)
 find_package(freetype CONFIG REQUIRED)
 find_path(STB_INCLUDE_DIRS "stb.h")
 find_package(doctest REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 add_subdirectory(visconfig)
 add_subdirectory(visualizer)
