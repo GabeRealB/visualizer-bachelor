@@ -77,8 +77,11 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.assets_directory_path = operation.output_path / "external_assets";
     generation_options.assets_texture_directory_path = generation_options.assets_directory_path / "textures";
 
-    generation_options.cuboid_shader_vertex_path = "assets/shaders/cuboid.vs.glsl";
-    generation_options.cuboid_shader_fragment_path = "assets/shaders/cuboid.fs.glsl";
+    generation_options.cuboid_diffuse_shader_vertex_path = "assets/shaders/cuboid.vs.glsl";
+    generation_options.cuboid_diffuse_shader_fragment_path = "assets/shaders/cuboid_diffuse.fs.glsl";
+
+    generation_options.cuboid_oit_shader_vertex_path = "assets/shaders/cuboid.vs.glsl";
+    generation_options.cuboid_oit_shader_fragment_path = "assets/shaders/cuboid_oit.fs.glsl";
 
     generation_options.cuboid_oit_blend_shader_vertex_path = "assets/shaders/cuboid_oit_blend.vs.glsl";
     generation_options.cuboid_oit_blend_shader_fragment_path = "assets/shaders/cuboid_oit_blend.fs.glsl";
@@ -88,7 +91,8 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
 
     generation_options.cuboid_pipeline_name = "cuboid";
     generation_options.cuboid_mesh_asset_name = "cuboid_mesh";
-    generation_options.cuboid_shader_asset_name = "cuboid_shader";
+    generation_options.cuboid_oit_shader_asset_name = "cuboid_oit_shader";
+    generation_options.cuboid_diffuse_shader_asset_name = "cuboid_diffuse_shader";
     generation_options.default_framebuffer_asset_name = "default_framebuffer";
     generation_options.fullscreen_quad_mesh_asset_name = "fullscreen_quad_mesh";
     generation_options.cuboid_oit_blend_shader_asset_name = "cuboid_oit_blend_shader";

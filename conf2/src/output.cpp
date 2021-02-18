@@ -39,8 +39,10 @@ Visconfig::Config generate_config(
     config.assets.push_back(create_cuboid_mesh_asset(generation_options.cuboid_mesh_asset_name));
     config.assets.push_back(create_default_framebuffer_asset(generation_options.default_framebuffer_asset_name));
     config.assets.push_back(create_fullscreen_quad_mesh_asset(generation_options.fullscreen_quad_mesh_asset_name));
-    config.assets.push_back(create_shader_asset(generation_options.cuboid_shader_asset_name,
-        generation_options.cuboid_shader_vertex_path, generation_options.cuboid_shader_fragment_path));
+    config.assets.push_back(create_shader_asset(generation_options.cuboid_diffuse_shader_asset_name,
+        generation_options.cuboid_diffuse_shader_vertex_path, generation_options.cuboid_diffuse_shader_fragment_path));
+    config.assets.push_back(create_shader_asset(generation_options.cuboid_oit_shader_asset_name,
+        generation_options.cuboid_oit_shader_vertex_path, generation_options.cuboid_oit_shader_fragment_path));
     config.assets.push_back(create_shader_asset(generation_options.cuboid_oit_blend_shader_asset_name,
         generation_options.cuboid_oit_blend_shader_vertex_path,
         generation_options.cuboid_oit_blend_shader_fragment_path));
@@ -75,7 +77,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto accumulation_texture_name = "accumulation_texture" + std::to_string(view_idx);
     auto revealage_texture_name = "revealage_texture" + std::to_string(view_idx);
     auto framebuffer_name = "framebuffer_" + std::to_string(view_idx);
-    auto oit_blend_framebuffer_name = "oit_blend_" + framebuffer_name;
+    auto oit_framebuffer_name = "oit_" + framebuffer_name;
 
     auto render_resolution_width = generation_options.render_resolution_multiplier * generation_options.screen_width;
     auto render_resolution_height = generation_options.render_resolution_multiplier * generation_options.screen_height;
@@ -95,7 +97,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto accumulation_multisample_texture_name = accumulation_texture_name + "_multisample";
     auto revealage_multisample_texture_name = revealage_texture_name + "_multisample";
     auto framebuffer_multisample_name = framebuffer_name + "_multisample";
-    auto oit_blend_framebuffer_multisample_name = oit_blend_framebuffer_name + "_multisample";
+    auto oit_framebuffer_multisample_name = oit_framebuffer_name + "_multisample";
 
     assets.push_back(create_multisample_render_texture_asset(render_texture_multisample_name, render_resolution_width,
         render_resolution_height, generation_options.screen_msaa_samples, Visconfig::Assets::TextureFormat::RGBA));
@@ -111,17 +113,17 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     assets.push_back(
         create_framebuffer_asset(framebuffer_multisample_name, 0, 0, render_resolution_width, render_resolution_height,
             { { Visconfig::Assets::FramebufferType::TextureMultisample,
-                  Visconfig::Assets::FramebufferDestination::Color0, accumulation_multisample_texture_name },
-                { Visconfig::Assets::FramebufferType::TextureMultisample,
-                    Visconfig::Assets::FramebufferDestination::Color1, revealage_multisample_texture_name },
-                { Visconfig::Assets::FramebufferType::TextureMultisample,
-                    Visconfig::Assets::FramebufferDestination::Color2, render_texture_multisample_name },
+                  Visconfig::Assets::FramebufferDestination::Color0, render_texture_multisample_name },
                 { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
                     depth_buffer_multisample_name } }));
-    assets.push_back(create_framebuffer_asset(oit_blend_framebuffer_multisample_name, 0, 0, render_resolution_width,
+    assets.push_back(create_framebuffer_asset(oit_framebuffer_multisample_name, 0, 0, render_resolution_width,
         render_resolution_height,
         { { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color0,
-              render_texture_multisample_name },
+              accumulation_multisample_texture_name },
+            { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color1,
+                revealage_multisample_texture_name },
+            { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color2,
+                render_texture_multisample_name },
             { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
                 depth_buffer_multisample_name } }));
 
@@ -173,7 +175,11 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
             generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name, side_texture_name,
                 top_texture_name, accumulation_multisample_texture_name, revealage_multisample_texture_name,
                 generation_options.cuboid_mesh_asset_name, generation_options.cuboid_pipeline_name,
-                { generation_options.cuboid_shader_asset_name, generation_options.cuboid_oit_blend_shader_asset_name },
+                {
+                    generation_options.cuboid_diffuse_shader_asset_name,
+                    generation_options.cuboid_oit_shader_asset_name,
+                    generation_options.cuboid_oit_blend_shader_asset_name,
+                },
                 max_cuboid_size));
     }
 
@@ -189,7 +195,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto camera_active = view_idx == 0;
     std::map<std::string, std::vector<std::string>> camera_targets = {
         { generation_options.cuboid_pipeline_name,
-            { framebuffer_multisample_name, oit_blend_framebuffer_multisample_name } },
+            { framebuffer_multisample_name, oit_framebuffer_multisample_name, framebuffer_multisample_name } },
     };
 
     auto camera_entity_id = world.entities.size();
@@ -211,7 +217,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto position_y = (view_commands.position[1] * 2.0f) - 1.0f + size;
 
     extend_camera_switcher(coordinator_entity, camera_entity_id);
-    extend_copy(coordinator_entity, oit_blend_framebuffer_multisample_name, framebuffer_name,
+    extend_copy(coordinator_entity, framebuffer_multisample_name, framebuffer_name,
         Visconfig::Components::CopyOperationFilter::Nearest, copy_flags);
     extend_composition(coordinator_entity, { size, size }, { position_x, position_y }, composition_src,
         generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,

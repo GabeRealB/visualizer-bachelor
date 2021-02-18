@@ -158,21 +158,24 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     static std::weak_ptr<Mesh> fullscreen_quad_mesh_weak = std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset("fullscreen_quad_mesh").data));
 
-    constexpr std::size_t transparent_pass_idx = 0;
-    constexpr std::size_t oit_blend_pass_idx = 1;
+    constexpr std::size_t diffuse_pass_idx = 0;
+    constexpr std::size_t transparent_pass_idx = 1;
+    constexpr std::size_t oit_blend_pass_idx = 2;
 
     targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ targets[transparent_pass_idx]->viewport() };
 
-    constexpr std::array<GLenum, 3> buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    constexpr std::array<GLenum, 1> diffuse_buffers = { GL_COLOR_ATTACHMENT0 };
+    constexpr std::array<GLenum, 3> oit_buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
     constexpr std::array<float, 4> accum_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> inactive_border_color = { 0.05f, 0.05f, 0.05f, 1.0f };
-    constexpr std::array<float, 4> background_color = { 0.2f, 0.2f, 0.2f, 0.0f };
+    constexpr std::array<float, 4> background_color = { 0.2f, 0.2f, 0.2f, 1.0f };
+    constexpr std::array<float, 4> depth_value = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-    glDrawBuffers(3, buffers.data());
+    glDrawBuffers(3, oit_buffers.data());
     glClearBufferfv(GL_COLOR, 0, accum_clear_color.data());
     glClearBufferfv(GL_COLOR, 1, revealage_clear_color.data());
 
@@ -182,24 +185,77 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
         glClearBufferfv(GL_COLOR, 2, inactive_border_color.data());
     }
 
+    targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
+
+    ShaderEnvironment camera_variables{};
+    std::shared_ptr<ShaderProgram> last_program{ nullptr };
+
     glEnable(GL_SCISSOR_TEST);
     glScissor(camera_viewport.x + 10, camera_viewport.y + 10, camera_viewport.width - 20, camera_viewport.height - 20);
     glClear(GL_DEPTH_BUFFER_BIT);
-    glClearBufferfv(GL_COLOR, 2, background_color.data());
+
+    // diffuse pass
+    targets[diffuse_pass_idx]->bind(FramebufferBinding::ReadWrite);
+
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDrawBuffers(1, diffuse_buffers.data());
+    glClearBufferfv(GL_COLOR, 0, background_color.data());
+    glClearBufferfv(GL_DEPTH, 0, depth_value.data());
+
+    for (auto& mesh_info : mesh_list) {
+        auto& mesh{ std::get<1>(mesh_info) };
+        auto& material{ std::get<2>(mesh_info) };
+
+        if (last_program != material->m_passes[diffuse_pass_idx].m_shader) {
+            constexpr float orthographic_far_factor = 1.4f;
+            constexpr float orthographic_near_factor = 3.5f;
+            auto orthographic_depth = 1 - std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
+            auto orthographic_factor = std::lerp(orthographic_far_factor, orthographic_near_factor, orthographic_depth);
+
+            last_program = material->m_passes[diffuse_pass_idx].m_shader;
+            camera_variables
+                = ShaderEnvironment{ *material->m_passes[diffuse_pass_idx].m_shader, ParameterQualifier::Program };
+            camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
+            camera_variables.set("view_matrix", view_matrix);
+            camera_variables.set("projection_matrix", projection_matrix);
+            material->m_passes[diffuse_pass_idx].m_shader->bind();
+        }
+
+        last_program->apply(camera_variables);
+        last_program->apply(material->m_passes[diffuse_pass_idx].m_material_variables);
+
+        auto tmp{ mesh->get() };
+        tmp->bind();
+        assert(glGetError() == GL_NO_ERROR);
+        glDrawElementsInstanced(tmp->primitiveType(), static_cast<GLsizei>(tmp->getIndexCount()), tmp->indexType(),
+            nullptr, tmp->instances());
+        assert(glGetError() == GL_NO_ERROR);
+        tmp->unbind();
+    }
+
+    if (last_program != nullptr) {
+        last_program->unbind();
+    }
+
+    targets[diffuse_pass_idx]->unbind(FramebufferBinding::ReadWrite);
+
+    // transparent pass
+    targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
 
     glEnable(GL_BLEND);
+    glDepthMask(GL_FALSE);
     glEnable(GL_CULL_FACE);
-    glDepthFunc(GL_NOTEQUAL);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawBuffers(3, oit_buffers.data());
+
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0f, 1.0f);
 
     glBlendFunci(0, GL_ONE, GL_ONE);
     glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
     glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
 
-    ShaderEnvironment camera_variables{};
-    std::shared_ptr<ShaderProgram> last_program{ nullptr };
-
-    // transparent pass
     for (auto& mesh_info : mesh_list) {
         auto& mesh{ std::get<1>(mesh_info) };
         auto& material{ std::get<2>(mesh_info) };
@@ -235,16 +291,22 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
         last_program->unbind();
     }
 
-    // oit-blend pass
-    auto fullscreen_quad_mesh = fullscreen_quad_mesh_weak.lock();
+    targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
 
+    glDepthMask(GL_TRUE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_POLYGON_OFFSET_FILL);
+
+    // oit-blend pass
+    targets[oit_blend_pass_idx]->bind(FramebufferBinding::ReadWrite);
+
+    glDrawBuffers(1, diffuse_buffers.data());
     glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_ONE);
 
     auto& oit_blend_shader = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_shader;
     auto& blend_variables = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_material_variables;
 
-    auto& oit_blend_target = targets[oit_blend_pass_idx];
-    oit_blend_target->bind(FramebufferBinding::ReadWrite);
+    auto fullscreen_quad_mesh = fullscreen_quad_mesh_weak.lock();
 
     oit_blend_shader->bind();
     oit_blend_shader->apply(blend_variables);
@@ -259,13 +321,12 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     fullscreen_quad_mesh->unbind();
     oit_blend_shader->unbind();
 
-    oit_blend_target->unbind(FramebufferBinding::ReadWrite);
+    targets[oit_blend_pass_idx]->unbind(FramebufferBinding::ReadWrite);
 
     glDisable(GL_SCISSOR_TEST);
 
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 }
 

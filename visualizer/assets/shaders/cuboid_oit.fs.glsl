@@ -3,8 +3,6 @@
 @program float 1 far_plane
 @material vec4 1 active_fill_color
 @material vec4 1 inactive_fill_color
-@material vec4 1 active_border_color
-@material vec4 1 inactive_border_color
 @material sampler2D 1 grid_texture_front
 @material sampler2D 1 grid_texture_side
 @material sampler2D 1 grid_texture_top
@@ -13,8 +11,6 @@ uniform float far_plane;
 
 uniform vec4 active_fill_color;
 uniform vec4 inactive_fill_color;
-uniform vec4 active_border_color;
-uniform vec4 inactive_border_color;
 
 uniform sampler2D grid_texture_front;
 uniform sampler2D grid_texture_side;
@@ -113,11 +109,7 @@ void main() {
     vec4 diffuse_color;
 
     if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
-        if (enabled == 1) {
-            diffuse_color = active_border_color;
-        } else {
-            diffuse_color = inactive_border_color;
-        }
+        discard;
     } else {
         if (enabled == 1) {
             diffuse_color = active_fill_color;

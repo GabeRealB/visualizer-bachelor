@@ -30,8 +30,11 @@ struct GenerationOptions {
     std::filesystem::path assets_directory_path;
     std::filesystem::path assets_texture_directory_path;
 
-    std::filesystem::path cuboid_shader_vertex_path;
-    std::filesystem::path cuboid_shader_fragment_path;
+    std::filesystem::path cuboid_diffuse_shader_vertex_path;
+    std::filesystem::path cuboid_diffuse_shader_fragment_path;
+
+    std::filesystem::path cuboid_oit_shader_vertex_path;
+    std::filesystem::path cuboid_oit_shader_fragment_path;
 
     std::filesystem::path cuboid_oit_blend_shader_vertex_path;
     std::filesystem::path cuboid_oit_blend_shader_fragment_path;
@@ -41,7 +44,8 @@ struct GenerationOptions {
 
     std::string cuboid_pipeline_name;
     std::string cuboid_mesh_asset_name;
-    std::string cuboid_shader_asset_name;
+    std::string cuboid_oit_shader_asset_name;
+    std::string cuboid_diffuse_shader_asset_name;
     std::string default_framebuffer_asset_name;
     std::string fullscreen_quad_mesh_asset_name;
     std::string cuboid_oit_blend_shader_asset_name;

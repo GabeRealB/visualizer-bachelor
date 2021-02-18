@@ -165,8 +165,38 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     std::vector<Visconfig::Components::MaterialPass> material_passes{};
 
-    // transparent pass
+    // diffuse pass
     material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[0],
+        {
+            {
+                "grid_texture_front",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_front_attribute, false },
+            },
+            {
+                "grid_texture_side",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_side_attribute, false },
+            },
+            {
+                "grid_texture_top",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false },
+            },
+            {
+                "active_border_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, active_border_color_attribute, false },
+            },
+            {
+                "inactive_border_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, inactive_border_color_attribute, false },
+            },
+        } });
+
+    // transparent pass
+    material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[1],
         {
             {
                 "grid_texture_front",
@@ -193,20 +223,10 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
                 Visconfig::Components::MaterialAttribute{
                     Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false },
             },
-            {
-                "active_border_color",
-                Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Vec4, active_border_color_attribute, false },
-            },
-            {
-                "inactive_border_color",
-                Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Vec4, inactive_border_color_attribute, false },
-            },
         } });
 
     // blend pass
-    material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[1],
+    material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[2],
         {
             {
                 "accum_texture",
