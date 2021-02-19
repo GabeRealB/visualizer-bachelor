@@ -76,16 +76,6 @@ public:
     void operator=(VertexAttributeBuffer&& buffer) noexcept;
 
     /**
-     * @brief Binds the VBO to the current context.
-     */
-    void bind() const final;
-
-    /**
-     * @brief Unbinds the VBO from the current context.
-     */
-    void unbind() const final;
-
-    /**
      * @brief Get the index to which the buffer will be bound
      *
      * @return Index to which the buffer will be bound

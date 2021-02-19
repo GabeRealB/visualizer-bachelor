@@ -3,7 +3,82 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
+template <class... Ts> struct overloaded : Ts... {
+    using Ts::operator()...;
+};
+template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
 namespace Visualizer {
+
+auto buffer_bind_fn = overloaded{
+    [](std::shared_ptr<GenericBuffer>&) {},
+    [](std::shared_ptr<VertexAttributeBuffer>& buffer) {
+        assert(glGetError() == GL_NO_ERROR);
+        glEnableVertexAttribArray(buffer->index());
+        glVertexAttribPointer(buffer->index(), buffer->elementSize(), buffer->elementType(), buffer->normalized(),
+            buffer->stride(), buffer->offset());
+        assert(glGetError() == GL_NO_ERROR);
+    },
+    [](std::shared_ptr<ComplexVertexAttributeBuffer>& buffer) {
+        auto indices = buffer->indices();
+        auto element_sizes = buffer->element_sizes();
+        auto element_types = buffer->element_types();
+        auto normalized = buffer->normalized();
+        auto strides = buffer->strides();
+        auto offsets = buffer->offsets();
+        auto divisors = buffer->divisors();
+        auto types = buffer->types();
+
+        for (std::size_t i = 0; i < indices.size(); ++i) {
+            assert(glGetError() == GL_NO_ERROR);
+            glEnableVertexAttribArray(indices[i]);
+
+            switch (types[i]) {
+            case VertexAttributeType::Real:
+                glVertexAttribPointer(
+                    indices[i], element_sizes[i], element_types[i], normalized[i], strides[i], offsets[i]);
+                break;
+            case VertexAttributeType::Integer:
+                glVertexAttribIPointer(indices[i], element_sizes[i], element_types[i], strides[i], offsets[i]);
+                break;
+            case VertexAttributeType::Long:
+                glVertexAttribLPointer(indices[i], element_sizes[i], element_types[i], strides[i], offsets[i]);
+                break;
+            }
+            glVertexAttribDivisor(indices[i], divisors[i]);
+            assert(glGetError() == GL_NO_ERROR);
+        }
+    },
+};
+
+auto buffer_unbind_fn = overloaded{
+    [](std::shared_ptr<GenericBuffer>& buffer) {
+        buffer->bind();
+        buffer->unbind();
+    },
+    [](std::shared_ptr<VertexAttributeBuffer>& buffer) {
+        buffer->bind();
+
+        assert(glGetError() == GL_NO_ERROR);
+        glDisableVertexAttribArray(buffer->index());
+        assert(glGetError() == GL_NO_ERROR);
+
+        buffer->unbind();
+    },
+    [](std::shared_ptr<ComplexVertexAttributeBuffer>& buffer) {
+        buffer->bind();
+
+        auto indices = buffer->indices();
+
+        for (auto&& idx : indices) {
+            assert(glGetError() == GL_NO_ERROR);
+            glDisableVertexAttribArray(idx);
+            assert(glGetError() == GL_NO_ERROR);
+        }
+
+        buffer->unbind();
+    },
+};
 
 Mesh::Mesh()
     : m_key{ 0 }
@@ -38,9 +113,14 @@ Mesh::Mesh(const Mesh& mesh)
 
     for (auto& keyValue : m_buffers) {
         std::visit([](auto& buffer) { buffer->bind(); }, keyValue.second);
+        std::visit(buffer_bind_fn, keyValue.second);
     }
 
     unbind();
+
+    for (auto& keyValue : m_buffers) {
+        std::visit([](auto& buffer) { buffer->unbind(); }, keyValue.second);
+    }
 }
 
 Mesh::Mesh(Mesh&& mesh) noexcept
@@ -63,7 +143,7 @@ void Mesh::operator=(const Mesh& mesh)
     bind();
 
     for (auto& keyValue : m_buffers) {
-        std::visit([](auto& buffer) { buffer->unbind(); }, keyValue.second);
+        std::visit(buffer_unbind_fn, keyValue.second);
     }
 
     m_attributesMap.clear();
@@ -80,9 +160,14 @@ void Mesh::operator=(const Mesh& mesh)
 
     for (auto& keyValue : m_buffers) {
         std::visit([](auto& buffer) { buffer->bind(); }, keyValue.second);
+        std::visit(buffer_bind_fn, keyValue.second);
     }
 
     unbind();
+
+    for (auto& keyValue : m_buffers) {
+        std::visit([](auto& buffer) { buffer->unbind(); }, keyValue.second);
+    }
 }
 
 void Mesh::operator=(Mesh&& mesh) noexcept
@@ -108,7 +193,7 @@ void Mesh::setVertices(const glm::vec4* vertices, GLsizeiptr count)
     if (bufferLocation != m_attributesMap.end()) {
         auto bufferKeyValue{ m_buffers.find(bufferLocation->second) };
         auto& buffer{ bufferKeyValue->second };
-        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        std::visit(buffer_unbind_fn, buffer);
         m_buffers.erase(bufferKeyValue);
     }
 
@@ -120,6 +205,8 @@ void Mesh::setVertices(const glm::vec4* vertices, GLsizeiptr count)
     auto ptr{ std::make_shared<VertexAttributeBuffer>(
         0, 4, GL_FLOAT, false, 0, nullptr, count * sizeof(float) * 4, GL_STATIC_DRAW, dataPtr) };
     ptr->bind();
+
+    buffer_bind_fn.operator()(ptr);
 
     unbind();
     ptr->unbind();
@@ -137,7 +224,7 @@ void Mesh::setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count
     if (bufferLocation != m_attributesMap.end()) {
         auto bufferKeyValue{ m_buffers.find(bufferLocation->second) };
         auto& buffer{ bufferKeyValue->second };
-        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        std::visit(buffer_unbind_fn, buffer);
         m_buffers.erase(bufferKeyValue);
     }
 
@@ -149,6 +236,8 @@ void Mesh::setTextureCoordinates0(const glm::vec4* coordinates, GLsizeiptr count
     auto ptr{ std::make_shared<VertexAttributeBuffer>(
         1, 4, GL_FLOAT, false, 0, nullptr, count * sizeof(float) * 4, GL_STATIC_DRAW, dataPtr) };
     ptr->bind();
+
+    buffer_bind_fn.operator()(ptr);
 
     unbind();
     ptr->unbind();
@@ -166,7 +255,7 @@ void Mesh::setIndices(const GLuint* indices, GLsizeiptr count, GLenum primitiveT
     if (bufferLocation != m_attributesMap.end()) {
         auto bufferKeyValue{ m_buffers.find(bufferLocation->second) };
         auto& buffer{ bufferKeyValue->second };
-        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        std::visit(buffer_unbind_fn, buffer);
         m_buffers.erase(bufferKeyValue);
     }
 
@@ -194,13 +283,15 @@ void Mesh::set_simple_attribute(const std::string& name, GLuint index, GLint ele
     if (buffer_location != m_attributes_string_map.end()) {
         auto buffer_key_value{ m_buffers.find(buffer_location->second) };
         auto& buffer{ buffer_key_value->second };
-        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        std::visit(buffer_unbind_fn, buffer);
         m_buffers.erase(buffer_key_value);
     }
 
     auto buffer{ std::make_shared<VertexAttributeBuffer>(
         index, element_size, element_type, normalized, stride, offset, size, usage, data) };
     buffer->bind();
+
+    buffer_bind_fn.operator()(buffer);
 
     unbind();
     buffer->unbind();
@@ -219,12 +310,14 @@ void Mesh::set_complex_attribute(const std::string& name, std::span<const Vertex
     if (buffer_location != m_attributes_string_map.end()) {
         auto buffer_key_value{ m_buffers.find(buffer_location->second) };
         auto& buffer{ buffer_key_value->second };
-        std::visit([](auto& buffer) { return buffer->unbind(); }, buffer);
+        std::visit(buffer_unbind_fn, buffer);
         m_buffers.erase(buffer_key_value);
     }
 
     auto buffer{ std::make_shared<ComplexVertexAttributeBuffer>(vertex_attributes, size, usage, data) };
     buffer->bind();
+
+    buffer_bind_fn.operator()(buffer);
 
     unbind();
     buffer->unbind();

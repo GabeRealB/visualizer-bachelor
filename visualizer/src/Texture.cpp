@@ -965,14 +965,12 @@ void Texture2DMultisample::initialize(
     GLint max_samples;
     glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
 
-    m_samples = samples < max_samples ? samples : max_samples;
+    m_samples = samples = samples < max_samples ? samples : max_samples;
     m_width = width;
     m_height = height;
 
     bind(TextureSlot::TmpSlot);
     assert(glGetError() == GL_NO_ERROR);
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAX_LEVEL, 0);
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormatGl, width, height, GL_TRUE);
     assert(glGetError() == GL_NO_ERROR);
     unbind(TextureSlot::TmpSlot);

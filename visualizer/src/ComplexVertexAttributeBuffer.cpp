@@ -112,40 +112,6 @@ ComplexVertexAttributeBuffer& ComplexVertexAttributeBuffer::operator=(ComplexVer
     return *this;
 }
 
-void ComplexVertexAttributeBuffer::bind() const
-{
-    GenericBuffer::bind();
-    for (std::size_t i = 0; i < m_indices.size(); ++i) {
-        assert(glGetError() == GL_NO_ERROR);
-        glEnableVertexAttribArray(m_indices[i]);
-
-        switch (m_types[i]) {
-        case VertexAttributeType::Real:
-            glVertexAttribPointer(
-                m_indices[i], m_element_sizes[i], m_element_types[i], m_normalized[i], m_strides[i], m_offsets[i]);
-            break;
-        case VertexAttributeType::Integer:
-            glVertexAttribIPointer(m_indices[i], m_element_sizes[i], m_element_types[i], m_strides[i], m_offsets[i]);
-            break;
-        case VertexAttributeType::Long:
-            glVertexAttribLPointer(m_indices[i], m_element_sizes[i], m_element_types[i], m_strides[i], m_offsets[i]);
-            break;
-        }
-        glVertexAttribDivisor(m_indices[i], m_divisors[i]);
-        assert(glGetError() == GL_NO_ERROR);
-    }
-}
-
-void ComplexVertexAttributeBuffer::unbind() const
-{
-    for (std::size_t i = 0; i < m_indices.size(); ++i) {
-        assert(glGetError() == GL_NO_ERROR);
-        glDisableVertexAttribArray(m_indices[i]);
-        assert(glGetError() == GL_NO_ERROR);
-    }
-    GenericBuffer::unbind();
-}
-
 std::span<const GLuint> ComplexVertexAttributeBuffer::indices() const { return { m_indices.data(), m_indices.size() }; }
 
 std::span<const GLint> ComplexVertexAttributeBuffer::element_sizes() const

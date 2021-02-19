@@ -75,23 +75,6 @@ void VertexAttributeBuffer::operator=(VertexAttributeBuffer&& buffer) noexcept
     assert(glGetError() == GL_NO_ERROR);
 }
 
-void VertexAttributeBuffer::bind() const
-{
-    GenericBuffer::bind();
-    assert(glGetError() == GL_NO_ERROR);
-    glEnableVertexAttribArray(m_index);
-    glVertexAttribPointer(m_index, m_elementSize, m_elementType, m_normalized, m_stride, m_offset);
-    assert(glGetError() == GL_NO_ERROR);
-}
-
-void VertexAttributeBuffer::unbind() const
-{
-    assert(glGetError() == GL_NO_ERROR);
-    glDisableVertexAttribArray(m_index);
-    assert(glGetError() == GL_NO_ERROR);
-    GenericBuffer::unbind();
-}
-
 GLuint VertexAttributeBuffer::index() const { return m_index; }
 
 GLint VertexAttributeBuffer::elementSize() const { return m_elementSize; }

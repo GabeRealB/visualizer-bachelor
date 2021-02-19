@@ -21,7 +21,9 @@ template <typename T>
 typename AlignedDeleter<T>::pointer_type AlignedDeleter<T>::allocate(std::size_t alignment, std::size_t size)
 {
     // POSIX systems require that the alignment is a multiple of sizeof(void*).
-    alignment += alignment % sizeof(void*);
+    if (alignment % sizeof(void*) != 0) {
+        alignment += sizeof(void*) - (alignment % sizeof(void*));
+    }
     // The size must be a multiple of the alignment.
     if (size % alignment != 0) {
         size += alignment - (size % alignment);

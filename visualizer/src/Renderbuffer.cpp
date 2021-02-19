@@ -175,7 +175,7 @@ void Renderbuffer::setFormat(RenderbufferFormat format, GLsizei width, GLsizei h
     GLint max_samples;
     glGetIntegerv(GL_MAX_SAMPLES, &max_samples);
 
-    m_samples = samples < max_samples ? samples : max_samples;
+    m_samples = samples = samples < max_samples ? samples : max_samples;
 
     bind();
     assert(glGetError() == GL_NO_ERROR);

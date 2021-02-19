@@ -1,7 +1,7 @@
 #include <visualizer/GenericBuffer.hpp>
 
-#include <utility>
 #include <cassert>
+#include <utility>
 
 namespace Visualizer {
 
@@ -82,9 +82,18 @@ void GenericBuffer::operator=(GenericBuffer&& buffer) noexcept
     assert(glGetError() == GL_NO_ERROR);
 }
 
-void GenericBuffer::bind() const { glBindBuffer(m_target, m_id); }
+void GenericBuffer::bind() const
+{
+    assert(glGetError() == GL_NO_ERROR);
+    glBindBuffer(m_target, m_id);
+    assert(glGetError() == GL_NO_ERROR);
+}
 
-void GenericBuffer::unbind() const { glBindBuffer(m_target, 0); }
+void GenericBuffer::unbind() const {
+    assert(glGetError() == GL_NO_ERROR);
+    glBindBuffer(m_target, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
 
 void* GenericBuffer::map(GLenum access)
 {
@@ -92,11 +101,13 @@ void* GenericBuffer::map(GLenum access)
     assert(glGetError() == GL_NO_ERROR);
     auto ptr = glMapBuffer(m_target, access);
     assert(glGetError() == GL_NO_ERROR);
+    GenericBuffer::unbind();
     return ptr;
 }
 
 bool GenericBuffer::unmap()
 {
+    GenericBuffer::bind();
     assert(glGetError() == GL_NO_ERROR);
     auto result = glUnmapBuffer(m_target);
     assert(glGetError() == GL_NO_ERROR);

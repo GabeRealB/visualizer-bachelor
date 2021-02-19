@@ -37,9 +37,6 @@ public:
     ComplexVertexAttributeBuffer& operator=(const ComplexVertexAttributeBuffer& buffer);
     ComplexVertexAttributeBuffer& operator=(ComplexVertexAttributeBuffer&& buffer) noexcept;
 
-    void bind() const final;
-    void unbind() const final;
-
     std::span<const GLuint> indices() const;
     std::span<const GLint> element_sizes() const;
     std::span<const GLenum> element_types() const;
