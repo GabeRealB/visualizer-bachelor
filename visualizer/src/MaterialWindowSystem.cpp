@@ -64,7 +64,7 @@ void MaterialWindowSystem::run(void*)
                                     if (ImGui::CollapsingHeader(header_name.c_str())) {
                                         ImGui::Indent(10.0f);
                                         ImGui::Text("Pipeline: %s", material->m_pipeline.c_str());
-                                        ImGui::Text("Passes: %llu", material->m_passes.size());
+                                        ImGui::Text("Passes: %zu", material->m_passes.size());
                                         ImGui::Spacing();
 
                                         for (std::size_t i = 0; i < material->m_passes.size(); i++) {
