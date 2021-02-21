@@ -7,7 +7,14 @@
 
 namespace Visualizer {
 
+#if defined(UINTPTR_MAX)
 using TypeId = std::uintptr_t;
+#elif defined(INTPTR_MAX)
+using TypeId = std::intptr_t;
+#else
+using TypeId = std::size_t;
+static_assert(sizeof(std::size_t) >= sizeof(void*));
+#endif
 
 template <typename T> struct TypeIdPtr {
     static const T* const id;

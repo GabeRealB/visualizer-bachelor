@@ -33,21 +33,21 @@ requires ComponentList<Ts...>&& NoCVRefs<Ts...> EntityDBQuery& EntityDBQuery::wi
 template <typename... Ts, typename Pred>
 requires ComponentList<Ts...>&& EntityDBWindowPred<Pred, Ts...> EntityDBWindow EntityDBWindow::filter(Pred&& pred)
 {
-    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    assert((has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...));
     return filter<Ts...>(std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
 }
 
 template <typename... Ts, typename Fn>
 requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...> void EntityDBWindow::iterate(Fn&& fn)
 {
-    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    assert((has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...));
     return iterate<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
 }
 
 template <typename... Ts, typename Fn>
 requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...> void EntityDBWindow::for_each(Fn&& fn)
 {
-    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    assert((has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...));
     return for_each<Ts...>(std::forward<Fn>(fn), std::index_sequence_for<Ts...>{});
 }
 
@@ -55,7 +55,7 @@ template <typename... Ts, typename Fn, typename Pred>
 requires ComponentList<Ts...>&& EntityDBWindowIterateFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
 EntityDBWindow::iterate(Fn&& fn, Pred&& pred)
 {
-    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    assert((has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...));
     return iterate<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
 }
 
@@ -63,7 +63,7 @@ template <typename... Ts, typename Fn, typename Pred>
 requires ComponentList<Ts...>&& EntityDBWindowForEachFn<Fn, Ts...>&& EntityDBWindowPred<Pred, Ts...> void
 EntityDBWindow::for_each(Fn&& fn, Pred&& pred)
 {
-    assert(has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...);
+    assert((has_component(getTypeId<typename std::remove_const_t<Ts>>()) && ...));
     return for_each<Ts...>(std::forward<Fn>(fn), std::forward<Pred>(pred), std::index_sequence_for<Ts...>{});
 }
 
