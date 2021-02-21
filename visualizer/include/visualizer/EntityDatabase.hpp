@@ -4,12 +4,12 @@
 #include <concepts>
 #include <functional>
 #include <optional>
+#include <set>
 #include <shared_mutex>
 #include <span>
 #include <string>
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
 #include <utility>
 
 #include <visualizer/Entity.hpp>
@@ -86,7 +86,7 @@ private:
     std::unordered_map<Entity, EntityContainerId, EntityHasher> m_entities;
     std::unordered_map<TypeId, ComponentDescriptor> m_component_descriptors;
     std::unordered_map<EntityContainerId, EntityContainer> m_entity_containers;
-    std::unordered_map<TypeId, std::unordered_set<EntityContainerId>> m_type_associations;
+    std::unordered_map<TypeId, std::set<EntityContainerId>> m_type_associations;
     std::unordered_map<EntityArchetype, EntityContainerId, EntityArchetypeHasher> m_archetype_map;
 };
 
@@ -100,13 +100,19 @@ public:
     EntityDatabase& operator=(const EntityDatabase& other) = delete;
     EntityDatabase& operator=(EntityDatabase&& other) noexcept = delete;
 
-    template <typename F> requires std::invocable<F, EntityDatabaseContext&> void enter_secure_context(F&& f);
     template <typename F>
-    requires std::invocable<F, const EntityDatabaseContext&> void enter_secure_context(F&& f) const;
+    requires std::invocable<F, EntityDatabaseContext&>
+    void enter_secure_context(F&& f);
+    template <typename F>
+    requires std::invocable<F, const EntityDatabaseContext&>
+    void enter_secure_context(F&& f) const;
 
-    template <typename F> requires std::invocable<F, EntityDatabaseLazyContext&> void enter_secure_lazy_context(F&& f);
     template <typename F>
-    requires std::invocable<F, const EntityDatabaseLazyContext&> void enter_secure_lazy_context(F&& f) const;
+    requires std::invocable<F, EntityDatabaseLazyContext&>
+    void enter_secure_lazy_context(F&& f);
+    template <typename F>
+    requires std::invocable<F, const EntityDatabaseLazyContext&>
+    void enter_secure_lazy_context(F&& f) const;
 
 private:
     mutable std::shared_mutex m_context_mutex;
@@ -157,21 +163,41 @@ public:
 
     EntityDBWindow query_db_window(const EntityDBQuery& query);
 
-    template <typename T> requires NoCVRefs<T> ComponentType register_component_desc();
+    template <typename T>
+    requires NoCVRefs<T> ComponentType register_component_desc();
 
-    template <typename T> requires NoCVRefs<T> bool entity_has_component(Entity entity) const;
+    template <typename T>
+    requires NoCVRefs<T>
+    bool entity_has_component(Entity entity) const;
 
-    template <typename T> requires NoCVRefs<T> void add_component(Entity entity);
-    template <typename T> requires NoCVRefs<T> void add_component(Entity entity, T&& component);
-    template <typename T> requires NoCVRefs<T> void add_component(Entity entity, const T& component);
-    template <typename T> requires NoCVRefs<T> void remove_component(Entity entity);
+    template <typename T>
+    requires NoCVRefs<T>
+    void add_component(Entity entity);
+    template <typename T>
+    requires NoCVRefs<T>
+    void add_component(Entity entity, T&& component);
+    template <typename T>
+    requires NoCVRefs<T>
+    void add_component(Entity entity, const T& component);
+    template <typename T>
+    requires NoCVRefs<T>
+    void remove_component(Entity entity);
 
-    template <typename T> requires NoCVRefs<T> T read_component(Entity entity) const;
-    template <typename T> requires NoCVRefs<T> void write_component(Entity entity, T&& component);
-    template <typename T> requires NoCVRefs<T> void write_component(Entity entity, const T& component);
+    template <typename T>
+    requires NoCVRefs<T> T read_component(Entity entity)
+    const;
+    template <typename T>
+    requires NoCVRefs<T>
+    void write_component(Entity entity, T&& component);
+    template <typename T>
+    requires NoCVRefs<T>
+    void write_component(Entity entity, const T& component);
 
-    template <typename T> requires NoCVRefs<T> T& fetch_component_unchecked(Entity entity);
-    template <typename T> requires NoCVRefs<T> const T& fetch_component_unchecked(Entity entity) const;
+    template <typename T>
+    requires NoCVRefs<T> T& fetch_component_unchecked(Entity entity);
+    template <typename T>
+    requires NoCVRefs<T>
+    const T& fetch_component_unchecked(Entity entity) const;
 
 private:
     EntityDatabaseImpl& m_database;
