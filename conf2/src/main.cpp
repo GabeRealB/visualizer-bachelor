@@ -74,7 +74,9 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.min_transparency = 0.1f;
     generation_options.max_transparency = 0.95f;
 
-    generation_options.assets_directory_path = operation.output_path / "external_assets";
+    generation_options.working_directory = operation.output_path;
+
+    generation_options.assets_directory_path = "external_assets";
     generation_options.assets_texture_directory_path = generation_options.assets_directory_path / "textures";
 
     generation_options.cuboid_diffuse_shader_vertex_path = "assets/shaders/cuboid.vs.glsl";

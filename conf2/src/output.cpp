@@ -16,12 +16,14 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
 
 void generate_assets_directory(const GenerationOptions& generation_options)
 {
-    if (std::filesystem::exists(generation_options.assets_directory_path)) {
-        std::filesystem::remove_all(generation_options.assets_directory_path);
+    if (std::filesystem::exists(generation_options.working_directory / generation_options.assets_directory_path)) {
+        std::filesystem::remove_all(generation_options.working_directory / generation_options.assets_directory_path);
     }
 
-    std::filesystem::create_directories(generation_options.assets_directory_path);
-    std::filesystem::create_directory(generation_options.assets_texture_directory_path);
+    std::filesystem::create_directories(
+        generation_options.working_directory / generation_options.assets_directory_path);
+    std::filesystem::create_directory(
+        generation_options.working_directory / generation_options.assets_texture_directory_path);
 }
 
 Visconfig::Config generate_config(
@@ -140,13 +142,17 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
         auto side_texture_name = "entity_" + std::to_string(focus_entity_id + index) + "_texture_side";
         auto top_texture_name = "entity_" + std::to_string(focus_entity_id + index) + "_texture_top";
 
-        auto front_texture_path = generation_options.assets_texture_directory_path / front_texture_name;
-        auto side_texture_path = generation_options.assets_texture_directory_path / side_texture_name;
-        auto top_texture_path = generation_options.assets_texture_directory_path / top_texture_name;
+        auto front_texture_relative_path = generation_options.assets_texture_directory_path / front_texture_name;
+        auto side_texture_relative_path = generation_options.assets_texture_directory_path / side_texture_name;
+        auto top_texture_relative_path = generation_options.assets_texture_directory_path / top_texture_name;
 
-        front_texture_path.replace_extension(".png");
-        side_texture_path.replace_extension(".png");
-        top_texture_path.replace_extension(".png");
+        front_texture_relative_path.replace_extension(".png");
+        side_texture_relative_path.replace_extension(".png");
+        top_texture_relative_path.replace_extension(".png");
+
+        auto front_texture_path = generation_options.working_directory / front_texture_relative_path;
+        auto side_texture_path = generation_options.working_directory / side_texture_relative_path;
+        auto top_texture_path = generation_options.working_directory / top_texture_relative_path;
 
         auto cuboid_size = [&]() -> auto
         {
@@ -167,9 +173,9 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
             Visconfig::Assets::TextureAttributes::GenerateMipMaps,
         };
 
-        assets.push_back(create_texture_asset(front_texture_name, front_texture_path, texture_attributes));
-        assets.push_back(create_texture_asset(side_texture_name, side_texture_path, texture_attributes));
-        assets.push_back(create_texture_asset(top_texture_name, top_texture_path, texture_attributes));
+        assets.push_back(create_texture_asset(front_texture_name, front_texture_relative_path, texture_attributes));
+        assets.push_back(create_texture_asset(side_texture_name, side_texture_relative_path, texture_attributes));
+        assets.push_back(create_texture_asset(top_texture_name, top_texture_relative_path, texture_attributes));
 
         world.entities.push_back(
             generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name, side_texture_name,

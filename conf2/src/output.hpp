@@ -27,6 +27,8 @@ struct GenerationOptions {
     float min_transparency;
     float max_transparency;
 
+    std::filesystem::path working_directory;
+
     std::filesystem::path assets_directory_path;
     std::filesystem::path assets_texture_directory_path;
 
