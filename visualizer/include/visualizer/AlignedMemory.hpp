@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>
 #include <cstddef>
 
 #ifdef _MSC_VER
@@ -20,10 +21,17 @@ template <typename T> struct AlignedDeleter {
 template <typename T>
 typename AlignedDeleter<T>::pointer_type AlignedDeleter<T>::allocate(std::size_t alignment, std::size_t size)
 {
-    // POSIX systems require that the alignment is a multiple of sizeof(void*).
-    if (alignment % sizeof(void*) != 0) {
-        alignment += sizeof(void*) - (alignment % sizeof(void*));
+    // POSIX systems require that the alignment is a power of 2 and multiple of sizeof(void*).
+    if (alignment < sizeof(void*)) {
+        alignment = sizeof(void*);
+    } else {
+        auto leading_zeroes = std::countl_zero(alignment);
+        auto power_of_two = 1ull << ((8 * sizeof(std::size_t)) - leading_zeroes - 1);
+        if (alignment > power_of_two) {
+            alignment = power_of_two << 1;
+        }
     }
+
     // The size must be a multiple of the alignment.
     if (size % alignment != 0) {
         size += alignment - (size % alignment);
