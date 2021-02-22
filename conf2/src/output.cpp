@@ -81,8 +81,10 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     auto framebuffer_name = "framebuffer_" + std::to_string(view_idx);
     auto oit_framebuffer_name = "oit_" + framebuffer_name;
 
-    auto render_resolution_width = generation_options.render_resolution_multiplier * generation_options.screen_width;
-    auto render_resolution_height = generation_options.render_resolution_multiplier * generation_options.screen_height;
+    auto render_resolution_width = static_cast<std::size_t>(
+        generation_options.render_resolution_multiplier * generation_options.screen_width * view_commands.size);
+    auto render_resolution_height = static_cast<std::size_t>(
+        generation_options.render_resolution_multiplier * generation_options.screen_height * view_commands.size);
 
     assets.push_back(create_render_texture_asset(render_texture_name, render_resolution_width, render_resolution_height,
         Visconfig::Assets::TextureFormat::RGBA));
