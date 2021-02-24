@@ -27,4 +27,6 @@ void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float,
     std::array<float, 2> position, const std::vector<std::string>& src, const std::string& target,
     const std::string& shader, std::size_t id, bool draggable);
 
+void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
+    const std::string& attribute, std::size_t entity, std::size_t pass);
 }

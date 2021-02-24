@@ -14,6 +14,7 @@ def cli():
 @click.argument('output', type=click.File('w'))
 def generate(config, template, output):
     views = {}
+    legend = {}
     variables = {"sequential": {}, "parallel": {}}
 
     mapping_template = """[=]() -> int {{
@@ -48,6 +49,9 @@ def generate(config, template, output):
     # Extract parallel variables
     for name, region in config_data["PAR_CLOCK"].items():
         variables["parallel"][name] = region
+
+    # Extract legend
+    legend = config_data["LEGEND"]
 
     # Extract views
     for name, view in config_data["CUBES"].items():
@@ -125,6 +129,18 @@ def generate(config, template, output):
         code_str = code_str + """\tconfig_instance.add_view_container("{}", {});\n\n""" \
             .format(view_name, container_name) \
             .expandtabs(4)
+
+    # Generate legend
+    for label, entry in legend.items():
+        if entry["type"] == "color":
+            entry_data = entry["data"]
+            view_name = entry_data["color"][0]
+            cuboid_idx = entry_data["color"][1]
+            description = entry_data["description"]
+
+            code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}", "{}", {});\n\n""" \
+                .format(label, description, view_name, cuboid_idx) \
+                .expandtabs(4)
 
     # Output the code
     generated_code = template.read().replace("@CONFIG_INIT_FUNC@", code_str)

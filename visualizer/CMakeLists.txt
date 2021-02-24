@@ -49,7 +49,7 @@ set(VISUALIZER_INCLUDES
         include/visualizer/CameraTypeSwitchingSystem.hpp
         include/visualizer/FixedCameraMovementSystem.hpp
         include/visualizer/EntityContainer.hpp
-        include/visualizer/EntityDatabase.impl include/visualizer/CuboidCommandList.hpp include/visualizer/CuboidCommandSystem.hpp include/visualizer/ComplexVertexAttributeBuffer.hpp include/visualizer/MaterialWindowSystem.hpp)
+        include/visualizer/EntityDatabase.impl include/visualizer/CuboidCommandList.hpp include/visualizer/CuboidCommandSystem.hpp include/visualizer/ComplexVertexAttributeBuffer.hpp include/visualizer/MaterialWindowSystem.hpp include/visualizer/Canvas.hpp include/visualizer/GUISystem.hpp)
 
 set(VISUALIZER_SRC
         src/FreeFlyCameraMovementSystem.cpp
@@ -74,7 +74,7 @@ set(VISUALIZER_SRC
         src/World.cpp
         src/TextDrawingSystem.cpp
         src/AssetDatabase.cpp
-        src/CameraSwitchingSystem.cpp src/CameraTypeSwitchingSystem.cpp src/FixedCameraMovementSystem.cpp src/EntityContainer.cpp src/CuboidCommandSystem.cpp src/ComplexVertexAttributeBuffer.cpp src/MaterialWindowSystem.cpp)
+        src/CameraSwitchingSystem.cpp src/CameraTypeSwitchingSystem.cpp src/FixedCameraMovementSystem.cpp src/EntityContainer.cpp src/CuboidCommandSystem.cpp src/ComplexVertexAttributeBuffer.cpp src/MaterialWindowSystem.cpp src/GUISystem.cpp)
 
 
 add_library(visualizer STATIC ${VISUALIZER_INCLUDES} ${VISUALIZER_SRC})

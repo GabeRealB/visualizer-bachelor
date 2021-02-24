@@ -13,6 +13,16 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
         std::make_shared<Visconfig::Components::CameraSwitcherComponent>() });
     entity.components.push_back(
         { Visconfig::Components::ComponentType::Copy, std::make_shared<Visconfig::Components::CopyComponent>() });
+    entity.components.push_back(
+        { Visconfig::Components::ComponentType::Canvas, std::make_shared<Visconfig::Components::CanvasComponent>() });
+
+    auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(entity.components[3].data);
+    canvas->entries.push_back({
+        Visconfig::Components::CanvasEntryType::LegendGUI,
+        { 0.2f, 0.2f },
+        { 0.0f, 0.0f },
+        Visconfig::Components::LegendGUI{},
+    });
 
     return entity;
 }
@@ -362,6 +372,18 @@ void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float,
         shader,
         id,
         draggable,
+    });
+}
+
+void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
+    const std::string& attribute, std::size_t entity, std::size_t pass)
+{
+    auto canvas
+        = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(coordinator_entity.components[3].data);
+    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[0].gui_data);
+    legend_gui.entries.push_back({
+        Visconfig::Components::LegendGUIEntryType::ColorEntry,
+        Visconfig::Components::LegendGUIColorEntry{ entity, pass, label, description, attribute },
     });
 }
 

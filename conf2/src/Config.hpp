@@ -8,6 +8,7 @@
 #include <span>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 namespace Config {
@@ -289,6 +290,62 @@ private:
     std::vector<std::set<std::string>> m_variable_requirements;
 };
 
+enum class LegendEntityType { Color };
+
+class LegendEntity {
+public:
+    LegendEntity(const std::string& label, LegendEntityType type)
+        : m_label{ label }
+        , m_type{ type }
+    {
+    }
+
+    LegendEntity(const LegendEntity& other) = default;
+    LegendEntity(LegendEntity&& other) noexcept = default;
+    virtual ~LegendEntity() = default;
+
+    LegendEntity& operator=(const LegendEntity& other) = default;
+    LegendEntity& operator=(LegendEntity&& other) noexcept = default;
+
+    LegendEntityType type() const { return m_type; }
+
+    const std::string& label() const { return m_label; }
+
+private:
+    std::string m_label;
+    LegendEntityType m_type;
+};
+
+class ColorLegend : public LegendEntity {
+public:
+    ColorLegend(
+        const std::string& label, const std::string& description, const std::string& view_name, std::size_t cuboid_idx)
+        : LegendEntity{ label, LegendEntityType::Color }
+        , m_view_name{ view_name }
+        , m_cuboid_idx{ cuboid_idx }
+        , m_description{ description }
+    {
+    }
+
+    ColorLegend(const ColorLegend& other) = default;
+    ColorLegend(ColorLegend&& other) noexcept = default;
+    ~ColorLegend() override = default;
+
+    ColorLegend& operator=(const ColorLegend& other) = default;
+    ColorLegend& operator=(ColorLegend&& other) noexcept = default;
+
+    const std::string& view_name() const { return m_view_name; }
+
+    std::size_t cuboid_idx() const { return m_cuboid_idx; }
+
+    const std::string& description() const { return m_description; }
+
+private:
+    std::string m_view_name;
+    std::size_t m_cuboid_idx;
+    std::string m_description;
+};
+
 class ConfigContainer {
 public:
     ConfigContainer() = default;
@@ -303,6 +360,25 @@ public:
     {
         static ConfigContainer container{};
         return container;
+    }
+
+    std::span<const std::variant<ColorLegend>> legend_entries() const { return { m_legend.begin(), m_legend.size() }; }
+
+    void add_color_legend(
+        const std::string& label, const std::string& description, const std::string& view_name, std::size_t cuboid_idx)
+    {
+        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), view_name); pos != m_view_names.end()) {
+            auto index = std::distance(m_view_names.begin(), pos);
+            if (m_views[index].get_num_cuboids() <= cuboid_idx) {
+                std::cerr << "Out of bounds." << std::endl;
+                std::abort();
+            } else {
+                m_legend.push_back(ColorLegend{ label, description, view_name, cuboid_idx });
+            }
+        } else {
+            std::cerr << "The view does not exist." << std::endl;
+            std::abort();
+        }
     }
 
     const ViewContainer& get_view_container(const std::string& name) const
@@ -346,6 +422,7 @@ public:
 private:
     std::vector<ViewContainer> m_views;
     std::vector<std::string> m_view_names;
+    std::vector<std::variant<ColorLegend>> m_legend;
     std::vector<std::tuple<VariableType, std::string, std::size_t, std::size_t>> m_variables;
 };
 

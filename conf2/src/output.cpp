@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <map>
 
+#include "Config.hpp"
 #include "asset_utilities.hpp"
 #include "entity_utilities.hpp"
 
@@ -11,7 +12,7 @@ namespace Config {
 
 Visconfig::World generate_world(const ConfigCommandList& config_command_list,
     const GenerationOptions& generation_options, std::vector<Visconfig::Asset>& assets);
-void populate_view(Visconfig::World& world, const ViewCommandList& view_commands,
+std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewCommandList& view_commands,
     const GenerationOptions& generation_options, std::vector<Visconfig::Asset>& assets, std::size_t view_idx);
 
 void generate_assets_directory(const GenerationOptions& generation_options)
@@ -64,14 +65,27 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
 
     world.entities.push_back(generate_coordinator_entity(0));
 
+    std::map<std::string, std::vector<std::size_t>> view_entity_map{};
     for (std::size_t i = 0; i < config_command_list.view_commands.size(); ++i) {
-        populate_view(world, config_command_list.view_commands[i], generation_options, assets, i);
+        view_entity_map[config_command_list.view_commands[i].view_name]
+            = populate_view(world, config_command_list.view_commands[i], generation_options, assets, i);
+    }
+
+    auto legend_entries = Config::ConfigContainer::get_instance().legend_entries();
+
+    for (auto& legend_entry : legend_entries) {
+        if (std::holds_alternative<ColorLegend>(legend_entry)) {
+            auto& color = std::get<ColorLegend>(legend_entry);
+            auto entity = view_entity_map[color.view_name()][color.cuboid_idx()];
+            add_color_legend(
+                world.entities.front(), color.label(), color.description(), "active_fill_color", entity, 1);
+        }
     }
 
     return world;
 }
 
-void populate_view(Visconfig::World& world, const ViewCommandList& view_commands,
+std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewCommandList& view_commands,
     const GenerationOptions& generation_options, std::vector<Visconfig::Asset>& assets, std::size_t view_idx)
 {
     auto render_texture_name = "render_texture_" + std::to_string(view_idx);
@@ -136,6 +150,7 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
         * std::pow(max_cuboid_size[0] * max_cuboid_size[1] * max_cuboid_size[2], 1.0f / 3.0f));
     texture_border_width = texture_border_width == 0 ? 1 : texture_border_width;
 
+    std::vector<std::size_t> generated_entities{};
     auto focus_entity_id = world.entities.size();
     for (auto cuboid = view_commands.cuboids.begin(); cuboid != view_commands.cuboids.end(); ++cuboid) {
         auto index = std::distance(view_commands.cuboids.begin(), cuboid);
@@ -179,16 +194,19 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
         assets.push_back(create_texture_asset(side_texture_name, side_texture_relative_path, texture_attributes));
         assets.push_back(create_texture_asset(top_texture_name, top_texture_relative_path, texture_attributes));
 
-        world.entities.push_back(
-            generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name, side_texture_name,
-                top_texture_name, accumulation_multisample_texture_name, revealage_multisample_texture_name,
-                generation_options.cuboid_mesh_asset_name, generation_options.cuboid_pipeline_name,
-                {
-                    generation_options.cuboid_diffuse_shader_asset_name,
-                    generation_options.cuboid_oit_shader_asset_name,
-                    generation_options.cuboid_oit_blend_shader_asset_name,
-                },
-                max_cuboid_size));
+        auto entity = generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name,
+            side_texture_name, top_texture_name, accumulation_multisample_texture_name,
+            revealage_multisample_texture_name, generation_options.cuboid_mesh_asset_name,
+            generation_options.cuboid_pipeline_name,
+            {
+                generation_options.cuboid_diffuse_shader_asset_name,
+                generation_options.cuboid_oit_shader_asset_name,
+                generation_options.cuboid_oit_blend_shader_asset_name,
+            },
+            max_cuboid_size);
+
+        generated_entities.push_back(entity.id);
+        world.entities.push_back(std::move(entity));
     }
 
     auto camera_distance = 1.2f
@@ -230,6 +248,8 @@ void populate_view(Visconfig::World& world, const ViewCommandList& view_commands
     extend_composition(coordinator_entity, { size, size }, { position_x, position_y }, composition_src,
         generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
         view_idx, movable);
+
+    return generated_entities;
 }
 
 }

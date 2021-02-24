@@ -11,6 +11,7 @@
 #include <visualizer/Camera.hpp>
 #include <visualizer/CameraSwitchingSystem.hpp>
 #include <visualizer/CameraTypeSwitchingSystem.hpp>
+#include <visualizer/Canvas.hpp>
 #include <visualizer/CompositingSystem.hpp>
 #include <visualizer/Composition.hpp>
 #include <visualizer/Cube.hpp>
@@ -21,6 +22,7 @@
 #include <visualizer/FixedCameraMovementSystem.hpp>
 #include <visualizer/FreeFly.hpp>
 #include <visualizer/FreeFlyCameraMovementSystem.hpp>
+#include <visualizer/GUISystem.hpp>
 #include <visualizer/Iteration.hpp>
 #include <visualizer/MaterialWindowSystem.hpp>
 #include <visualizer/MeshDrawingSystem.hpp>
@@ -435,6 +437,7 @@ void register_component_descriptors(EntityDatabaseContext& database_context)
     database_context.register_component_desc<Composition>();
     database_context.register_component_desc<Draggable>();
     database_context.register_component_desc<Copy>();
+    database_context.register_component_desc<Canvas>();
 }
 
 void add_entity(EntityDatabaseContext& database_context, std::unordered_map<std::size_t, Entity>& entity_id_map,
@@ -496,6 +499,9 @@ void add_entity(EntityDatabaseContext& database_context, std::unordered_map<std:
             break;
         case Visconfig::Components::ComponentType::Copy:
             archetype = archetype.with<Copy>();
+            break;
+        case Visconfig::Components::ComponentType::Canvas:
+            archetype = archetype.with<Canvas>();
             break;
         }
     }
@@ -1690,6 +1696,50 @@ void initialize_component(
     database_context.write_component(entity, Copy{ std::move(operations) });
 }
 
+void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_t, Entity>& entity_id_map,
+    const Visconfig::Components::LegendGUIColorEntry& color_entry)
+{
+    LegendGUIColor color{};
+    color.entity = entity_id_map.at(color_entry.entity);
+    color.pass = color_entry.pass;
+    color.label = color_entry.label;
+    color.description = color_entry.description;
+    color.attribute = color_entry.attribute;
+
+    gui.entries.push_back(std::move(color));
+}
+
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::CanvasComponent& component,
+    const std::unordered_map<std::size_t, Entity>& entity_id_map)
+{
+    Canvas canvas{};
+
+    for (auto& entry : component.entries) {
+        auto size = glm::make_vec2(entry.size.data());
+        auto position = glm::make_vec2(entry.position.data());
+
+        switch (entry.type) {
+        case Visconfig::Components::CanvasEntryType::LegendGUI: {
+            LegendGUI gui{};
+            gui.size = size;
+            gui.position = position;
+
+            auto& component_gui = std::get<Visconfig::Components::LegendGUI>(entry.gui_data);
+            for (auto& legend_entry : component_gui.entries) {
+                std::visit(
+                    [&](auto&& entry) { initialize_legend_entry(gui, entity_id_map, entry); }, legend_entry.entry);
+            }
+
+            canvas.guis.push_back(std::move(gui));
+            break;
+        }
+        }
+    }
+
+    database_context.write_component(entity, std::move(canvas));
+}
+
 void initialize_entity(EntityDatabaseContext& database_context,
     const std::unordered_map<std::size_t, Entity>& entityIdMap, const Visconfig::Entity& entity)
 {
@@ -1773,6 +1823,10 @@ void initialize_entity(EntityDatabaseContext& database_context,
             initialize_component(database_context, ecs_entity,
                 *std::static_pointer_cast<const Visconfig::Components::CopyComponent>(component.data));
             break;
+        case Visconfig::Components::ComponentType::Canvas:
+            initialize_component(database_context, ecs_entity,
+                *std::static_pointer_cast<const Visconfig::Components::CanvasComponent>(component.data), entityIdMap);
+            break;
         }
     }
 }
@@ -1806,6 +1860,7 @@ World initialize_world(const Visconfig::World& world)
 
     systemManager->addSystem<MaterialWindowSystem>("draw"sv);
     systemManager->addSystem<MeshDrawingSystem>("draw"sv);
+    systemManager->addSystem<GUISystem>("composite"sv);
     systemManager->addSystem<CompositingSystem>("composite"sv);
 
     return ecs_world;

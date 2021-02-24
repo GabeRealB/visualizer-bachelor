@@ -59,6 +59,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<ComponentData>& v, Compone
     case ComponentType::Copy:
         to_json(j, *std::static_pointer_cast<CopyComponent>(v));
         break;
+    case ComponentType::Canvas:
+        to_json(j, *std::static_pointer_cast<CanvasComponent>(v));
+        break;
     }
 }
 
@@ -155,6 +158,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<ComponentData>& v, Compo
         from_json(j, *ptr);
         v = std::static_pointer_cast<ComponentData>(ptr);
     } break;
+    case ComponentType::Canvas: {
+        auto ptr{ std::make_shared<CanvasComponent>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<ComponentData>(ptr);
+    } break;
     }
 }
 
@@ -179,6 +187,7 @@ std::unordered_map<ComponentType, std::string> sComponentTypeStringNameMap{
     { ComponentType::CameraSwitcher, "camera_switcher" },
     { ComponentType::Composition, "composition" },
     { ComponentType::Copy, "copy" },
+    { ComponentType::Canvas, "canvas" },
 };
 
 void to_json(nlohmann::json& j, const ComponentType& v) { j = sComponentTypeStringNameMap[v]; }
@@ -497,6 +506,10 @@ void from_json(const nlohmann::json& j, CompositionComponent& v)
 void to_json(nlohmann::json& j, const CopyComponent& v) { j[CopyComponent::operationsJson] = v.operations; }
 
 void from_json(const nlohmann::json& j, CopyComponent& v) { j[CopyComponent::operationsJson].get_to(v.operations); }
+
+void to_json(nlohmann::json& j, const CanvasComponent& v) { j[CanvasComponent::entries_json] = v.entries; }
+
+void from_json(const nlohmann::json& j, CanvasComponent& v) { j[CanvasComponent::entries_json].get_to(v.entries); }
 
 /*Internal Structs*/
 
@@ -1028,9 +1041,9 @@ void from_json(const nlohmann::json& j, DrawMultipleCommand& v)
     j[DrawMultipleCommand::cuboid_indices_json].get_to(v.cuboid_indices);
 }
 
-void to_json( [[maybe_unused]] nlohmann::json& j,  [[maybe_unused]] const DeleteCommand& v) {}
+void to_json([[maybe_unused]] nlohmann::json& j, [[maybe_unused]] const DeleteCommand& v) {}
 
-void from_json( [[maybe_unused]] const nlohmann::json& j,  [[maybe_unused]] DeleteCommand& v) {}
+void from_json([[maybe_unused]] const nlohmann::json& j, [[maybe_unused]] DeleteCommand& v) {}
 
 void to_json(nlohmann::json& j, const DeleteMultipleCommand& v) { j[DeleteMultipleCommand::counter_json] = v.counter; }
 
@@ -1121,6 +1134,48 @@ void from_json(const nlohmann::json& j, CopyOperation& v)
     j[CopyOperation::destinationJson].get_to(v.destination);
     j[CopyOperation::flagsJson].get_to(v.flags);
     j[CopyOperation::filterJson].get_to(v.filter);
+}
+
+void to_json(nlohmann::json& j, const LegendGUIEntry& v)
+{
+    j[LegendGUIEntry::type_json] = v.type;
+    std::visit([&](auto& entry) { j[LegendGUIEntry::entry_json] = entry; }, v.entry);
+}
+
+void from_json(const nlohmann::json& j, LegendGUIEntry& v)
+{
+    j[LegendGUIEntry::type_json].get_to(v.type);
+    switch (v.type) {
+    case LegendGUIEntryType::ColorEntry: {
+        LegendGUIColorEntry entry;
+        from_json(j[LegendGUIEntry::entry_json], entry);
+        v.entry = std::move(entry);
+        break;
+    }
+    }
+}
+
+void to_json(nlohmann::json& j, const CanvasEntry& v)
+{
+    j[CanvasEntry::type_json] = v.type;
+    j[CanvasEntry::size_json] = v.size;
+    j[CanvasEntry::position_json] = v.position;
+    std::visit([&](auto& entry) { j[CanvasEntry::gui_data_json] = entry; }, v.gui_data);
+}
+
+void from_json(const nlohmann::json& j, CanvasEntry& v)
+{
+    j[CanvasEntry::type_json].get_to(v.type);
+    j[CanvasEntry::size_json].get_to(v.size);
+    j[CanvasEntry::position_json].get_to(v.position);
+    switch (v.type) {
+    case CanvasEntryType::LegendGUI: {
+        LegendGUI gui;
+        from_json(j[CanvasEntry::gui_data_json], gui);
+        v.gui_data = std::move(gui);
+        break;
+    }
+    }
 }
 
 }

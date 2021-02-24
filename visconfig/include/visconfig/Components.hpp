@@ -31,6 +31,7 @@ enum class ComponentType {
     CameraSwitcher,
     Composition,
     Copy,
+    Canvas,
 };
 
 struct ComponentData {
@@ -403,6 +404,48 @@ struct CopyComponent : public ComponentData {
     static constexpr const char* operationsJson{ "operations" };
 };
 
+enum class CanvasEntryType { LegendGUI };
+
+enum class LegendGUIEntryType { ColorEntry };
+
+struct LegendGUIColorEntry {
+    std::size_t entity;
+    std::size_t pass;
+    std::string label;
+    std::string description;
+    std::string attribute;
+};
+
+struct LegendGUIEntry {
+    LegendGUIEntryType type;
+    std::variant<LegendGUIColorEntry> entry;
+
+    static constexpr const char* type_json{ "type" };
+    static constexpr const char* entry_json{ "entry" };
+};
+
+struct LegendGUI {
+    std::vector<LegendGUIEntry> entries;
+};
+
+struct CanvasEntry {
+    CanvasEntryType type;
+    std::array<float, 2> size;
+    std::array<float, 2> position;
+    std::variant<LegendGUI> gui_data;
+
+    static constexpr const char* type_json{ "type" };
+    static constexpr const char* size_json{ "size" };
+    static constexpr const char* position_json{ "position" };
+    static constexpr const char* gui_data_json{ "gui_data" };
+};
+
+struct CanvasComponent : public ComponentData {
+    std::vector<CanvasEntry> entries;
+
+    static constexpr const char* entries_json{ "entries" };
+};
+
 /*Enums*/
 
 void to_json(nlohmann::json& j, const ComponentType& v);
@@ -450,6 +493,16 @@ void from_json(const nlohmann::json& j, CopyOperationFlag& v);
 
 void to_json(nlohmann::json& j, const CopyOperationFilter& v);
 void from_json(const nlohmann::json& j, CopyOperationFilter& v);
+
+NLOHMANN_JSON_SERIALIZE_ENUM(CanvasEntryType,
+    {
+        { CanvasEntryType::LegendGUI, "legend_gui" },
+    })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
+    {
+        { LegendGUIEntryType::ColorEntry, "color_entry" },
+    })
 
 /*Components*/
 
@@ -506,6 +559,9 @@ void from_json(const nlohmann::json& j, CompositionComponent& v);
 
 void to_json(nlohmann::json& j, const CopyComponent& v);
 void from_json(const nlohmann::json& j, CopyComponent& v);
+
+void to_json(nlohmann::json& j, const CanvasComponent& v);
+void from_json(const nlohmann::json& j, CanvasComponent& v);
 
 /*Internal Structs*/
 
@@ -567,5 +623,15 @@ void from_json(const nlohmann::json& j, CompositionOperation& v);
 
 void to_json(nlohmann::json& j, const CopyOperation& v);
 void from_json(const nlohmann::json& j, CopyOperation& v);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, entity, pass, label, description, attribute)
+
+void to_json(nlohmann::json& j, const LegendGUIEntry& v);
+void from_json(const nlohmann::json& j, LegendGUIEntry& v);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUI, entries)
+
+void to_json(nlohmann::json& j, const CanvasEntry& v);
+void from_json(const nlohmann::json& j, CanvasEntry& v);
 
 }
