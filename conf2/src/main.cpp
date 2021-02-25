@@ -9,7 +9,10 @@ struct Print {
 
 struct Generate {
     std::filesystem::path output_path;
+    std::filesystem::path resource_path;
 };
+
+constexpr std::string_view usage_string = "Usage: conf2 [print | generate [-o output_path] [-r resource_path]]";
 
 using OperationVariant = std::variant<std::monostate, Print, Generate>;
 
@@ -18,8 +21,8 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2 && argc != 4) {
-        std::cerr << "Usage: conf2 [print | generate [-o output_path]]" << std::endl;
+    if (argc == 1) {
+        std::cerr << usage_string << std::endl;
         return 1;
     }
 
@@ -27,15 +30,50 @@ int main(int argc, char* argv[])
         if (strcmp(argv[1], "print") == 0) {
             return Print{};
         } else if (strcmp(argv[1], "generate") == 0) {
-            if (argc == 2) {
-                return Generate{ std::filesystem::current_path() };
-            } else if (strcmp(argv[2], "-o") == 0) {
-                return Generate{ std::filesystem::path{ argv[3] } };
+            Generate options{};
+
+            bool output_path = false;
+            bool resource_path = false;
+
+            for (int i = 2; i < argc; i++) {
+                if (strcmp(argv[i], "-o") == 0) {
+                    if (i + 1 >= argc) {
+                        std::cerr << "Too few arguments after -o, expected 1, got 0." << std::endl;
+                        return std::monostate{};
+                    }
+
+                    i++;
+                    output_path = true;
+                    options.output_path = std::filesystem::path{ argv[i] };
+                } else if (strcmp(argv[i], "-r") == 0) {
+                    if (i + 1 >= argc) {
+                        std::cerr << "Too few arguments after -r, expected 1, got 0." << std::endl;
+                        return std::monostate{};
+                    }
+
+                    i++;
+                    resource_path = true;
+                    options.resource_path = std::filesystem::path{ argv[i] };
+                }
             }
+
+            if (!output_path) {
+                options.output_path = std::filesystem::current_path();
+            }
+            if (!resource_path) {
+                options.resource_path = std::filesystem::current_path();
+            }
+
+            return options;
         }
 
         return std::monostate{};
     }();
+
+    if (std::holds_alternative<std::monostate>(operation_variant)) {
+        std::cerr << usage_string << std::endl;
+        return 1;
+    }
 
     auto command_list = Config::generate_config_command_list();
 
@@ -75,6 +113,7 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
     generation_options.max_transparency = 0.95f;
 
     generation_options.working_directory = operation.output_path;
+    generation_options.resource_directory = operation.resource_path;
 
     generation_options.assets_directory_path = "external_assets";
     generation_options.assets_texture_directory_path = generation_options.assets_directory_path / "textures";
