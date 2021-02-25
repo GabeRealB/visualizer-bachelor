@@ -241,7 +241,12 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     auto camera_active = view_idx == 0;
     std::map<std::string, std::vector<std::string>> camera_targets = {
         { generation_options.cuboid_pipeline_name,
-            { framebuffer_multisample_name, oit_framebuffer_multisample_name, framebuffer_multisample_name } },
+            {
+                framebuffer_multisample_name,
+                oit_framebuffer_multisample_name,
+                framebuffer_multisample_name,
+                framebuffer_name,
+            } },
     };
 
     auto camera_entity_id = world.entities.size();
@@ -251,10 +256,6 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
         camera_perspective, camera_active));
 
     auto& coordinator_entity = world.entities.front();
-    std::vector<Visconfig::Components::CopyOperationFlag> copy_flags = {
-        Visconfig::Components::CopyOperationFlag::Color,
-        Visconfig::Components::CopyOperationFlag::Depth,
-    };
     std::vector<std::string> composition_src = { render_texture_name };
 
     auto size = view_commands.size;
@@ -263,8 +264,6 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     auto position_y = (view_commands.position[1] * 2.0f) - 1.0f + size;
 
     extend_camera_switcher(coordinator_entity, camera_entity_id);
-    extend_copy(coordinator_entity, framebuffer_multisample_name, framebuffer_name,
-        Visconfig::Components::CopyOperationFilter::Nearest, copy_flags);
     extend_composition(coordinator_entity, { size, size }, { position_x, position_y }, composition_src,
         generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
         view_idx, movable);

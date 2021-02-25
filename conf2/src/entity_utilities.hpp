@@ -19,9 +19,6 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
     std::array<int, 3> global_size);
 
-void extend_copy(Visconfig::Entity& coordinator_entity, const std::string& src_name, const std::string& dst_name,
-    Visconfig::Components::CopyOperationFilter filter,
-    const std::vector<Visconfig::Components::CopyOperationFlag>& flags);
 void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id);
 void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float, 2> scale,
     std::array<float, 2> position, const std::vector<std::string>& src, const std::string& target,

@@ -161,6 +161,8 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     constexpr std::size_t diffuse_pass_idx = 0;
     constexpr std::size_t transparent_pass_idx = 1;
     constexpr std::size_t oit_blend_pass_idx = 2;
+    constexpr std::size_t sampling_src_idx = 2;
+    constexpr std::size_t sampling_dst_idx = 3;
 
     targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
     auto camera_viewport{ targets[transparent_pass_idx]->viewport() };
@@ -328,6 +330,15 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     glBlendFunc(GL_ONE, GL_ZERO);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
+
+    // sampling pass
+    std::vector<FramebufferCopyFlags> copy_flags = {
+        FramebufferCopyFlags::Color,
+        FramebufferCopyFlags::Depth,
+    };
+    assert(glGetError() == GL_NO_ERROR);
+    targets[sampling_src_idx]->copyTo(*targets[sampling_dst_idx], copy_flags, FramebufferCopyFilter::Nearest);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 }
