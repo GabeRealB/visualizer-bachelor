@@ -18,7 +18,22 @@
     "seq_til_id_2": [ 1, 2         ],
     "seq_til_id_3": [ 1, 2         ]
   },
-  "LEGEND": {},
+  "LEGEND": {
+    "sample": {
+      "type": "color",
+      "data": {
+        "color": ["computation", 2],
+        "description": "... layer"
+      }
+    },
+    "thread": {
+      "type": "color",
+      "data": {
+        "color": ["computation", 5],
+        "description": "Thread layer"
+      }
+    }
+  },
   "CUBES" : {
     "buffer A": {
       "mapping": [
