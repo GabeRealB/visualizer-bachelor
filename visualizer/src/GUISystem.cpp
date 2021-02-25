@@ -31,6 +31,7 @@ void GUISystem::run(void*)
     });
 }
 
+void render_legend_entry(EntityDatabaseContext&, const LegendGUIImage&);
 void render_legend_entry(EntityDatabaseContext&, const LegendGUIColor&);
 
 void render_gui(EntityDatabaseContext& database_context, const LegendGUI& gui)
@@ -41,8 +42,8 @@ void render_gui(EntityDatabaseContext& database_context, const LegendGUI& gui)
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImVec2 work_pos = viewport->Pos; // Use work area to avoid menu-bar/task-bar, if any!
     ImVec2 window_pos, window_pos_pivot;
-    window_pos.x = (work_pos.x + PAD);
-    window_pos.y = (work_pos.y + PAD);
+    window_pos.x = (work_pos.x + gui.position.x + PAD);
+    window_pos.y = (work_pos.y + gui.position.y + PAD);
     window_pos_pivot.x = 0.0f;
     window_pos_pivot.y = 0.0f;
     ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
@@ -56,6 +57,32 @@ void render_gui(EntityDatabaseContext& database_context, const LegendGUI& gui)
         }
     }
     ImGui::End();
+}
+
+void render_legend_entry(EntityDatabaseContext&, const LegendGUIImage& image_entry)
+{
+    assert(!image_entry.texture.expired());
+
+    auto texture = image_entry.texture.lock();
+    assert(texture->type() == TextureType::Texture2D);
+    auto texture_2d = std::static_pointer_cast<const Texture2D>(texture);
+
+    ImVec2 texture_size;
+    if (image_entry.absolute) {
+        texture_size = { static_cast<float>(texture_2d->width()), static_cast<float>(texture_2d->height()) };
+    } else {
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        texture_size = viewport->Size;
+    }
+
+    texture_size.x *= image_entry.scaling.x;
+    texture_size.y *= image_entry.scaling.y;
+
+    ImGui::Image(reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size,
+        ImVec2{ 0.0f, 0.0f }, ImVec2{ 1.0f, 1.0f });
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", image_entry.description.c_str());
+    }
 }
 
 void render_legend_entry(EntityDatabaseContext& database_context, const LegendGUIColor& color_entry)

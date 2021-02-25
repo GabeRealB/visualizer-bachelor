@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cassert>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <set>
@@ -290,7 +291,7 @@ private:
     std::vector<std::set<std::string>> m_variable_requirements;
 };
 
-enum class LegendEntityType { Color };
+enum class LegendEntityType { Color, Image };
 
 class LegendEntity {
 public:
@@ -314,6 +315,42 @@ public:
 private:
     std::string m_label;
     LegendEntityType m_type;
+};
+
+class ImageLegend : public LegendEntity {
+public:
+    ImageLegend(const std::string& label, const std::string& image_name, const std::filesystem::path& image_path,
+        const std::array<float, 2>& scaling, bool absolute)
+        : LegendEntity{ label, LegendEntityType::Color }
+        , m_absolute{ absolute }
+        , m_image_name{ image_name }
+        , m_scaling{ scaling }
+        , m_image_path{ image_path }
+    {
+    }
+
+    ImageLegend(const ImageLegend& other) = default;
+    ImageLegend(ImageLegend&& other) noexcept = default;
+    ~ImageLegend() override = default;
+
+    ImageLegend& operator=(const ImageLegend& other) = default;
+    ImageLegend& operator=(ImageLegend&& other) noexcept = default;
+
+    bool absolute() const { return m_absolute; }
+
+    const std::string& image_name() const { return m_image_name; }
+
+    const std::string& description() const { return label(); }
+
+    const std::array<float, 2>& scaling() const { return m_scaling; }
+
+    const std::filesystem::path& image_path() const { return m_image_path; }
+
+private:
+    bool m_absolute;
+    std::string m_image_name;
+    std::array<float, 2> m_scaling;
+    std::filesystem::path m_image_path;
 };
 
 class ColorLegend : public LegendEntity {
@@ -348,6 +385,8 @@ private:
 
 class ConfigContainer {
 public:
+    using LegendVariant = std::variant<ColorLegend, ImageLegend>;
+
     ConfigContainer() = default;
     ConfigContainer(const ConfigContainer& other) = default;
     ConfigContainer(ConfigContainer&& other) noexcept = default;
@@ -362,7 +401,7 @@ public:
         return container;
     }
 
-    std::span<const std::variant<ColorLegend>> legend_entries() const { return { m_legend.begin(), m_legend.size() }; }
+    std::span<const LegendVariant> legend_entries() const { return { m_legend.begin(), m_legend.size() }; }
 
     void add_color_legend(
         const std::string& label, const std::string& description, const std::string& view_name, std::size_t cuboid_idx)
@@ -379,6 +418,12 @@ public:
             std::cerr << "The view does not exist." << std::endl;
             std::abort();
         }
+    }
+
+    void add_image_legend(const std::string& label, const std::string& image_name,
+        const std::filesystem::path& image_path, const std::array<float, 2>& scaling, bool absolute)
+    {
+        m_legend.push_back(ImageLegend{ label, image_name, image_path, scaling, absolute });
     }
 
     const ViewContainer& get_view_container(const std::string& name) const
@@ -421,8 +466,8 @@ public:
 
 private:
     std::vector<ViewContainer> m_views;
+    std::vector<LegendVariant> m_legend;
     std::vector<std::string> m_view_names;
-    std::vector<std::variant<ColorLegend>> m_legend;
     std::vector<std::tuple<VariableType, std::string, std::size_t, std::size_t>> m_variables;
 };
 

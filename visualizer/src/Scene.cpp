@@ -1709,6 +1709,18 @@ void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_
     gui.entries.push_back(std::move(color));
 }
 
+void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_t, Entity>&,
+    const Visconfig::Components::LegendGUIImageEntry& image_entry)
+{
+    LegendGUIImage image{};
+    image.absolute = image_entry.absolute;
+    image.scaling = glm::make_vec2(image_entry.scaling.data());
+    image.description = image_entry.description;
+    image.texture = std::static_pointer_cast<const Texture>(AssetDatabase::getAsset(image_entry.image).data);
+
+    gui.entries.push_back(std::move(image));
+}
+
 void initialize_component(EntityDatabaseContext& database_context, Entity entity,
     const Visconfig::Components::CanvasComponent& component,
     const std::unordered_map<std::size_t, Entity>& entity_id_map)

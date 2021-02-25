@@ -1152,6 +1152,12 @@ void from_json(const nlohmann::json& j, LegendGUIEntry& v)
         v.entry = std::move(entry);
         break;
     }
+    case LegendGUIEntryType::ImageEntry: {
+        LegendGUIImageEntry entry;
+        from_json(j[LegendGUIEntry::entry_json], entry);
+        v.entry = std::move(entry);
+        break;
+    }
     }
 }
 

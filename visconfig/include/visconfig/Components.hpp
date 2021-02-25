@@ -406,7 +406,14 @@ struct CopyComponent : public ComponentData {
 
 enum class CanvasEntryType { LegendGUI };
 
-enum class LegendGUIEntryType { ColorEntry };
+enum class LegendGUIEntryType { ColorEntry, ImageEntry };
+
+struct LegendGUIImageEntry {
+    bool absolute;
+    std::string image;
+    std::string description;
+    std::array<float, 2> scaling;
+};
 
 struct LegendGUIColorEntry {
     std::size_t entity;
@@ -418,7 +425,7 @@ struct LegendGUIColorEntry {
 
 struct LegendGUIEntry {
     LegendGUIEntryType type;
-    std::variant<LegendGUIColorEntry> entry;
+    std::variant<LegendGUIColorEntry, LegendGUIImageEntry> entry;
 
     static constexpr const char* type_json{ "type" };
     static constexpr const char* entry_json{ "entry" };
@@ -502,6 +509,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(CanvasEntryType,
 NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
     {
         { LegendGUIEntryType::ColorEntry, "color_entry" },
+        { LegendGUIEntryType::ImageEntry, "image_entry" },
     })
 
 /*Components*/
@@ -623,6 +631,8 @@ void from_json(const nlohmann::json& j, CompositionOperation& v);
 
 void to_json(nlohmann::json& j, const CopyOperation& v);
 void from_json(const nlohmann::json& j, CopyOperation& v);
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, description, scaling)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, entity, pass, label, description, attribute)
 

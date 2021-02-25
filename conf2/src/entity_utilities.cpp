@@ -387,4 +387,16 @@ void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& 
     });
 }
 
+void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
+    const std::array<float, 2>& scaling, bool absolute)
+{
+    auto canvas
+        = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(coordinator_entity.components[3].data);
+    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[0].gui_data);
+    legend_gui.entries.push_back({
+        Visconfig::Components::LegendGUIEntryType::ImageEntry,
+        Visconfig::Components::LegendGUIImageEntry{ absolute, image, description, scaling },
+    });
+}
+
 }

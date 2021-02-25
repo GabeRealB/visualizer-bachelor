@@ -79,6 +79,18 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             auto entity = view_entity_map[color.view_name()][color.cuboid_idx()];
             add_color_legend(
                 world.entities.front(), color.label(), color.description(), "active_fill_color", entity, 1);
+        } else if (std::holds_alternative<ImageLegend>(legend_entry)) {
+            auto& image = std::get<ImageLegend>(legend_entry);
+            std::vector<Visconfig::Assets::TextureAttributes> texture_attributes = {
+                Visconfig::Assets::TextureAttributes::MagnificationLinear,
+                Visconfig::Assets::TextureAttributes::MinificationLinear,
+                Visconfig::Assets::TextureAttributes::GenerateMipMaps,
+            };
+
+            assets.push_back(create_texture_asset(image.image_name(),
+                generation_options.assets_texture_directory_path / image.image_path(), texture_attributes));
+            add_image_legend(
+                world.entities.front(), image.image_name(), image.description(), image.scaling(), image.absolute());
         }
     }
 

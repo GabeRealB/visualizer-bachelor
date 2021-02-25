@@ -141,6 +141,17 @@ def generate(config, template, output):
             code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}", "{}", {});\n\n""" \
                 .format(label, description, view_name, cuboid_idx) \
                 .expandtabs(4)
+        elif entry["type"] == "image":
+            entry_data = entry["data"]
+            name = entry_data["name"]
+            path = entry_data["path"]
+            scaling = entry_data["scaling"]
+            description = entry_data["description"]
+            absolute = "true" if entry_data["absolute"] else "false"
+
+            code_str = code_str + """\tconfig_instance.add_image_legend("{}", "{}", "{}", {{ {}, {} }}, {});\n\n""" \
+                .format(description, name, path, scaling[0], scaling[1], absolute) \
+                .expandtabs(4)
 
     # Output the code
     generated_code = template.read().replace("@CONFIG_INIT_FUNC@", code_str)

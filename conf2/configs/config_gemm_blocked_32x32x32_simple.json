@@ -25,6 +25,16 @@
         "color": ["buffer A", 0],
         "description": "Description"
       }
+    },
+    "sample2": {
+      "type": "image",
+      "data": {
+        "absolute": false,
+        "description": "formula",
+        "name": "formula_texture",
+        "path": "my_image.png",
+        "scaling": [0.2, 0.2]
+      }
     }
   },
   "CUBES" : {

@@ -1,13 +1,22 @@
 #pragma once
 
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 #include <variant>
 #include <vector>
 
 #include <visualizer/Entity.hpp>
+#include <visualizer/Texture.hpp>
 
 namespace Visualizer {
+
+struct LegendGUIImage {
+    bool absolute;
+    glm::vec2 scaling;
+    std::string description;
+    std::weak_ptr<const Texture> texture;
+};
 
 struct LegendGUIColor {
     Entity entity;
@@ -20,7 +29,7 @@ struct LegendGUIColor {
 struct LegendGUI {
     glm::vec2 size;
     glm::vec2 position;
-    std::vector<std::variant<LegendGUIColor>> entries;
+    std::vector<std::variant<LegendGUIColor, LegendGUIImage>> entries;
 };
 
 struct Canvas {

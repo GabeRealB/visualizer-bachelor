@@ -29,4 +29,6 @@ void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float,
 
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
     const std::string& attribute, std::size_t entity, std::size_t pass);
+void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
+    const std::array<float, 2>& scaling, bool absolute);
 }
