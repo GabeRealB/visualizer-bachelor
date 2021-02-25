@@ -36,6 +36,10 @@ void render_legend_entry(EntityDatabaseContext&, const LegendGUIColor&);
 
 void render_gui(EntityDatabaseContext& database_context, const LegendGUI& gui)
 {
+    if (gui.entries.empty()) {
+        return;
+    }
+
     const float PAD = 10.0f;
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize
         | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
