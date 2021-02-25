@@ -36,14 +36,18 @@ void attach(bool attached)
 
     if (attached) {
         glfwSetInputMode(g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        glfwSetInputMode(g_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        if (glfwRawMouseMotionSupported()) {
+            glfwSetInputMode(g_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        }
 
         glfwSetCursorPos(g_window, lastPosX, lastPosY);
     } else {
         glfwGetCursorPos(g_window, &lastPosX, &lastPosY);
 
         glfwSetInputMode(g_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        glfwSetInputMode(g_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+        if (glfwRawMouseMotionSupported()) {
+            glfwSetInputMode(g_window, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
+        }
 
         GLint width;
         GLint height;
