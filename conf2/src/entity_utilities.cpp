@@ -2,9 +2,8 @@
 
 namespace Config {
 
-constexpr std::size_t coordinator_composition_idx = 0;
-constexpr std::size_t coordinator_camera_switcher_idx = 1;
-constexpr std::size_t coordinator_canvas_idx = 2;
+constexpr std::size_t coordinator_camera_switcher_idx = 0;
+constexpr std::size_t coordinator_canvas_idx = 1;
 
 constexpr std::size_t canvas_composition_gui_idx = 0;
 constexpr std::size_t canvas_legend_gui_idx = 1;
@@ -14,10 +13,6 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
     Visconfig::Entity entity{};
     entity.id = entity_id;
 
-    entity.components.push_back({
-        Visconfig::Components::ComponentType::Composition,
-        std::make_shared<Visconfig::Components::CompositionComponent>(),
-    });
     entity.components.push_back({
         Visconfig::Components::ComponentType::CameraSwitcher,
         std::make_shared<Visconfig::Components::CameraSwitcherComponent>(),

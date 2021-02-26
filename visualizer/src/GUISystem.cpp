@@ -271,7 +271,7 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         ImVec2 p1 = { link_start.x + 50.0f, link_start.y };
         ImVec2 p2 = { link_end.x - 50.0f, link_end.y };
 
-        draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 200, 100, 255), 3.0f);
+        draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 100, 0, 255), 3.0f);
     }
 
     draw_list->ChannelsMerge();
