@@ -15,6 +15,7 @@ def cli():
 def generate(config, template, output):
     views = {}
     legend = {}
+    groups = {}
     variables = {"sequential": {}, "parallel": {}}
 
     mapping_template = """[=]() -> int {{
@@ -52,6 +53,7 @@ def generate(config, template, output):
 
     # Extract legend
     legend = config_data["LEGEND"]
+    groups = config_data["STRUCTURE"]
 
     # Extract views
     for name, view in config_data["CUBES"].items():
@@ -138,7 +140,7 @@ def generate(config, template, output):
             cuboid_idx = entry_data["color"][1]
             description = entry_data["description"]
 
-            code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}", "{}", {});\n\n""" \
+            code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}", "{}", {});\n""" \
                 .format(label, description, view_name, cuboid_idx) \
                 .expandtabs(4)
         elif entry["type"] == "image":
@@ -149,9 +151,22 @@ def generate(config, template, output):
             description = entry_data["description"]
             absolute = "true" if entry_data["absolute"] else "false"
 
-            code_str = code_str + """\tconfig_instance.add_image_legend("{}", "{}", "{}", {{ {}, {} }}, {});\n\n""" \
+            code_str = code_str + """\tconfig_instance.add_image_legend("{}", "{}", "{}", {{ {}, {} }}, {});\n""" \
                 .format(description, name, path, scaling[0], scaling[1], absolute) \
                 .expandtabs(4)
+
+    code_str = code_str + "\n"
+
+    # Generate groups
+    for group_name, group in groups["GROUPS"].items():
+        for view_name in group:
+            code_str = code_str + """\tconfig_instance.add_group("{}", "{}");\n""" \
+                .format(group_name, view_name) \
+                .expandtabs(4)
+    for connection in groups["ARROWS"]:
+        code_str = code_str + """\tconfig_instance.add_group_connection("{}", "{}");\n""" \
+            .format(connection[0], connection[1]) \
+            .expandtabs(4)
 
     # Output the code
     generated_code = template.read().replace("@CONFIG_INIT_FUNC@", code_str)

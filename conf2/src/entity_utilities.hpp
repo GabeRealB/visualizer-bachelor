@@ -20,12 +20,15 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     std::array<int, 3> global_size);
 
 void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id);
-void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float, 2> scale,
-    std::array<float, 2> position, const std::vector<std::string>& src, const std::string& target,
-    const std::string& shader, std::size_t id, bool draggable);
 
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
     const std::string& attribute, std::size_t entity, std::size_t pass);
 void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
     const std::array<float, 2>& scaling, bool absolute);
+
+void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
+    const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
+    const std::array<float, 2>& position);
+void add_composition_gui_connection(
+    Visconfig::Entity& coordinator_entity, const std::string& group_source, const std::string& group_destination);
 }

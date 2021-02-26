@@ -34,6 +34,16 @@
       }
     }
   },
+  "STRUCTURE": {
+    "GROUPS": {
+      "1": [ "buffer A", "buffer B" ],
+      "2": [ "input mda" ],
+      "3": [ "computation" ],
+      "4": [ "output mda" ],
+      "5": [ "buffer C" ]
+    },
+    "ARROWS": [ [ "1", "2" ], [ "2", "3" ], [ "3", "4" ], [ "4", "5" ] ]
+  },
   "CUBES" : {
     "buffer A": {
       "mapping": [

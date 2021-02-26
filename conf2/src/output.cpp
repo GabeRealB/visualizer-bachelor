@@ -71,8 +71,7 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             = populate_view(world, config_command_list.view_commands[i], generation_options, assets, i);
     }
 
-    auto legend_entries = Config::ConfigContainer::get_instance().legend_entries();
-
+    auto legend_entries = ConfigContainer::get_instance().legend_entries();
     for (auto& legend_entry : legend_entries) {
         if (std::holds_alternative<ColorLegend>(legend_entry)) {
             auto& color = std::get<ColorLegend>(legend_entry);
@@ -100,6 +99,11 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             add_image_legend(
                 world.entities.front(), image.image_name(), image.description(), image.scaling(), image.absolute());
         }
+    }
+
+    auto group_connections = ConfigContainer::get_instance().get_group_connections();
+    for (auto& connection : group_connections) {
+        add_composition_gui_connection(world.entities.front(), connection[0], connection[1]);
     }
 
     return world;
@@ -259,14 +263,18 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     std::vector<std::string> composition_src = { render_texture_name };
 
     auto size = view_commands.size;
-    auto movable = view_commands.movable;
-    auto position_x = (view_commands.position[0] * 2.0f) - 1.0f + size;
-    auto position_y = (view_commands.position[1] * 2.0f) - 1.0f + size;
+    // auto movable = view_commands.movable;
+    // auto position_x = (view_commands.position[0] * 2.0f) - 1.0f + size;
+    // auto position_y = (view_commands.position[1] * 2.0f) - 1.0f + size;
 
     extend_camera_switcher(coordinator_entity, camera_entity_id);
-    extend_composition(coordinator_entity, { size, size }, { position_x, position_y }, composition_src,
-        generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
-        view_idx, movable);
+    // extend_composition(coordinator_entity, { size, size }, { position_x, position_y }, composition_src,
+    //    generation_options.default_framebuffer_asset_name, generation_options.view_composition_shader_asset_name,
+    //    view_idx, movable);
+
+    auto& group_name = ConfigContainer::get_instance().get_group_association(view_commands.view_name);
+    add_composition_gui_window(coordinator_entity, group_name, view_commands.view_name, render_texture_name,
+        { size, size }, view_commands.position);
 
     return generated_entities;
 }

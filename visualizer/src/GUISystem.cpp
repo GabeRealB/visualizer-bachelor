@@ -5,10 +5,12 @@
 
 #include <visualizer/Canvas.hpp>
 #include <visualizer/Shader.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
 void render_gui(EntityDatabaseContext&, const LegendGUI&);
+void render_gui(EntityDatabaseContext&, CompositionGUI&);
 
 GUISystem::GUISystem()
     : m_canvas_query{ EntityDBQuery{}.with_component<Canvas>() }
@@ -23,7 +25,7 @@ void GUISystem::terminate() { m_entity_database = nullptr; }
 void GUISystem::run(void*)
 {
     m_entity_database->enter_secure_context([&](EntityDatabaseContext& database_context) {
-        m_canvas_query.query_db_window(database_context).for_each<Canvas>([&](const Canvas* canvas) {
+        m_canvas_query.query_db_window(database_context).for_each<Canvas>([&](Canvas* canvas) {
             for (auto& gui : canvas->guis) {
                 std::visit([&](auto&& g) { render_gui(database_context, g); }, gui);
             }
@@ -104,6 +106,176 @@ void render_legend_entry(EntityDatabaseContext& database_context, const LegendGU
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", color_entry.description.c_str());
     }
+}
+
+void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
+{
+    if (gui.groups.empty()) {
+        return;
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImVec2 window_pos = { gui.position.x, gui.position.y };
+    auto window_size = viewport->Size;
+    window_size.x *= gui.size.x;
+    window_size.y *= gui.size.y;
+
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings
+        | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus;
+
+    ImGui::SetNextWindowPos(window_pos);
+    ImGui::SetNextWindowSize(window_size);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+
+    if (!ImGui::Begin("CompositionGUI", nullptr, window_flags)) {
+        ImGui::End();
+    }
+
+    auto draw_list = ImGui::GetWindowDrawList();
+    draw_list->ChannelsSplit(2);
+
+    draw_list->ChannelsSetCurrent(1);
+    // Display groups
+    std::vector<std::array<ImVec2, 2>> group_rects{};
+    group_rects.reserve(gui.groups.size());
+    std::size_t group_selected = 0;
+    std::size_t window_selected = 0;
+    for (std::size_t i = 0; i < gui.groups.size(); i++) {
+        auto& group = gui.groups[i];
+        ImGui::PushID(group.group_name.c_str());
+
+        ImVec2 min_pos = viewport->Size;
+        ImVec2 max_pos = { 0.0f, 0.0f };
+        ImVec2 content_size = { 0.0f, 0.0f };
+
+        bool group_created = false;
+        for (std::size_t j = 0; j < group.windows.size(); j++) {
+            auto& window = group.windows[j];
+            assert(!window.texture.expired());
+            ImGui::PushID(window.window_name.c_str());
+
+            auto texture_size = viewport->Size;
+            texture_size.x *= window.scaling.x;
+            texture_size.y *= window.scaling.y;
+
+            auto screen_pos = viewport->Size;
+            screen_pos.x *= window.position.x + group.position.x;
+            screen_pos.y *= 1.0f - (window.position.y + group.position.y);
+            screen_pos.y -= texture_size.y;
+
+            constexpr float size_padding = 15.0f;
+            auto max_screen_pos = ImVec2{ screen_pos.x + texture_size.x, screen_pos.y + texture_size.y };
+
+            if (screen_pos.x < min_pos.x) {
+                min_pos.x = screen_pos.x;
+            }
+            if (screen_pos.y < min_pos.y) {
+                min_pos.y = screen_pos.y;
+            }
+            if (max_screen_pos.x > max_pos.x) {
+                max_pos.x = max_screen_pos.x;
+            }
+            if (max_screen_pos.y + size_padding > max_pos.y) {
+                max_pos.y = max_screen_pos.y + size_padding;
+            }
+            content_size = { max_screen_pos.x - min_pos.x, max_screen_pos.y - min_pos.y };
+
+            auto texture_2d = window.texture.lock();
+
+            ImGui::SetCursorScreenPos(screen_pos);
+
+            if (!group_created) {
+                ImGui::BeginGroup();
+                group_created = true;
+            }
+
+            ImGui::BeginGroup();
+            ImGui::Image(reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size,
+                ImVec2{ 0.0f, 1.0f }, ImVec2{ 1.0f, 0.0f });
+            ImGui::Text("%s", window.window_name.c_str());
+            ImGui::EndGroup();
+
+            draw_list->ChannelsSetCurrent(0);
+            ImGui::SetCursorScreenPos(min_pos);
+            ImGui::InvisibleButton("window", content_size);
+            if (ImGui::IsMouseHoveringRect(screen_pos, max_screen_pos)) {
+                window_selected = j + 1;
+
+                if (group.windows.size() == 1) {
+                    group_selected = i + 1;
+                }
+            }
+            draw_list->ChannelsSetCurrent(1);
+
+            ImGui::PopID();
+        }
+        if (group_created) {
+            ImGui::EndGroup();
+        }
+
+        constexpr float rect_padding = 5.0f;
+        auto rect_min = min_pos;
+        auto rect_max = max_pos;
+
+        rect_min.x -= rect_padding;
+        rect_min.y -= rect_padding;
+
+        rect_max.x += rect_padding;
+        rect_max.y += rect_padding;
+
+        ImGui::SetCursorScreenPos({ rect_min.x, rect_min.y - 15.0f });
+        ImGui::Text("%s", group.group_name.c_str());
+        draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
+        if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0) {
+            group_selected = i + 1;
+        }
+
+        group_rects.push_back({ rect_min, rect_max });
+
+        ImGui::PopID();
+    }
+
+    if (group_selected != 0 && isDetached() && !is_frozen()) {
+        glm::vec2 mouse_delta = { io.MouseDelta.x, -io.MouseDelta.y };
+        mouse_delta.x /= viewport->Size.x;
+        mouse_delta.y /= viewport->Size.y;
+
+        auto& group = gui.groups[group_selected - 1];
+
+        if (window_selected == 0) {
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                group.position += mouse_delta;
+            }
+        } else {
+            auto mouse_wheel = io.MouseWheel;
+            constexpr float scaling_stepping = 0.01f;
+            auto& window = group.windows[window_selected - 1];
+
+            if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+                window.position += mouse_delta;
+            }
+            window.scaling.x += mouse_wheel * scaling_stepping;
+            window.scaling.y += mouse_wheel * scaling_stepping;
+        }
+    }
+
+    // Display links
+    draw_list->ChannelsSetCurrent(0);
+    for (auto& link : gui.group_connections) {
+        auto& src_rect = group_rects[link[0]];
+        auto& dst_rect = group_rects[link[1]];
+
+        ImVec2 link_start = { (src_rect[0].x + src_rect[1].x) / 2.0f, src_rect[1].y };
+        ImVec2 link_end = { (dst_rect[0].x + dst_rect[1].x) / 2.0f, dst_rect[0].y };
+        ImVec2 p1 = { link_start.x + 50.0f, link_start.y };
+        ImVec2 p2 = { link_end.x - 50.0f, link_end.y };
+
+        draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 200, 100, 255), 3.0f);
+    }
+
+    draw_list->ChannelsMerge();
+    ImGui::End();
 }
 
 }

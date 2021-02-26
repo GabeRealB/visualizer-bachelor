@@ -450,6 +450,62 @@ public:
 
     std::span<const std::string> get_view_names() const { return { m_view_names.data(), m_view_names.size() }; }
 
+    const std::string& get_group_association(const std::string& view_name) const
+    {
+        if (!m_group_associations.contains(view_name)) {
+            std::cerr << "The group does not exist." << std::endl;
+            std::abort();
+        } else {
+            return m_group_associations.at(view_name);
+        }
+    }
+
+    std::span<const std::string> get_group(const std::string& group_name) const
+    {
+        if (!m_groups.contains(group_name)) {
+            std::cerr << "The group does not exist." << std::endl;
+            std::abort();
+        } else {
+            auto& group = m_groups.at(group_name);
+            return { group.data(), group.size() };
+        }
+    }
+
+    void add_group(const std::string& group_name, const std::string& view_name)
+    {
+        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), view_name); pos != m_view_names.end()) {
+            if (m_group_associations.contains(view_name)) {
+                std::cerr << "The view is already associated to a group." << std::endl;
+                std::abort();
+            } else {
+                if (m_groups.contains(group_name)) {
+                    m_groups[group_name].push_back(group_name);
+                } else {
+                    m_groups.insert({ group_name, { view_name } });
+                }
+                m_group_associations.insert({ view_name, group_name });
+            }
+        } else {
+            std::cerr << "The view does not exist." << std::endl;
+            std::abort();
+        }
+    }
+
+    std::span<const std::array<std::string, 2>> get_group_connections() const
+    {
+        return { m_group_connections.data(), m_group_connections.size() };
+    }
+
+    void add_group_connection(const std::string& source, const std::string& destination)
+    {
+        if (!m_groups.contains(source) || !m_groups.contains(destination)) {
+            std::cerr << "The group does not exist." << std::endl;
+            std::abort();
+        } else {
+            m_group_connections.push_back({ source, destination });
+        }
+    }
+
     void add_variable(VariableType type, const std::string& name, std::size_t start, std::size_t end)
     {
         m_variables.emplace_back(type, name, start, end);
@@ -468,6 +524,9 @@ private:
     std::vector<ViewContainer> m_views;
     std::vector<LegendVariant> m_legend;
     std::vector<std::string> m_view_names;
+    std::map<std::string, std::string> m_group_associations;
+    std::map<std::string, std::vector<std::string>> m_groups;
+    std::vector<std::array<std::string, 2>> m_group_connections;
     std::vector<std::tuple<VariableType, std::string, std::size_t, std::size_t>> m_variables;
 };
 

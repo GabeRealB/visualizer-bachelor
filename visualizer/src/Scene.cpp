@@ -1746,6 +1746,50 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             canvas.guis.push_back(std::move(gui));
             break;
         }
+        case Visconfig::Components::CanvasEntryType::CompositionGUI: {
+            CompositionGUI gui{};
+            gui.size = size;
+            gui.position = position;
+
+            auto& component_gui = std::get<Visconfig::Components::CompositionGUI>(entry.gui_data);
+            std::unordered_map<std::string, std::size_t> group_index_map{};
+            group_index_map.reserve(component_gui.groups.size());
+
+            for (auto& component_group : component_gui.groups) {
+                CompositionGUIGroup group{};
+                group.position = { 0.0f, 0.0f };
+                group.group_name = component_group.first;
+
+                for (auto& component_window : component_group.second.windows) {
+                    group.position += glm::make_vec2(component_window.position.data());
+                }
+                group.position /= component_group.second.windows.size();
+
+                for (auto& component_window : component_group.second.windows) {
+                    CompositionGUIWindow window{};
+                    window.window_name = component_window.name;
+                    window.scaling = glm::make_vec2(component_window.scaling.data());
+                    window.position = glm::make_vec2(component_window.position.data()) - group.position;
+                    window.texture = std::static_pointer_cast<const Texture2D>(
+                        AssetDatabase::getAsset(component_window.texture_name).data);
+
+                    group.windows.push_back(std::move(window));
+                }
+
+                group_index_map.insert({ group.group_name, gui.groups.size() });
+                gui.groups.push_back(std::move(group));
+            }
+
+            for (auto& component_connection : component_gui.group_connections) {
+                gui.group_connections.push_back({
+                    group_index_map.at(component_connection[0]),
+                    group_index_map.at(component_connection[1]),
+                });
+            }
+
+            canvas.guis.push_back(std::move(gui));
+            break;
+        }
         }
     }
 

@@ -6,6 +6,9 @@ constexpr std::size_t coordinator_composition_idx = 0;
 constexpr std::size_t coordinator_camera_switcher_idx = 1;
 constexpr std::size_t coordinator_canvas_idx = 2;
 
+constexpr std::size_t canvas_composition_gui_idx = 0;
+constexpr std::size_t canvas_legend_gui_idx = 1;
+
 Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
 {
     Visconfig::Entity entity{};
@@ -26,6 +29,12 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
 
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         entity.components[coordinator_canvas_idx].data);
+    canvas->entries.push_back({
+        Visconfig::Components::CanvasEntryType::CompositionGUI,
+        { 1.0f, 1.0f },
+        { 0.0f, 0.0f },
+        Visconfig::Components::CompositionGUI{},
+    });
     canvas->entries.push_back({
         Visconfig::Components::CanvasEntryType::LegendGUI,
         { 0.2f, 0.2f },
@@ -355,32 +364,12 @@ void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t c
     camera_switcher->cameras.push_back(camera_entity_id);
 }
 
-void extend_composition(Visconfig::Entity& coordinator_entity, std::array<float, 2> scale,
-    std::array<float, 2> position, const std::vector<std::string>& src, const std::string& target,
-    const std::string& shader, std::size_t id, [[maybe_unused]] bool draggable)
-{
-    auto composition{
-        std::static_pointer_cast<Visconfig::Components::CompositionComponent>(
-            coordinator_entity.components[coordinator_composition_idx].data),
-    };
-
-    composition->operations.push_back(Visconfig::Components::CompositionOperation{
-        { scale[0], scale[1] },
-        { position[0], position[1] },
-        src,
-        target,
-        shader,
-        id,
-        draggable,
-    });
-}
-
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
     const std::string& attribute, std::size_t entity, std::size_t pass)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
-    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[0].gui_data);
+    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[canvas_legend_gui_idx].gui_data);
     legend_gui.entries.push_back({
         Visconfig::Components::LegendGUIEntryType::ColorEntry,
         Visconfig::Components::LegendGUIColorEntry{ entity, pass, label, description, attribute },
@@ -392,11 +381,40 @@ void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& 
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
-    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[0].gui_data);
+    auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[canvas_legend_gui_idx].gui_data);
     legend_gui.entries.push_back({
         Visconfig::Components::LegendGUIEntryType::ImageEntry,
         Visconfig::Components::LegendGUIImageEntry{ absolute, image, description, scaling },
     });
+}
+
+void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
+    const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
+    const std::array<float, 2>& position)
+{
+    auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
+        coordinator_entity.components[coordinator_canvas_idx].data);
+    auto& composition_gui
+        = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
+
+    Visconfig::Components::CompositionGUIWindow gui_window{ window, texture, scaling, position };
+
+    if (composition_gui.groups.contains(group)) {
+        composition_gui.groups[group].windows.push_back(std::move(gui_window));
+    } else {
+        composition_gui.groups.insert({ group, { { std::move(gui_window) } } });
+    }
+}
+
+void add_composition_gui_connection(
+    Visconfig::Entity& coordinator_entity, const std::string& group_source, const std::string& group_destination)
+{
+    auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
+        coordinator_entity.components[coordinator_canvas_idx].data);
+    auto& composition_gui
+        = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
+
+    composition_gui.group_connections.push_back({ group_source, group_destination });
 }
 
 }

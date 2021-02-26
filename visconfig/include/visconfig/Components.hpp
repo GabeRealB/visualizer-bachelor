@@ -404,7 +404,7 @@ struct CopyComponent : public ComponentData {
     static constexpr const char* operationsJson{ "operations" };
 };
 
-enum class CanvasEntryType { LegendGUI };
+enum class CanvasEntryType { LegendGUI, CompositionGUI };
 
 enum class LegendGUIEntryType { ColorEntry, ImageEntry };
 
@@ -435,11 +435,27 @@ struct LegendGUI {
     std::vector<LegendGUIEntry> entries;
 };
 
+struct CompositionGUIWindow {
+    std::string name;
+    std::string texture_name;
+    std::array<float, 2> scaling;
+    std::array<float, 2> position;
+};
+
+struct CompositionGUIGroup {
+    std::vector<CompositionGUIWindow> windows;
+};
+
+struct CompositionGUI {
+    std::map<std::string, CompositionGUIGroup> groups;
+    std::vector<std::array<std::string, 2>> group_connections;
+};
+
 struct CanvasEntry {
     CanvasEntryType type;
     std::array<float, 2> size;
     std::array<float, 2> position;
-    std::variant<LegendGUI> gui_data;
+    std::variant<LegendGUI, CompositionGUI> gui_data;
 
     static constexpr const char* type_json{ "type" };
     static constexpr const char* size_json{ "size" };
@@ -504,6 +520,7 @@ void from_json(const nlohmann::json& j, CopyOperationFilter& v);
 NLOHMANN_JSON_SERIALIZE_ENUM(CanvasEntryType,
     {
         { CanvasEntryType::LegendGUI, "legend_gui" },
+        { CanvasEntryType::CompositionGUI, "composition_gui" },
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
@@ -635,6 +652,12 @@ void from_json(const nlohmann::json& j, CopyOperation& v);
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, description, scaling)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, entity, pass, label, description, attribute)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, name, texture_name, scaling, position)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, windows)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, groups, group_connections)
 
 void to_json(nlohmann::json& j, const LegendGUIEntry& v);
 void from_json(const nlohmann::json& j, LegendGUIEntry& v);

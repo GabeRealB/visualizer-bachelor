@@ -32,8 +32,28 @@ struct LegendGUI {
     std::vector<std::variant<LegendGUIColor, LegendGUIImage>> entries;
 };
 
+struct CompositionGUIWindow {
+    glm::vec2 scaling;
+    glm::vec2 position;
+    std::string window_name;
+    std::weak_ptr<const Texture2D> texture;
+};
+
+struct CompositionGUIGroup {
+    glm::vec2 position;
+    std::string group_name;
+    std::vector<CompositionGUIWindow> windows;
+};
+
+struct CompositionGUI {
+    glm::vec2 size;
+    glm::vec2 position;
+    std::vector<CompositionGUIGroup> groups;
+    std::vector<std::array<std::size_t, 2>> group_connections;
+};
+
 struct Canvas {
-    std::vector<std::variant<LegendGUI>> guis;
+    std::vector<std::variant<LegendGUI, CompositionGUI>> guis;
 };
 
 }

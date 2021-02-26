@@ -40,6 +40,9 @@ void MaterialWindowSystem::run(void*)
     }
 
     if (m_key == GLFW_RELEASE && m_pressed) {
+        if (m_active) {
+            freeze(false);
+        }
         m_pressed = false;
         m_active = true;
         freeze(true);
@@ -84,7 +87,8 @@ void MaterialWindowSystem::run(void*)
                                                         auto val
                                                             = material->m_passes[i]
                                                                   .m_material_variables.getPtr<glm::vec4>(parameter, 1);
-                                                        auto label = "Color##" + header_label + std::string{ parameter };
+                                                        auto label
+                                                            = "Color##" + header_label + std::string{ parameter };
                                                         ImGui::ColorEdit4(label.c_str(), glm::value_ptr(*val));
                                                         break;
                                                     }
