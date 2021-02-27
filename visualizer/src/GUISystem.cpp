@@ -266,11 +266,39 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         auto& src_rect = group_rects[link[0]];
         auto& dst_rect = group_rects[link[1]];
 
-        ImVec2 link_start = { (src_rect[0].x + src_rect[1].x) / 2.0f, src_rect[1].y };
-        ImVec2 link_end = { (dst_rect[0].x + dst_rect[1].x) / 2.0f, dst_rect[0].y };
-        ImVec2 p1 = { link_start.x + 50.0f, link_start.y };
-        ImVec2 p2 = { link_end.x - 50.0f, link_end.y };
+        ImVec2 src_mid = { (src_rect[0].x + src_rect[1].x) / 2.0f, (src_rect[0].y + src_rect[1].y) / 2.0f };
+        ImVec2 dst_mid = { (dst_rect[0].x + dst_rect[1].x) / 2.0f, (dst_rect[0].y + dst_rect[1].y) / 2.0f };
 
+        ImVec2 link_start;
+        ImVec2 link_end;
+        ImVec2 p1;
+        ImVec2 p2;
+
+        if (dst_mid.x >= src_rect[0].x && dst_mid.x <= src_rect[1].x) {
+            if (dst_rect[1].y <= src_rect[0].y) {
+                link_start = { src_mid.x, src_rect[0].y };
+                link_end = { dst_mid.x, dst_rect[1].y };
+                p1 = { link_start.x, link_start.y - 50.0f };
+                p2 = { link_end.x, link_end.y + 50.0f };
+            } else {
+                link_start = { src_mid.x, src_rect[1].y };
+                link_end = { dst_mid.x, dst_rect[0].y };
+                p1 = { link_start.x, link_start.y + 50.0f };
+                p2 = { link_end.x, link_end.y - 50.0f };
+            }
+        } else if (dst_mid.x <= src_rect[0].x) {
+            link_start = { src_rect[0].x, src_mid.y };
+            link_end = { dst_rect[1].x, dst_mid.y };
+            p1 = { link_start.x - 50.0f, link_start.y };
+            p2 = { link_end.x + 50.0f, link_end.y };
+        } else {
+            link_start = { src_rect[1].x, src_mid.y };
+            link_end = { dst_rect[0].x, dst_mid.y };
+            p1 = { link_start.x + 50.0f, link_start.y };
+            p2 = { link_end.x - 50.0f, link_end.y };
+        }
+
+        draw_list->AddCircle(link_end, 5.0f, IM_COL32(200, 100, 0, 255), 16);
         draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 100, 0, 255), 3.0f);
     }
 
