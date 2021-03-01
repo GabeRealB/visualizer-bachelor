@@ -281,32 +281,45 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         ImVec2 p1;
         ImVec2 p2;
 
+        ImVec2 arrow_p1;
+        ImVec2 arrow_p2;
+
         if (dst_mid.x >= src_rect[0].x && dst_mid.x <= src_rect[1].x) {
             if (dst_rect[1].y <= src_rect[0].y) {
                 link_start = { src_mid.x, src_rect[0].y };
                 link_end = { dst_mid.x, dst_rect[1].y };
                 p1 = { link_start.x, link_start.y - 50.0f };
                 p2 = { link_end.x, link_end.y + 50.0f };
+                arrow_p1 = { link_end.x - 7.5f, link_end.y + 15.0f };
+                arrow_p2 = { link_end.x + 7.5f, link_end.y + 15.0f };
             } else {
                 link_start = { src_mid.x, src_rect[1].y };
                 link_end = { dst_mid.x, dst_rect[0].y };
                 p1 = { link_start.x, link_start.y + 50.0f };
                 p2 = { link_end.x, link_end.y - 50.0f };
+                arrow_p1 = { link_end.x - 7.5f, link_end.y - 15.0f };
+                arrow_p2 = { link_end.x + 7.5f, link_end.y - 15.0f };
             }
         } else if (dst_mid.x <= src_rect[0].x) {
             link_start = { src_rect[0].x, src_mid.y };
             link_end = { dst_rect[1].x, dst_mid.y };
             p1 = { link_start.x - 50.0f, link_start.y };
             p2 = { link_end.x + 50.0f, link_end.y };
+            arrow_p1 = { link_end.x + 15.0f, link_end.y - 7.5f };
+            arrow_p2 = { link_end.x + 15.0f, link_end.y + 7.5f };
         } else {
             link_start = { src_rect[1].x, src_mid.y };
             link_end = { dst_rect[0].x, dst_mid.y };
             p1 = { link_start.x + 50.0f, link_start.y };
             p2 = { link_end.x - 50.0f, link_end.y };
+            arrow_p1 = { link_end.x - 15.0f, link_end.y - 7.5f };
+            arrow_p2 = { link_end.x - 15.0f, link_end.y + 7.5f };
         }
 
-        draw_list->AddCircle(link_end, 5.0f, IM_COL32(200, 100, 0, 255), 16);
-        draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 100, 0, 255), 3.0f);
+        constexpr auto line_color = IM_COL32(200, 100, 0, 255);
+        draw_list->AddLine(arrow_p1, link_end, line_color, 3.0f);
+        draw_list->AddLine(arrow_p2, link_end, line_color, 3.0f);
+        draw_list->AddBezierCurve(link_start, p1, p2, link_end, line_color, 3.0f);
     }
 
     gui.selected_group = group_selected;
