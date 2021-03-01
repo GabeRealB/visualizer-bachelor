@@ -101,9 +101,6 @@ def generate(config, template, output):
         code_str = code_str + """\t{}.set_size({});\n""" \
             .format(container_name, view["arrangement"]["size"])
 
-        code_str = code_str + """\t{}.set_movable({});\n""" \
-            .format(container_name, str(view["arrangement"]["movable"]).lower())
-
         code_str = code_str + """\t{}.set_position({}, {});\n""" \
             .format(container_name, view["arrangement"]["position"][0], view["arrangement"]["position"][1])
 

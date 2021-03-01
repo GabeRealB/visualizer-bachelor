@@ -248,13 +248,9 @@ public:
 
     float size() const { return m_size; }
 
-    bool movable() const { return m_movable; }
-
     std::array<float, 2> position() const { return m_position; }
 
     void set_size(float size) { m_size = size; }
-
-    void set_movable(bool movable) { m_movable = movable; }
 
     void set_position(float x, float y)
     {
@@ -285,7 +281,6 @@ public:
 
 private:
     float m_size;
-    bool m_movable;
     std::array<float, 2> m_position;
     std::vector<CuboidContainer> m_cuboids;
     std::vector<std::set<std::string>> m_variable_requirements;
