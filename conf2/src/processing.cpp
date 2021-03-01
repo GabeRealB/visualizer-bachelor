@@ -103,10 +103,6 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                 cuboid_list.commands.push_back({ CuboidCommandType::DRAW,
                     DrawCommand{
                         cuboid_idx,
-                        cuboid_size,
-                        start_position,
-                        cuboids[i].fill_color,
-                        cuboids[i].active_color,
                     } });
             }
         }
@@ -146,17 +142,11 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                 if (cuboid_commands.empty() || cuboid_commands.back().type != CuboidCommandType::DRAW_MULTIPLE) {
                     cuboid_commands.push_back({ CuboidCommandType::DRAW_MULTIPLE,
                         DrawMultipleCommand{
-                            cuboids[i].fill_color,
-                            cuboids[i].active_color,
                             { cuboid_idx },
-                            { cuboid_size },
-                            { start_position },
                         } });
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
                     command.cuboid_indices.insert(cuboid_idx);
-                    command.cuboid_sizes.push_back(cuboid_size);
-                    command.start_positions.push_back(start_position);
                 }
             }
         }
@@ -168,11 +158,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
             auto& cuboids = std::get<1>(value);
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE,
-                    DeleteCommand{
-                        { 0, 0, 0, 0 },
-                        cuboids[i].unused_color,
-                    } });
+                command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE, DeleteCommand{} });
             }
         }
     };
@@ -189,8 +175,6 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE_MULTIPLE,
                         DeleteMultipleCommand{
                             0,
-                            { 0, 0, 0, 0 },
-                            cuboids[i].unused_color,
                         } });
                 } else {
                     std::get<DeleteMultipleCommand>(cuboid_commands.back().command).counter++;

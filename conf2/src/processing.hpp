@@ -22,29 +22,17 @@ struct NoopCommand {
 
 struct DrawCommand {
     std::size_t cuboid_idx;
-    std::array<int, 3> cuboid_size;
-    std::array<int, 3> start_position;
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
 };
 
 struct DrawMultipleCommand {
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
     std::unordered_set<std::size_t> cuboid_indices;
-    std::vector<std::array<int, 3>> cuboid_sizes;
-    std::vector<std::array<int, 3>> start_positions;
 };
 
 struct DeleteCommand {
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
 };
 
 struct DeleteMultipleCommand {
     std::size_t counter;
-    std::array<std::size_t, 4> fill_color;
-    std::array<std::size_t, 4> border_color;
 };
 
 struct CuboidCommand {
