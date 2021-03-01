@@ -1750,6 +1750,8 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             CompositionGUI gui{};
             gui.size = size;
             gui.position = position;
+            gui.selected_group = 0;
+            gui.selected_window = 0;
 
             auto& component_gui = std::get<Visconfig::Components::CompositionGUI>(entry.gui_data);
             std::unordered_map<std::string, std::size_t> group_index_map{};

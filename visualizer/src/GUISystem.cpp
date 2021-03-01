@@ -132,6 +132,11 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         ImGui::End();
     }
 
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) && (gui.selected_group || gui.selected_window)) {
+        gui.selected_group = 0;
+        gui.selected_window = 0;
+    }
+
     auto draw_list = ImGui::GetWindowDrawList();
     draw_list->ChannelsSplit(2);
 
@@ -139,15 +144,15 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
     // Display groups
     std::vector<std::array<ImVec2, 2>> group_rects{};
     group_rects.reserve(gui.groups.size());
-    std::size_t group_selected = 0;
-    std::size_t window_selected = 0;
+    std::size_t group_selected = gui.selected_group;
+    std::size_t window_selected = gui.selected_window;
     for (std::size_t i = 0; i < gui.groups.size(); i++) {
         auto& group = gui.groups[i];
         ImGui::PushID(group.group_name.c_str());
 
         ImVec2 min_pos = viewport->Size;
         ImVec2 max_pos = { 0.0f, 0.0f };
-        ImVec2 content_size = { 0.0f, 0.0f };
+        ImVec2 content_size;
 
         bool group_created = false;
         for (std::size_t j = 0; j < group.windows.size(); j++) {
@@ -199,7 +204,8 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
             draw_list->ChannelsSetCurrent(0);
             ImGui::SetCursorScreenPos(min_pos);
             ImGui::InvisibleButton("window", content_size);
-            if (ImGui::IsMouseHoveringRect(screen_pos, max_screen_pos)) {
+            if (ImGui::IsMouseHoveringRect(screen_pos, max_screen_pos) && gui.selected_group == 0
+                && gui.selected_window == 0) {
                 window_selected = j + 1;
 
                 if (group.windows.size() == 1) {
@@ -227,7 +233,8 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         ImGui::SetCursorScreenPos({ rect_min.x, rect_min.y - 15.0f });
         ImGui::Text("%s", group.group_name.c_str());
         draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
-        if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0) {
+        if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0 && gui.selected_group == 0
+            && gui.selected_window == 0) {
             group_selected = i + 1;
         }
 
@@ -301,6 +308,9 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         draw_list->AddCircle(link_end, 5.0f, IM_COL32(200, 100, 0, 255), 16);
         draw_list->AddBezierCurve(link_start, p1, p2, link_end, IM_COL32(200, 100, 0, 255), 3.0f);
     }
+
+    gui.selected_group = group_selected;
+    gui.selected_window = window_selected;
 
     draw_list->ChannelsMerge();
     ImGui::End();

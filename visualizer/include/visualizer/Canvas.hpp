@@ -48,6 +48,8 @@ struct CompositionGUIGroup {
 struct CompositionGUI {
     glm::vec2 size;
     glm::vec2 position;
+    std::size_t selected_group;
+    std::size_t selected_window;
     std::vector<CompositionGUIGroup> groups;
     std::vector<std::array<std::size_t, 2>> group_connections;
 };
