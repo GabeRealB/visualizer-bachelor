@@ -231,6 +231,7 @@ using ViewCuboidCallable = std::array<std::tuple<int, int>, 3> (*)(const Variabl
 
 struct CuboidContainer {
     std::array<std::size_t, 4> fill_color;
+    std::array<std::size_t, 4> out_of_bounds_color;
     std::array<std::size_t, 4> unused_color;
     std::array<std::size_t, 4> active_color;
     ViewCuboidCallable pos_size_callable;

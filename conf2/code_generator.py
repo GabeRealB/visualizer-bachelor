@@ -34,6 +34,7 @@ def generate(config, template, output):
 
     cuboid_constr_template = """CuboidContainer {{
         .fill_color = {{ {} }},
+        .out_of_bounds_color = {{ {} }},
         .unused_color = {{ {} }},
         .active_color = {{ {} }},
         .pos_size_callable = {},
@@ -112,12 +113,14 @@ def generate(config, template, output):
         for cuboid in view["cuboids"]:
             cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")
             fill_color = ", ".join([str(c) for c in cuboid["color"][0]])
-            unused_color = ", ".join([str(c) for c in cuboid["color"][1]])
-            active_color = ", ".join([str(c) for c in cuboid["color"][2]])
+            out_of_bounds_color = ", ".join([str(c) for c in cuboid["color"][1]])
+            unused_color = ", ".join([str(c) for c in cuboid["color"][2]])
+            active_color = ", ".join([str(c) for c in cuboid["color"][3]])
             callable_func = cuboid["callable"]
             code_str = code_str + """\tauto {} = {};\n""" \
                 .format(cuboid_name,
-                        cuboid_constr_template.format(fill_color, unused_color, active_color, callable_func)) \
+                        cuboid_constr_template.format(fill_color, out_of_bounds_color, unused_color, active_color,
+                                                      callable_func)) \
                 .expandtabs(4)
 
             requirements_name = "r_" + str(uuid.uuid4()).replace("-", "_")

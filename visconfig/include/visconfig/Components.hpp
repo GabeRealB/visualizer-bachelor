@@ -45,14 +45,10 @@ struct CubeComponent : public ComponentData {
 
 struct MeshComponent : public ComponentData {
     std::string asset;
-
-    static constexpr const char* assetJson{ "asset" };
 };
 
 struct ParentComponent : public ComponentData {
     std::size_t id;
-
-    static constexpr const char* idJson{ "id" };
 };
 
 enum class MaterialAttributeType {
@@ -91,21 +87,18 @@ struct MaterialAttributeData {
 template <typename T> struct TMaterialAttribute : MaterialAttributeData {
     T value;
 
-    static constexpr const char* valueJson{ "value" };
+    static constexpr const char* value_json{ "value" };
 };
 
 template <typename T> struct TArrayMaterialAttribute : MaterialAttributeData {
     std::vector<T> value;
 
-    static constexpr const char* valueJson{ "value" };
+    static constexpr const char* value_json{ "value" };
 };
 
 struct Sampler2DMaterialAttribute : MaterialAttributeData {
     std::string asset;
     std::size_t slot;
-
-    static constexpr const char* assetJson{ "asset" };
-    static constexpr const char* slotJson{ "slot" };
 };
 
 struct Sampler2DMSMaterialAttribute : MaterialAttributeData {
@@ -187,18 +180,12 @@ struct MaterialComponent : public ComponentData {
 
 struct LayerComponent : public ComponentData {
     std::size_t mask;
-
-    static constexpr const char* maskJson{ "mask" };
 };
 
 struct TransformComponent : public ComponentData {
     float scale[3];
     float position[3];
     float rotation[3];
-
-    static constexpr const char* scaleJson{ "scale" };
-    static constexpr const char* positionJson{ "position" };
-    static constexpr const char* rotationJson{ "rotation" };
 };
 
 enum class IterationOrder { XYZ, XZY, YXZ, YZX, ZXY, ZYX };
@@ -208,69 +195,45 @@ struct ImplicitIterationComponent : public ComponentData {
     float startPos[3];
     std::size_t numIterations[3];
     std::size_t ticksPerIteration;
-
-    static constexpr const char* orderJson{ "order" };
-    static constexpr const char* startPosJson{ "start_position" };
-    static constexpr const char* numIterationsJson{ "num_iterations" };
-    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
 struct ExplicitIterationComponent : public ComponentData {
     std::vector<std::array<float, 3>> positions;
     std::size_t ticksPerIteration;
-
-    static constexpr const char* positionsJson{ "positions" };
-    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
 struct EntityActivationComponent : public ComponentData {
     std::size_t layer;
     std::vector<std::size_t> entities;
     std::vector<std::size_t> ticksPerIteration;
-
-    static constexpr const char* layerJson{ "layer" };
-    static constexpr const char* entitiesJson{ "entities" };
-    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
 struct MeshIterationComponent : public ComponentData {
     std::array<std::size_t, 3> dimensions;
     std::vector<std::size_t> ticksPerIteration;
     std::vector<std::array<float, 3>> positions;
-
-    static constexpr const char* dimensionsJson{ "dimensions" };
-    static constexpr const char* positionsJson{ "positions" };
-    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
 struct ExplicitHeterogeneousIterationComponent : public ComponentData {
     std::vector<std::size_t> ticksPerIteration;
     std::vector<std::array<float, 3>> scales;
     std::vector<std::array<float, 3>> positions;
-
-    static constexpr const char* scalesJson{ "scales" };
-    static constexpr const char* positionsJson{ "positions" };
-    static constexpr const char* ticksPerIterationJson{ "ticks_per_iteration" };
 };
 
 enum class CuboidCommandType { NOOP, DRAW, DRAW_MULTIPLE, DELETE, DELETE_MULTIPLE };
 
 struct NoopCommand {
     std::size_t counter;
-
-    static constexpr const char* counter_json{ "counter" };
 };
 
 struct DrawCommand {
+    bool out_of_bounds;
     std::size_t cuboid_idx;
-
-    static constexpr const char* cuboid_idx_json{ "cuboid_idx" };
 };
 
 struct DrawMultipleCommand {
     std::vector<std::size_t> cuboid_indices;
-
-    static constexpr const char* cuboid_indices_json{ "cuboid_indices" };
+    std::vector<std::size_t> out_of_bounds_indices;
 };
 
 struct DeleteCommand {
@@ -278,8 +241,6 @@ struct DeleteCommand {
 
 struct DeleteMultipleCommand {
     std::size_t counter;
-
-    static constexpr const char* counter_json{ "counter" };
 };
 
 struct CuboidCommand {
@@ -295,11 +256,6 @@ struct CuboidCommandListComponent : public ComponentData {
     std::array<int, 3> global_size;
     std::vector<CuboidCommand> commands;
     std::vector<std::tuple<std::array<int, 3>, std::array<int, 3>>> positions;
-
-    static constexpr const char* global_json{ "global" };
-    static constexpr const char* global_size_json{ "global_size" };
-    static constexpr const char* commands_json{ "commands" };
-    static constexpr const char* positions_json{ "positions" };
 };
 
 struct CameraComponent : public ComponentData {
@@ -314,18 +270,6 @@ struct CameraComponent : public ComponentData {
     float orthographicHeight;
     std::bitset<64> layerMask;
     std::unordered_map<std::string, std::vector<std::string>> targets;
-
-    static constexpr const char* activeJson{ "active" };
-    static constexpr const char* fixedJson{ "fixed" };
-    static constexpr const char* perspectiveJson{ "perspective" };
-    static constexpr const char* fovJson{ "fov" };
-    static constexpr const char* farJson{ "far" };
-    static constexpr const char* nearJson{ "near" };
-    static constexpr const char* aspectJson{ "aspect" };
-    static constexpr const char* orthographicWidthJson{ "orthographic_width" };
-    static constexpr const char* orthographicHeightJson{ "orthographic_height" };
-    static constexpr const char* layerMaskJson{ "layer_mask" };
-    static constexpr const char* targetsJson{ "targets" };
 };
 
 struct FreeFlyCameraComponent : public ComponentData {
@@ -336,19 +280,11 @@ struct FixedCameraComponent : public ComponentData {
     float distance;
     float horizontalAngle;
     float verticalAngle;
-
-    static constexpr const char* focusJson{ "focus" };
-    static constexpr const char* distanceJson{ "distance" };
-    static constexpr const char* horizontalAngleJson{ "horizontal_angle" };
-    static constexpr const char* verticalAngleJson{ "vertical_angle" };
 };
 
 struct CameraSwitcherComponent : public ComponentData {
     std::vector<std::size_t> cameras;
     std::size_t active;
-
-    static constexpr const char* camerasJson{ "cameras" };
-    static constexpr const char* activeJson{ "active" };
 };
 
 struct CompositionOperation {
@@ -359,20 +295,10 @@ struct CompositionOperation {
     std::string shader;
     std::size_t id;
     bool draggable;
-
-    static constexpr const char* scaleJson{ "scale" };
-    static constexpr const char* positionJson{ "position" };
-    static constexpr const char* sourceTextureJson{ "source_texture" };
-    static constexpr const char* targetJson{ "target" };
-    static constexpr const char* shaderJson{ "shader" };
-    static constexpr const char* idJson{ "id" };
-    static constexpr const char* draggableJson{ "draggable" };
 };
 
 struct CompositionComponent : public ComponentData {
     std::vector<CompositionOperation> operations;
-
-    static constexpr const char* operationsJson{ "operations" };
 };
 
 enum class CopyOperationFlag {
@@ -391,17 +317,10 @@ struct CopyOperation {
     std::string destination;
     std::vector<CopyOperationFlag> flags;
     CopyOperationFilter filter;
-
-    static constexpr const char* sourceJson{ "source" };
-    static constexpr const char* destinationJson{ "destination" };
-    static constexpr const char* flagsJson{ "flags" };
-    static constexpr const char* filterJson{ "filter" };
 };
 
 struct CopyComponent : public ComponentData {
     std::vector<CopyOperation> operations;
-
-    static constexpr const char* operationsJson{ "operations" };
 };
 
 enum class CanvasEntryType { LegendGUI, CompositionGUI };
@@ -465,14 +384,64 @@ struct CanvasEntry {
 
 struct CanvasComponent : public ComponentData {
     std::vector<CanvasEntry> entries;
-
-    static constexpr const char* entries_json{ "entries" };
 };
+
+}
+
+/* STD Extensions */
+
+namespace nlohmann {
+template <std::size_t N> struct adl_serializer<std::bitset<N>> {
+    static void to_json(nlohmann::json& j, const std::bitset<N>& v)
+    {
+        if constexpr (N <= sizeof(unsigned long) * 8) {
+            j = v.to_ulong();
+        } else if constexpr (N <= sizeof(unsigned long long) * 8) {
+            j = v.to_ullong();
+        } else {
+            j = v.to_string();
+        }
+    }
+
+    static void from_json(const nlohmann::json& j, std::bitset<N>& v)
+    {
+        if constexpr (N <= sizeof(unsigned long) * 8) {
+            v = std::bitset<N>{ j.get<unsigned long>() };
+        } else if constexpr (N <= sizeof(unsigned long long) * 8) {
+            v = std::bitset<N>{ j.get<unsigned long long>() };
+        } else {
+            v = std::bitset<N>{ j.get<std::string>() };
+        }
+    }
+};
+}
+
+namespace Visconfig::Components {
 
 /*Enums*/
 
-void to_json(nlohmann::json& j, const ComponentType& v);
-void from_json(const nlohmann::json& j, ComponentType& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(ComponentType,
+    {
+        { ComponentType::Cube, "cube" },
+        { ComponentType::Mesh, "mesh" },
+        { ComponentType::Parent, "parent" },
+        { ComponentType::Material, "material" },
+        { ComponentType::Layer, "layer" },
+        { ComponentType::Transform, "transform" },
+        { ComponentType::ImplicitIteration, "implicit_iteration" },
+        { ComponentType::ExplicitIteration, "explicit_iteration" },
+        { ComponentType::EntityActivation, "entity_activation" },
+        { ComponentType::MeshIteration, "mesh_iteration" },
+        { ComponentType::ExplicitHeterogeneousIteration, "explicit_heterogeneous_iteration" },
+        { ComponentType::CuboidCommandList, "cuboid_command_list" },
+        { ComponentType::Camera, "camera" },
+        { ComponentType::FreeFlyCamera, "free_fly_camera" },
+        { ComponentType::FixedCamera, "fixed_camera" },
+        { ComponentType::CameraSwitcher, "camera_switcher" },
+        { ComponentType::Composition, "composition" },
+        { ComponentType::Copy, "copy" },
+        { ComponentType::Canvas, "canvas" },
+    })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MaterialAttributeType,
     {
@@ -505,17 +474,37 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MaterialAttributeType,
         { MaterialAttributeType::Sampler2DMS, "sampler2DMS" },
     })
 
-void to_json(nlohmann::json& j, const IterationOrder& v);
-void from_json(const nlohmann::json& j, IterationOrder& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(IterationOrder,
+    {
+        { IterationOrder::XYZ, "xyz" },
+        { IterationOrder::XZY, "xzy" },
+        { IterationOrder::YXZ, "yxz" },
+        { IterationOrder::YZX, "yzx" },
+        { IterationOrder::ZXY, "zxy" },
+        { IterationOrder::ZYX, "zyx" },
+    })
 
-void to_json(nlohmann::json& j, const CuboidCommandType& v);
-void from_json(const nlohmann::json& j, CuboidCommandType& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(CuboidCommandType,
+    {
+        { CuboidCommandType::NOOP, "noop" },
+        { CuboidCommandType::DRAW, "draw" },
+        { CuboidCommandType::DRAW_MULTIPLE, "draw_multiple" },
+        { CuboidCommandType::DELETE, "delete" },
+        { CuboidCommandType::DELETE_MULTIPLE, "delete_multiple" },
+    })
 
-void to_json(nlohmann::json& j, const CopyOperationFlag& v);
-void from_json(const nlohmann::json& j, CopyOperationFlag& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(CopyOperationFlag,
+    {
+        { CopyOperationFlag::Color, "color" },
+        { CopyOperationFlag::Depth, "depth" },
+        { CopyOperationFlag::Stencil, "stencil" },
+    })
 
-void to_json(nlohmann::json& j, const CopyOperationFilter& v);
-void from_json(const nlohmann::json& j, CopyOperationFilter& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(CopyOperationFilter,
+    {
+        { CopyOperationFilter::Nearest, "nearest" },
+        { CopyOperationFilter::Linear, "linear" },
+    })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(CanvasEntryType,
     {
@@ -529,85 +518,26 @@ NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
         { LegendGUIEntryType::ImageEntry, "image_entry" },
     })
 
-/*Components*/
-
-void to_json(nlohmann::json& j, const CubeComponent& v);
-void from_json(const nlohmann::json& j, CubeComponent& v);
-
-void to_json(nlohmann::json& j, const MeshComponent& v);
-void from_json(const nlohmann::json& j, MeshComponent& v);
-
-void to_json(nlohmann::json& j, const ParentComponent& v);
-void from_json(const nlohmann::json& j, ParentComponent& v);
-
-void to_json(nlohmann::json& j, const MaterialComponent& v);
-void from_json(const nlohmann::json& j, MaterialComponent& v);
-
-void to_json(nlohmann::json& j, const LayerComponent& v);
-void from_json(const nlohmann::json& j, LayerComponent& v);
-
-void to_json(nlohmann::json& j, const TransformComponent& v);
-void from_json(const nlohmann::json& j, TransformComponent& v);
-
-void to_json(nlohmann::json& j, const ImplicitIterationComponent& v);
-void from_json(const nlohmann::json& j, ImplicitIterationComponent& v);
-
-void to_json(nlohmann::json& j, const ExplicitIterationComponent& v);
-void from_json(const nlohmann::json& j, ExplicitIterationComponent& v);
-
-void to_json(nlohmann::json& j, const EntityActivationComponent& v);
-void from_json(const nlohmann::json& j, EntityActivationComponent& v);
-
-void to_json(nlohmann::json& j, const MeshIterationComponent& v);
-void from_json(const nlohmann::json& j, MeshIterationComponent& v);
-
-void to_json(nlohmann::json& j, const ExplicitHeterogeneousIterationComponent& v);
-void from_json(const nlohmann::json& j, ExplicitHeterogeneousIterationComponent& v);
-
-void to_json(nlohmann::json& j, const CuboidCommandListComponent& v);
-void from_json(const nlohmann::json& j, CuboidCommandListComponent& v);
-
-void to_json(nlohmann::json& j, const CameraComponent& v);
-void from_json(const nlohmann::json& j, CameraComponent& v);
-
-void to_json(nlohmann::json& j, const FreeFlyCameraComponent& v);
-void from_json(const nlohmann::json& j, FreeFlyCameraComponent& v);
-
-void to_json(nlohmann::json& j, const FixedCameraComponent& v);
-void from_json(const nlohmann::json& j, FixedCameraComponent& v);
-
-void to_json(nlohmann::json& j, const CameraSwitcherComponent& v);
-void from_json(const nlohmann::json& j, CameraSwitcherComponent& v);
-
-void to_json(nlohmann::json& j, const CompositionComponent& v);
-void from_json(const nlohmann::json& j, CompositionComponent& v);
-
-void to_json(nlohmann::json& j, const CopyComponent& v);
-void from_json(const nlohmann::json& j, CopyComponent& v);
-
-void to_json(nlohmann::json& j, const CanvasComponent& v);
-void from_json(const nlohmann::json& j, CanvasComponent& v);
-
 /*Internal Structs*/
 
 template <typename T> void to_json(nlohmann::json& j, const TMaterialAttribute<T>& v)
 {
-    j[TMaterialAttribute<T>::valueJson] = v.value;
+    j[TMaterialAttribute<T>::value_json] = v.value;
 }
 
 template <typename T> void from_json(const nlohmann::json& j, TMaterialAttribute<T>& v)
 {
-    j[TMaterialAttribute<T>::valueJson].get_to(v.value);
+    j[TMaterialAttribute<T>::value_json].get_to(v.value);
 }
 
 template <typename T> void to_json(nlohmann::json& j, const TArrayMaterialAttribute<T>& v)
 {
-    j[TArrayMaterialAttribute<T>::valueJson] = v.value;
+    j[TArrayMaterialAttribute<T>::value_json] = v.value;
 }
 
 template <typename T> void from_json(const nlohmann::json& j, TArrayMaterialAttribute<T>& v)
 {
-    j[TArrayMaterialAttribute<T>::valueJson].get_to(v.value);
+    j[TArrayMaterialAttribute<T>::value_json].get_to(v.value);
 }
 
 void to_json(
@@ -620,34 +550,27 @@ void from_json(const nlohmann::json& j, MaterialAttribute& v);
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MaterialPass, asset, attributes)
 
-void to_json(nlohmann::json& j, const Sampler2DMaterialAttribute& v);
-void from_json(const nlohmann::json& j, Sampler2DMaterialAttribute& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Sampler2DMaterialAttribute, asset, slot)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Sampler2DMSMaterialAttribute, asset, slot)
 
-void to_json(nlohmann::json& j, const NoopCommand& v);
-void from_json(const nlohmann::json& j, NoopCommand& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NoopCommand, counter)
 
-void to_json(nlohmann::json& j, const DrawCommand& v);
-void from_json(const nlohmann::json& j, DrawCommand& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DrawCommand, out_of_bounds, cuboid_idx)
 
-void to_json(nlohmann::json& j, const DrawMultipleCommand& v);
-void from_json(const nlohmann::json& j, DrawMultipleCommand& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DrawMultipleCommand, cuboid_indices, out_of_bounds_indices)
 
-void to_json(nlohmann::json& j, const DeleteCommand& v);
-void from_json(const nlohmann::json& j, DeleteCommand& v);
+inline void to_json(nlohmann::json&, const DeleteCommand&) {}
+inline void from_json(const nlohmann::json&, DeleteCommand&) {}
 
-void to_json(nlohmann::json& j, const DeleteMultipleCommand& v);
-void from_json(const nlohmann::json& j, DeleteMultipleCommand& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(DeleteMultipleCommand, counter)
 
 void to_json(nlohmann::json& j, const CuboidCommand& v);
 void from_json(const nlohmann::json& j, CuboidCommand& v);
 
-void to_json(nlohmann::json& j, const CompositionOperation& v);
-void from_json(const nlohmann::json& j, CompositionOperation& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionOperation, scale, position, sourceTexture, target, shader, id, draggable)
 
-void to_json(nlohmann::json& j, const CopyOperation& v);
-void from_json(const nlohmann::json& j, CopyOperation& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CopyOperation, source, destination, flags, filter)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, description, scaling)
 
@@ -666,5 +589,48 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUI, entries)
 
 void to_json(nlohmann::json& j, const CanvasEntry& v);
 void from_json(const nlohmann::json& j, CanvasEntry& v);
+
+/*Components*/
+
+inline void to_json(nlohmann::json&, const CubeComponent&) {}
+inline void from_json(const nlohmann::json&, CubeComponent&) {}
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshComponent, asset)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ParentComponent, id)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MaterialComponent, pipeline, passes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LayerComponent, mask)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TransformComponent, scale, position, rotation)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ImplicitIterationComponent, order, startPos, numIterations, ticksPerIteration)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ExplicitIterationComponent, positions, ticksPerIteration)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(EntityActivationComponent, layer, entities, ticksPerIteration)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshIterationComponent, dimensions, positions, ticksPerIteration)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ExplicitHeterogeneousIterationComponent, scales, positions, ticksPerIteration)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CuboidCommandListComponent, global, global_size, commands, positions)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CameraComponent, active, fixed, perspective, fov, far, near, aspect,
+    orthographicWidth, orthographicHeight, layerMask, targets)
+
+inline void to_json(nlohmann::json&, const FreeFlyCameraComponent&) {}
+inline void from_json(const nlohmann::json&, FreeFlyCameraComponent&) {}
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FixedCameraComponent, focus, distance, horizontalAngle, verticalAngle)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CameraSwitcherComponent, cameras, active)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionComponent, operations)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CopyComponent, operations)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CanvasComponent, entries)
 
 }

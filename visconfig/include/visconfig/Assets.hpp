@@ -173,8 +173,32 @@ struct FramebufferAsset : public AssetData {
 
 struct DefaultFramebufferAsset : public AssetData {
 };
+}
 
+/* STD Extensions */
+
+namespace nlohmann {
+template <> struct adl_serializer<std::filesystem::path> {
+    static void to_json(nlohmann::json& j, const std::filesystem::path& v) { j = v.string(); }
+
+    static void from_json(const nlohmann::json& j, std::filesystem::path& v) { v = j.get<std::string>(); }
+};
+}
+
+namespace Visconfig::Assets {
 /*Enums*/
+
+NLOHMANN_JSON_SERIALIZE_ENUM(AssetType,
+    {
+        { AssetType::Mesh, "mesh" },
+        { AssetType::TextureFile, "texture_file" },
+        { AssetType::TextureRaw, "texture_raw" },
+        { AssetType::TextureMultisampleRaw, "texture_multisample_raw" },
+        { AssetType::Renderbuffer, "renderbuffer" },
+        { AssetType::Shader, "shader" },
+        { AssetType::Framebuffer, "framebuffer" },
+        { AssetType::DefaultFramebuffer, "default_framebuffer" },
+    })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MeshAttributeElementSize,
     {
@@ -212,55 +236,71 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MeshAttributeUsage,
         { MeshAttributeUsage::DynamicCopy, "dynamic_copy" },
     })
 
-void to_json(nlohmann::json& j, const AssetType& v);
-void from_json(const nlohmann::json& j, AssetType& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(TextureFormat,
+    {
+        { TextureFormat::R, "r" },
+        { TextureFormat::RG, "rg" },
+        { TextureFormat::RGB, "rgb" },
+        { TextureFormat::RGBA, "rgba" },
+        { TextureFormat::R8, "r8" },
+        { TextureFormat::RGBA16F, "rgba16" },
+    })
 
-void to_json(nlohmann::json& j, const TextureFormat& v);
-void from_json(const nlohmann::json& j, TextureFormat& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(TextureAttributes,
+    {
+        { TextureAttributes::MagnificationLinear, "magnification_linear" },
+        { TextureAttributes::MinificationLinear, "minification_linear" },
+        { TextureAttributes::GenerateMipMaps, "generate_mipmaps" },
+    })
 
-void to_json(nlohmann::json& j, const TextureAttributes& v);
-void from_json(const nlohmann::json& j, TextureAttributes& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(RenderbufferFormat,
+    {
+        { RenderbufferFormat::Depth24, "depth_24" },
+    })
 
-void to_json(nlohmann::json& j, const RenderbufferFormat& v);
-void from_json(const nlohmann::json& j, RenderbufferFormat& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(FramebufferType,
+    {
+        { FramebufferType::Texture, "texture" },
+        { FramebufferType::TextureMultisample, "texture_multisample" },
+        { FramebufferType::Renderbuffer, "renderbuffer" },
+    })
 
-void to_json(nlohmann::json& j, const FramebufferType& v);
-void from_json(const nlohmann::json& j, FramebufferType& v);
-
-void to_json(nlohmann::json& j, const FramebufferDestination& v);
-void from_json(const nlohmann::json& j, FramebufferDestination& v);
-
-/*Assets*/
-
-void to_json(nlohmann::json& j, const MeshAsset& v);
-void from_json(const nlohmann::json& j, MeshAsset& v);
-
-void to_json(nlohmann::json& j, const TextureFileAsset& v);
-void from_json(const nlohmann::json& j, TextureFileAsset& v);
-
-void to_json(nlohmann::json& j, const TextureRawAsset& v);
-void from_json(const nlohmann::json& j, TextureRawAsset& v);
-
-void to_json(nlohmann::json& j, const TextureMultisampleRawAsset& v);
-void from_json(const nlohmann::json& j, TextureMultisampleRawAsset& v);
-
-void to_json(nlohmann::json& j, const RenderbufferAsset& v);
-void from_json(const nlohmann::json& j, RenderbufferAsset& v);
-
-void to_json(nlohmann::json& j, const ShaderAsset& v);
-void from_json(const nlohmann::json& j, ShaderAsset& v);
-
-void to_json(nlohmann::json& j, const FramebufferAsset& v);
-void from_json(const nlohmann::json& j, FramebufferAsset& v);
-
-void to_json(nlohmann::json& j, const DefaultFramebufferAsset& v);
-void from_json(const nlohmann::json& j, DefaultFramebufferAsset& v);
+NLOHMANN_JSON_SERIALIZE_ENUM(FramebufferDestination,
+    {
+        { FramebufferDestination::Color0, "color0" },
+        { FramebufferDestination::Color1, "color1" },
+        { FramebufferDestination::Color2, "color2" },
+        { FramebufferDestination::Color3, "color3" },
+        { FramebufferDestination::Depth, "depth" },
+        { FramebufferDestination::Stencil, "stencil" },
+        { FramebufferDestination::DepthStencil, "depth_stencil" },
+    })
 
 /*Internal Structs*/
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
     SimpleMeshAttribute, normalized, size, index, stride, offset, usage, data, element_size, element_type)
 
-void to_json(nlohmann::json& j, const FramebufferAttachment& v);
-void from_json(const nlohmann::json& j, FramebufferAttachment& v);
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FramebufferAttachment, type, destination, asset)
+
+/*Assets*/
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshAsset, vertices, indices, texture_coords0, simple_attributes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureFileAsset, path, attributes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureRawAsset, width, height, format, attributes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureMultisampleRawAsset, width, height, samples, format, attributes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RenderbufferAsset, width, height, samples, format)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ShaderAsset, vertex, fragment)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    FramebufferAsset, attachments, viewportWidth, viewportHeight, viewportStartX, viewportStartY)
+
+inline void to_json(nlohmann::json&, const DefaultFramebufferAsset&) {}
+inline void from_json(const nlohmann::json&, DefaultFramebufferAsset&) {}
 
 }

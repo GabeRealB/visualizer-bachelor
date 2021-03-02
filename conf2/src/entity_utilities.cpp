@@ -304,6 +304,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawCommand{
+                    command.out_of_bounds,
                     command.cuboid_idx,
                 };
             }
@@ -315,6 +316,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             {
                 return Visconfig::Components::DrawMultipleCommand{
                     std::vector<std::size_t>{ command.cuboid_indices.begin(), command.cuboid_indices.end() },
+                    {},
                 };
             }
             (std::get<DrawMultipleCommand>(command.command));
