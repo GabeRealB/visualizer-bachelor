@@ -2,6 +2,7 @@
 
 @program float 1 far_plane
 @material vec4 1 active_fill_color
+@material vec4 1 out_of_bounds_fill_color
 @material vec4 1 inactive_fill_color
 @material sampler2D 1 grid_texture_front
 @material sampler2D 1 grid_texture_side
@@ -10,6 +11,7 @@
 uniform float far_plane;
 
 uniform vec4 active_fill_color;
+uniform vec4 out_of_bounds_fill_color;
 uniform vec4 inactive_fill_color;
 
 uniform sampler2D grid_texture_front;
@@ -25,6 +27,10 @@ in vec3 vs_normal;
 layout(location = 0) out vec4 accum;
 layout(location = 1) out float revealage;
 layout(location = 2) out vec3 modulate;
+
+const uint DISABLED = 0;
+const uint ENABLED = 1;
+const uint OUT_OF_BOUNDS = 2;
 
 vec3 compute_diffuse_reflection(vec3 diffuse, vec3 vs_normal, vec3 vs_point_to_light) {
     return diffuse * max(dot(vs_normal, vs_point_to_light), 0);
@@ -111,9 +117,11 @@ void main() {
     if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
         discard;
     } else {
-        if (enabled == 1) {
+        if (enabled == ENABLED) {
             diffuse_color = active_fill_color;
-        } else {
+        } else if (enabled == OUT_OF_BOUNDS) {
+            diffuse_color = out_of_bounds_fill_color;
+        } else if (enabled == DISABLED) {
             diffuse_color = inactive_fill_color;
         }
     }

@@ -13,10 +13,12 @@ struct NoopCommand {
 };
 
 struct DrawCommand {
+    bool out_of_bounds;
     std::size_t cuboid_idx;
 };
 
 struct DrawMultipleCommand {
+    std::vector<std::size_t> out_of_bounds;
     std::vector<std::size_t> cuboid_indices;
 };
 

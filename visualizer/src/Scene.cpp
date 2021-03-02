@@ -1357,6 +1357,7 @@ CuboidCommand construct_command(const Visconfig::Components::DrawCommand& comman
     return CuboidCommand{
         CuboidCommandType::DRAW,
         DrawCommand{
+            command.out_of_bounds,
             command.cuboid_idx,
         },
     };
@@ -1367,6 +1368,7 @@ CuboidCommand construct_command(const Visconfig::Components::DrawMultipleCommand
     return CuboidCommand{
         CuboidCommandType::DRAW_MULTIPLE,
         DrawMultipleCommand{
+            command.out_of_bounds_indices,
             command.cuboid_indices,
         },
     };

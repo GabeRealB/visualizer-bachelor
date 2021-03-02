@@ -167,9 +167,9 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     };
 
                     auto box_intersects_fn = [](const BoundingBox& lhs, const BoundingBox& rhs) -> bool {
-                        auto intersects_x = lhs.start[0] <= rhs.end[0] || rhs.start[0] >= lhs.end[0];
-                        auto intersects_y = lhs.start[1] <= rhs.end[1] || rhs.start[1] >= lhs.end[1];
-                        auto intersects_z = lhs.start[2] <= rhs.end[2] || rhs.start[2] >= lhs.end[2];
+                        auto intersects_x = lhs.start[0] <= rhs.end[0] && rhs.start[0] <= lhs.end[0];
+                        auto intersects_y = lhs.start[1] <= rhs.end[1] && rhs.start[1] <= lhs.end[1];
+                        auto intersects_z = lhs.start[2] <= rhs.end[2] && rhs.start[2] <= lhs.end[2];
                         return intersects_x && intersects_y && intersects_z;
                     };
 
@@ -454,6 +454,9 @@ void generate_bounds_information(const CuboidCommandList& parent_layer, CuboidCo
                     }
                 }
             }
+            for (auto idx : draw_command.out_of_bounds) {
+                draw_command.cuboid_indices.erase(idx);
+            }
         }
 
         if (std::holds_alternative<NoopCommand>(command.command)) {
@@ -492,6 +495,7 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
     for (auto& cuboid_container : view_container.get_cuboids()) {
         CuboidCommandList cuboid_command_list{};
         cuboid_command_list.active_fill_color = cuboid_container.fill_color;
+        cuboid_command_list.out_of_bounds_fill_color = cuboid_container.out_of_bounds_color;
         cuboid_command_list.inactive_fill_color = { 0, 0, 0, 0 };
         cuboid_command_list.active_border_color = cuboid_container.active_color;
         cuboid_command_list.inactive_border_color = cuboid_container.unused_color;

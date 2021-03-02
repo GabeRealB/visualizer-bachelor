@@ -50,6 +50,7 @@ struct CuboidCommand {
 
 struct CuboidCommandList {
     CuboidColor active_fill_color;
+    CuboidColor out_of_bounds_fill_color;
     CuboidColor inactive_fill_color;
     CuboidColor active_border_color;
     CuboidColor inactive_border_color;

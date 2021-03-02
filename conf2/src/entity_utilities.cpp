@@ -142,6 +142,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto accum_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto revealage_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto out_of_bounds_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
@@ -166,6 +167,12 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         command_list.active_fill_color[1] / 255.0f,
         command_list.active_fill_color[2] / 255.0f,
         command_list.active_fill_color[3] / 255.0f,
+    };
+    out_of_bounds_fill_color_attribute->value = {
+        command_list.out_of_bounds_fill_color[0] / 255.0f,
+        command_list.out_of_bounds_fill_color[1] / 255.0f,
+        command_list.out_of_bounds_fill_color[2] / 255.0f,
+        command_list.out_of_bounds_fill_color[3] / 255.0f,
     };
     inactive_fill_color_attribute->value = {
         command_list.inactive_fill_color[0] / 255.0f,
@@ -242,6 +249,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
                     Visconfig::Components::MaterialAttributeType::Vec4, active_fill_color_attribute, false },
             },
             {
+                "out_of_bounds_fill_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, out_of_bounds_fill_color_attribute, false },
+            },
+            {
                 "inactive_fill_color",
                 Visconfig::Components::MaterialAttribute{
                     Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false },
@@ -315,8 +327,8 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             visconfig_command.command = [=](auto&& command) -> auto
             {
                 return Visconfig::Components::DrawMultipleCommand{
-                    std::vector<std::size_t>{ command.cuboid_indices.begin(), command.cuboid_indices.end() },
-                    {},
+                    { command.cuboid_indices.begin(), command.cuboid_indices.end() },
+                    command.out_of_bounds,
                 };
             }
             (std::get<DrawMultipleCommand>(command.command));

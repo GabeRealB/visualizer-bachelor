@@ -20,6 +20,10 @@ constexpr double TICK_INTERVAL_3 = 0.001;
 constexpr double TICK_INTERVAL_4 = 0.0001;
 constexpr double TICK_INTERVAL_STOPPED = std::numeric_limits<double>::max();
 
+constexpr unsigned int DISABLED = 0;
+constexpr unsigned int ENABLED = 1;
+constexpr unsigned int OUT_OF_BOUNDS = 2;
+
 void step_iteration(
     CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh, Material& material, Transform& transform);
 
@@ -92,8 +96,8 @@ bool step_iteration(const DrawCommand& command, const CuboidCommand& previous, s
     auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
     auto& previous_command = std::get<DrawCommand>(previous.command);
 
-    buffer_ptr[previous_command.cuboid_idx] = 0;
-    buffer_ptr[command.cuboid_idx] = 1;
+    buffer_ptr[previous_command.cuboid_idx] = DISABLED;
+    buffer_ptr[command.cuboid_idx] = command.out_of_bounds ? OUT_OF_BOUNDS : ENABLED;
 
     enabled_buffer->unmap();
     return true;
@@ -108,11 +112,17 @@ bool step_iteration(const DrawMultipleCommand& command, const CuboidCommand& pre
     auto& previous_command = std::get<DrawMultipleCommand>(previous.command);
 
     for (auto idx : previous_command.cuboid_indices) {
-        buffer_ptr[idx] = 0;
+        buffer_ptr[idx] = DISABLED;
+    }
+    for (auto idx : previous_command.out_of_bounds) {
+        buffer_ptr[idx] = DISABLED;
     }
 
     for (auto idx : command.cuboid_indices) {
-        buffer_ptr[idx] = 1;
+        buffer_ptr[idx] = ENABLED;
+    }
+    for (auto idx : command.out_of_bounds) {
+        buffer_ptr[idx] = OUT_OF_BOUNDS;
     }
 
     enabled_buffer->unmap();
