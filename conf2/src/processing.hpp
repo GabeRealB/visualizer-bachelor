@@ -28,6 +28,7 @@ struct NoopCommand {
 struct DrawCommand {
     bool out_of_bounds;
     std::size_t cuboid_idx;
+    BoundingBox bounding_box;
 };
 
 struct DrawMultipleCommand {
@@ -69,6 +70,10 @@ struct ViewCommandList {
 struct ConfigCommandList {
     std::vector<ViewCommandList> view_commands;
 };
+
+bool aabb_contains(const BoundingBox& lhs, const BoundingBox& rhs);
+bool aabb_intersects(const BoundingBox& lhs, const BoundingBox& rhs);
+BoundingBox aabb_extend(const BoundingBox& lhs, const BoundingBox& rhs);
 
 ConfigCommandList generate_config_command_list();
 void print_config_command_list(const ConfigCommandList& config);
