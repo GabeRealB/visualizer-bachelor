@@ -250,6 +250,8 @@ public:
 
     std::array<float, 2> position() const { return m_position; }
 
+    std::span<const std::size_t> layer_indices() const { return { m_layer_indices.data(), m_layer_indices.size() }; }
+
     void set_size(float size) { m_size = size; }
 
     void set_position(float x, float y)
@@ -263,6 +265,8 @@ public:
         m_cuboids.push_back(cuboid);
         m_variable_requirements.push_back(requirements);
     }
+
+    void set_layer_indices(const std::vector<std::size_t>& indices) { m_layer_indices = indices; }
 
     std::size_t get_num_cuboids() const { return m_cuboids.size(); }
 
@@ -283,6 +287,7 @@ private:
     float m_size;
     std::array<float, 2> m_position;
     std::vector<CuboidContainer> m_cuboids;
+    std::vector<std::size_t> m_layer_indices;
     std::vector<std::set<std::string>> m_variable_requirements;
 };
 

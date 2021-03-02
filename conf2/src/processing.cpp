@@ -102,6 +102,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 cuboid_list.commands.push_back({ CuboidCommandType::DRAW,
                     DrawCommand{
+                        false,
                         cuboid_idx,
                     } });
             }
@@ -138,15 +139,93 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                 }
 
                 auto& cuboid_commands = cuboid_list.commands;
+                BoundingBox box = {
+                    start_position,
+                    {
+                        start_position[0] + cuboid_size[0],
+                        start_position[1] + cuboid_size[1],
+                        start_position[2] + cuboid_size[2],
+                    },
+                };
 
                 if (cuboid_commands.empty() || cuboid_commands.back().type != CuboidCommandType::DRAW_MULTIPLE) {
                     cuboid_commands.push_back({ CuboidCommandType::DRAW_MULTIPLE,
                         DrawMultipleCommand{
+                            {},
+                            { box },
                             { cuboid_idx },
                         } });
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
-                    command.cuboid_indices.insert(cuboid_idx);
+                    [[maybe_unused]] auto [it, new_idx] = command.cuboid_indices.insert(cuboid_idx);
+
+                    auto box_contains_fn = [](const BoundingBox& lhs, const BoundingBox& rhs) -> bool {
+                        auto contains_x = lhs.start[0] <= rhs.start[0] && rhs.end[0] <= lhs.end[0];
+                        auto contains_y = lhs.start[1] <= rhs.start[1] && rhs.end[1] <= lhs.end[1];
+                        auto contains_z = lhs.start[2] <= rhs.start[2] && rhs.end[2] <= lhs.end[2];
+                        return contains_x && contains_y && contains_z;
+                    };
+
+                    auto box_intersects_fn = [](const BoundingBox& lhs, const BoundingBox& rhs) -> bool {
+                        auto intersects_x = lhs.start[0] <= rhs.end[0] || rhs.start[0] >= lhs.end[0];
+                        auto intersects_y = lhs.start[1] <= rhs.end[1] || rhs.start[1] >= lhs.end[1];
+                        auto intersects_z = lhs.start[2] <= rhs.end[2] || rhs.start[2] >= lhs.end[2];
+                        return intersects_x && intersects_y && intersects_z;
+                    };
+
+                    auto box_merge_fn = [](const BoundingBox& lhs, const BoundingBox& rhs) -> BoundingBox {
+                        auto box = rhs;
+
+                        if (lhs.start[0] < box.start[0]) {
+                            box.start[0] = lhs.start[0];
+                        }
+                        if (lhs.start[1] < box.start[1]) {
+                            box.start[1] = lhs.start[1];
+                        }
+                        if (lhs.start[2] < box.start[2]) {
+                            box.start[2] = lhs.start[2];
+                        }
+
+                        if (lhs.end[0] > box.end[0]) {
+                            box.end[0] = lhs.end[0];
+                        }
+                        if (lhs.end[1] > box.end[1]) {
+                            box.end[1] = lhs.end[1];
+                        }
+                        if (lhs.end[2] > box.end[2]) {
+                            box.end[2] = lhs.end[2];
+                        }
+
+                        return box;
+                    };
+
+                    if (new_idx) {
+                        bool intersects = false;
+                        for (auto& bounding_box : command.bounding_boxes) {
+                            if (box_intersects_fn(bounding_box, box) && !box_contains_fn(bounding_box, box)) {
+                                bounding_box = box_merge_fn(bounding_box, box);
+                                intersects = true;
+                                break;
+                            }
+                        }
+
+                        if (intersects) {
+                            for (std::size_t j = 0; j < command.bounding_boxes.size(); ++j) {
+                                auto& box_j = command.bounding_boxes[j];
+                                for (std::size_t k = j + 1; k < command.bounding_boxes.size(); ++k) {
+                                    auto& box_k = command.bounding_boxes[k];
+                                    if (box_intersects_fn(box_j, box_k)) {
+                                        box_j = box_merge_fn(box_j, box_k);
+                                        command.bounding_boxes.erase(command.bounding_boxes.begin() + k);
+                                        j = 0;
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            command.bounding_boxes.push_back(box);
+                        }
+                    }
                 }
             }
         }
@@ -258,6 +337,146 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
     }
 }
 
+void generate_bounds_information(const CuboidCommandList& parent_layer, CuboidCommandList& layer)
+{
+    std::size_t parent_idx = 0;
+    std::size_t parent_counter = 0;
+
+    auto contains_lambda = [](const std::tuple<CuboidPosition, CuboidSize>& parent,
+                               const std::tuple<CuboidPosition, CuboidSize>& child) -> bool {
+        auto& parent_start = std::get<0>(parent);
+        auto& parent_size = std::get<1>(parent);
+        auto parent_end = parent_start;
+        parent_end[0] += parent_size[0];
+        parent_end[1] += parent_size[1];
+        parent_end[2] += parent_size[2];
+
+        auto& child_start = std::get<0>(child);
+        auto& child_size = std::get<1>(child);
+        auto child_end = child_start;
+        child_end[0] += child_size[0];
+        child_end[1] += child_size[1];
+        child_end[2] += child_size[2];
+
+        if (parent_start[0] <= child_start[0] && child_end[0] <= parent_end[0]) {
+            if (parent_start[1] <= child_start[1] && child_end[1] <= parent_end[1]) {
+                if (parent_start[2] <= child_start[2] && child_end[2] <= parent_end[2]) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    };
+
+    auto step_parent = [&](std::size_t ticks) {
+        if (std::holds_alternative<NoopCommand>(parent_layer.commands[parent_idx].command)) {
+            parent_counter += ticks;
+            auto& noop_command = std::get<NoopCommand>(parent_layer.commands[parent_idx].command);
+            if (parent_counter >= noop_command.counter) {
+                parent_idx++;
+                parent_counter = 0;
+            }
+        } else {
+            parent_idx++;
+            parent_counter = 0;
+        }
+    };
+
+    for (auto& command : layer.commands) {
+        auto& parent_command = [&]() -> auto&
+        {
+            auto reverse_idx = parent_layer.commands.size() - parent_idx - 1;
+            for (auto parent_command = parent_layer.commands.rbegin() + reverse_idx;
+                 parent_command != parent_layer.commands.rend(); parent_command++) {
+                if (std::holds_alternative<DrawCommand>(parent_command->command)
+                    || std::holds_alternative<DrawMultipleCommand>(parent_command->command)) {
+                    return parent_command->command;
+                }
+            }
+            std::abort();
+        }
+        ();
+
+        if (std::holds_alternative<DrawCommand>(command.command)) {
+            auto& draw_command = std::get<DrawCommand>(command.command);
+            auto& draw_info = layer.positions[draw_command.cuboid_idx];
+
+            if (std::holds_alternative<DrawCommand>(parent_command)) {
+                auto& parent_draw_command = std::get<DrawCommand>(parent_command);
+                auto& parent_draw_info = parent_layer.positions[parent_draw_command.cuboid_idx];
+
+                if (!contains_lambda(parent_draw_info, draw_info)) {
+                    draw_command.out_of_bounds = true;
+                }
+            } else {
+                bool inside_bounds = false;
+                auto& parent_draw_command = std::get<DrawMultipleCommand>(parent_command);
+                for (auto& box : parent_draw_command.bounding_boxes) {
+                    auto box_size = box.end;
+                    box_size[0] -= box.start[0];
+                    box_size[1] -= box.start[1];
+                    box_size[2] -= box.start[2];
+                    if (contains_lambda({ box.start, box_size }, draw_info)) {
+                        inside_bounds = true;
+                        break;
+                    }
+                }
+                draw_command.out_of_bounds = !inside_bounds;
+            }
+        } else if (std::holds_alternative<DrawMultipleCommand>(command.command)) {
+            auto& draw_command = std::get<DrawMultipleCommand>(command.command);
+            for (auto idx : draw_command.cuboid_indices) {
+                auto& draw_info = layer.positions[idx];
+
+                if (std::holds_alternative<DrawCommand>(parent_command)) {
+                    auto& parent_draw_command = std::get<DrawCommand>(parent_command);
+                    auto& parent_draw_info = parent_layer.positions[parent_draw_command.cuboid_idx];
+
+                    if (!contains_lambda(parent_draw_info, draw_info)) {
+                        draw_command.out_of_bounds.push_back(idx);
+                    }
+                } else {
+                    bool inside_bounds = false;
+                    auto& parent_draw_command = std::get<DrawMultipleCommand>(parent_command);
+                    for (auto& box : parent_draw_command.bounding_boxes) {
+                        auto box_size = box.end;
+                        box_size[0] -= box.start[0];
+                        box_size[1] -= box.start[1];
+                        box_size[2] -= box.start[2];
+                        if (contains_lambda({ box.start, box_size }, draw_info)) {
+                            inside_bounds = true;
+                            break;
+                        }
+                    }
+                    if (!inside_bounds) {
+                        draw_command.out_of_bounds.push_back(idx);
+                    }
+                }
+            }
+        }
+
+        if (std::holds_alternative<NoopCommand>(command.command)) {
+            auto& noop_command = std::get<NoopCommand>(command.command);
+            step_parent(noop_command.counter);
+        } else {
+            step_parent(1);
+        }
+    }
+}
+
+void remove_out_of_bounds_indices(CuboidCommandList& layer)
+{
+    for (auto& command : layer.commands) {
+        if (std::holds_alternative<DrawMultipleCommand>(command.command)) {
+            auto& draw_command = std::get<DrawMultipleCommand>(command.command);
+            for (auto idx : draw_command.out_of_bounds) {
+                draw_command.cuboid_indices.erase(idx);
+            }
+        }
+    }
+}
+
 using VariablePowerSet = std::vector<std::vector<std::set<std::string>>>;
 
 ViewCommandList generate_view_command_list(const std::string& view_name, const ViewContainer& view_container,
@@ -300,6 +519,15 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
 
     generate_cuboid_command_list(
         command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
+
+    auto layers = view_container.layer_indices();
+    for (auto layer = layers.begin(); layer != layers.end() && layer + 1 != layers.end(); layer++) {
+        generate_bounds_information(command_list.cuboids[*layer], command_list.cuboids[*(layer + 1)]);
+    }
+
+    for (auto& cuboid : command_list.cuboids) {
+        remove_out_of_bounds_indices(cuboid);
+    }
 
     return command_list;
 }

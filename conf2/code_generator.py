@@ -61,7 +61,7 @@ def generate(config, template, output):
         view_zip = zip(view["mapping"], view["COLOR"])
         for mapping, color in view_zip:
             cuboids.append({"mapping": mapping, "color": color})
-        views[name] = {"cuboids": cuboids, "arrangement": view["arrangement"]}
+        views[name] = {"cuboids": cuboids, "layers": view["layers"], "arrangement": view["arrangement"]}
 
     # Generate cuboid mappings
     for view_name, view in views.items():
@@ -103,6 +103,11 @@ def generate(config, template, output):
 
         code_str = code_str + """\t{}.set_position({}, {});\n""" \
             .format(container_name, view["arrangement"]["position"][0], view["arrangement"]["position"][1])
+
+        layers = ", ".join(map(lambda v: """{}""".format(v), view["layers"]))
+
+        code_str = code_str + """\t{}.set_layer_indices({{ {} }});\n""" \
+            .format(container_name, layers)
 
         for cuboid in view["cuboids"]:
             cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")

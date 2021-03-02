@@ -16,15 +16,23 @@ using CuboidColor = std::array<std::size_t, 4>;
 
 enum class CuboidCommandType { NOOP, DRAW, DRAW_MULTIPLE, DELETE, DELETE_MULTIPLE };
 
+struct BoundingBox {
+    CuboidPosition start;
+    CuboidPosition end;
+};
+
 struct NoopCommand {
     std::size_t counter;
 };
 
 struct DrawCommand {
+    bool out_of_bounds;
     std::size_t cuboid_idx;
 };
 
 struct DrawMultipleCommand {
+    std::vector<std::size_t> out_of_bounds;
+    std::vector<BoundingBox> bounding_boxes;
     std::unordered_set<std::size_t> cuboid_indices;
 };
 
