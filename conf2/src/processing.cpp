@@ -525,8 +525,10 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
 
     auto layers = view_container.layer_indices();
-    for (auto layer = layers.begin(); layer != layers.end() && layer + 1 != layers.end(); layer++) {
-        generate_bounds_information(command_list.cuboids[*layer], command_list.cuboids[*(layer + 1)]);
+    for (auto layer = layers.begin(); layer != layers.end(); layer++) {
+        for (auto sub_layer = layer + 1; sub_layer != layers.end(); sub_layer++) {
+            generate_bounds_information(command_list.cuboids[*layer], command_list.cuboids[*sub_layer]);
+        }
     }
 
     for (auto& cuboid : command_list.cuboids) {
