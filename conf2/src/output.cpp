@@ -169,7 +169,7 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
             { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
                 depth_buffer_multisample_name } }));
 
-    auto max_cuboid_size = std::get<1>(view_commands.cuboids.front().positions.front());
+    auto max_cuboid_size = view_commands.cuboids.front().positions.front().size;
     auto texture_border_width = static_cast<std::size_t>(generation_options.cuboid_texture_border_relative_width
         * std::pow(max_cuboid_size[0] * max_cuboid_size[1] * max_cuboid_size[2], 1.0f / 3.0f));
     texture_border_width = texture_border_width == 0 ? 1 : texture_border_width;
@@ -199,7 +199,7 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
         {
             if (cuboid->commands[0].type == CuboidCommandType::DRAW) {
                 auto sub_cuboid_idx = std::get<DrawCommand>(cuboid->commands[0].command).cuboid_idx;
-                return std::get<1>(cuboid->positions[sub_cuboid_idx]);
+                return cuboid->positions[sub_cuboid_idx].size;
             } else {
                 return max_cuboid_size;
             }

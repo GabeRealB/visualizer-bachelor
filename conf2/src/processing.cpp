@@ -48,7 +48,10 @@ std::vector<std::set<std::string>> get_variable_combinations(
     }
 }
 
-using CuboidContainerTupleVec = std::tuple<std::size_t, std::vector<CuboidContainer>>;
+struct CuboidContainerTupleVec {
+    std::vector<std::pair<CuboidContainer, std::size_t>> containers;
+};
+
 using ContainerList = std::vector<std::variant<std::monostate, CuboidContainerTupleVec>>;
 
 void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, const ContainerList& container_list,
@@ -56,11 +59,10 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 {
     auto noop_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
-            auto startIdx = std::get<0>(value);
-            auto& cuboids = std::get<1>(value);
+            auto& cuboids = value.containers;
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                auto& cuboid_commands = command_list[startIdx + i].commands;
+                auto& cuboid_commands = command_list[cuboids[i].second].commands;
 
                 if (cuboid_commands.empty() || cuboid_commands.back().type != CuboidCommandType::NOOP) {
                     cuboid_commands.push_back({ CuboidCommandType::NOOP, NoopCommand{ 1 } });
@@ -73,11 +75,10 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
     auto draw_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
-            auto startIdx = std::get<0>(value);
-            auto& cuboids = std::get<1>(value);
+            auto& cuboids = value.containers;
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                auto position_data = cuboids[i].pos_size_callable(variable_map);
+                auto position_data = cuboids[i].first.pos_size_callable(variable_map);
                 std::array<int, 3> start_position = {
                     std::get<0>(position_data[0]),
                     std::get<0>(position_data[1]),
@@ -89,15 +90,20 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     1 + std::get<1>(position_data[2]) - start_position[2],
                 };
 
-                auto& cuboid_list = command_list[startIdx + i];
+                auto& cuboid_list = command_list[cuboids[i].second];
 
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
+                    CuboidInfo cuboid_info = {
+                        cuboid_size,
+                        start_position,
+                    };
+
                     cuboid_idx = cuboid_list.positions.size();
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
-                    cuboid_list.positions.emplace_back(start_position, cuboid_size);
+                    cuboid_list.positions.push_back(cuboid_info);
                 }
 
                 BoundingBox box = {
@@ -121,11 +127,10 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
     auto draw_multiple_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
-            auto startIdx = std::get<0>(value);
-            auto& cuboids = std::get<1>(value);
+            auto& cuboids = value.containers;
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                auto position_data = cuboids[i].pos_size_callable(variable_map);
+                auto position_data = cuboids[i].first.pos_size_callable(variable_map);
                 std::array<int, 3> start_position = {
                     std::get<0>(position_data[0]),
                     std::get<0>(position_data[1]),
@@ -137,15 +142,20 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     1 + std::get<1>(position_data[2]) - start_position[2],
                 };
 
-                auto& cuboid_list = command_list[startIdx + i];
+                auto& cuboid_list = command_list[cuboids[i].second];
 
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
+                    CuboidInfo cuboid_info = {
+                        cuboid_size,
+                        start_position,
+                    };
+
                     cuboid_idx = cuboid_list.positions.size();
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
-                    cuboid_list.positions.emplace_back(start_position, cuboid_size);
+                    cuboid_list.positions.push_back(cuboid_info);
                 }
 
                 auto& cuboid_commands = cuboid_list.commands;
@@ -203,25 +213,23 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
     auto delete_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
-            auto startIdx = std::get<0>(value);
-            auto& cuboids = std::get<1>(value);
+            auto& cuboids = value.containers;
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE, DeleteCommand{} });
+                command_list[cuboids[i].second].commands.push_back({ CuboidCommandType::DELETE, DeleteCommand{} });
             }
         }
     };
 
     auto delete_multiple_command_lambda = [&](auto&& value) {
         if constexpr (std::is_same_v<decltype(value), const CuboidContainerTupleVec&>) {
-            auto startIdx = std::get<0>(value);
-            auto& cuboids = std::get<1>(value);
+            auto& cuboids = value.containers;
 
             for (std::size_t i = 0; i < cuboids.size(); i++) {
-                auto& cuboid_commands = command_list[startIdx + i].commands;
+                auto& cuboid_commands = command_list[cuboids[i].second].commands;
 
                 if (cuboid_commands.empty() || cuboid_commands.back().type != CuboidCommandType::DELETE_MULTIPLE) {
-                    command_list[startIdx + i].commands.push_back({ CuboidCommandType::DELETE_MULTIPLE,
+                    cuboid_commands.push_back({ CuboidCommandType::DELETE_MULTIPLE,
                         DeleteMultipleCommand{
                             0,
                         } });
@@ -367,8 +375,8 @@ void generate_bounds_information(const CuboidCommandList& parent_layer, CuboidCo
             for (auto idx : draw_command.cuboid_indices) {
                 auto& draw_info = layer.positions[idx];
                 BoundingBox bounding_box = {
-                    std::get<0>(draw_info),
-                    std::get<1>(draw_info),
+                    draw_info.position,
+                    draw_info.size,
                 };
                 bounding_box.end[0] += bounding_box.start[0];
                 bounding_box.end[1] += bounding_box.start[1];
@@ -431,8 +439,8 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
     }
 
     ContainerList container_list{};
-    for (std::size_t i = 0, containers = 0; i < variable_power_set.size(); i++) {
-        std::vector<CuboidContainer> cuboid_containers{};
+    for (std::size_t i = 0; i < variable_power_set.size(); i++) {
+        std::vector<std::pair<CuboidContainer, std::size_t>> cuboid_containers{};
         for (const auto& variables : variable_power_set[i]) {
             auto matching_containers = view_container.find_matching(variables);
             for (auto& container : matching_containers) {
@@ -443,19 +451,16 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         if (cuboid_containers.empty()) {
             container_list.push_back(std::monostate{});
         } else {
-            auto container_start_index = containers;
-            containers += cuboid_containers.size();
-            container_list.push_back(std::tuple{ container_start_index, std::move(cuboid_containers) });
+            container_list.push_back(CuboidContainerTupleVec{ std::move(cuboid_containers) });
         }
     }
 
     generate_cuboid_command_list(
         command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
 
-    auto layers = view_container.layer_indices();
-    for (auto layer = layers.begin(); layer != layers.end(); layer++) {
-        for (auto sub_layer = layer + 1; sub_layer != layers.end(); sub_layer++) {
-            generate_bounds_information(command_list.cuboids[*layer], command_list.cuboids[*sub_layer]);
+    for (auto layer = command_list.cuboids.begin(); layer != command_list.cuboids.end(); layer++) {
+        for (auto sub_layer = layer + 1; sub_layer != command_list.cuboids.end(); sub_layer++) {
+            generate_bounds_information(*layer, *sub_layer);
         }
     }
 

@@ -251,8 +251,6 @@ public:
 
     std::array<float, 2> position() const { return m_position; }
 
-    std::span<const std::size_t> layer_indices() const { return { m_layer_indices.data(), m_layer_indices.size() }; }
-
     void set_size(float size) { m_size = size; }
 
     void set_position(float x, float y)
@@ -267,28 +265,25 @@ public:
         m_variable_requirements.push_back(requirements);
     }
 
-    void set_layer_indices(const std::vector<std::size_t>& indices) { m_layer_indices = indices; }
-
     std::size_t get_num_cuboids() const { return m_cuboids.size(); }
 
     std::span<const CuboidContainer> get_cuboids() const { return { m_cuboids.data(), m_cuboids.size() }; }
 
-    std::vector<CuboidContainer> find_matching(const std::set<std::string>& requirements) const
+    std::vector<std::pair<CuboidContainer, std::size_t>> find_matching(const std::set<std::string>& requirements) const
     {
-        auto result = std::vector<CuboidContainer>{};
+        auto matches = std::vector<std::pair<CuboidContainer, std::size_t>>{};
         for (std::size_t i = 0; i < m_variable_requirements.size(); i++) {
             if (m_variable_requirements[i] == requirements) {
-                result.push_back(m_cuboids[i]);
+                matches.emplace_back(m_cuboids[i], i);
             }
         }
-        return result;
+        return matches;
     }
 
 private:
     float m_size;
     std::array<float, 2> m_position;
     std::vector<CuboidContainer> m_cuboids;
-    std::vector<std::size_t> m_layer_indices;
     std::vector<std::set<std::string>> m_variable_requirements;
 };
 

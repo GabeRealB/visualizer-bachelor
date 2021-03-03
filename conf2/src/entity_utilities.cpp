@@ -357,7 +357,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     }
 
     for (auto& position : command_list.positions) {
-        cuboid_command_list.positions.push_back(position);
+        cuboid_command_list.positions.push_back(std::make_tuple(position.position, position.size));
     }
 
     return entity;

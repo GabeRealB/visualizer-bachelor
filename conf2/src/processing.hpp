@@ -49,6 +49,11 @@ struct CuboidCommand {
     std::variant<NoopCommand, DrawCommand, DrawMultipleCommand, DeleteCommand, DeleteMultipleCommand> command;
 };
 
+struct CuboidInfo {
+    CuboidSize size;
+    CuboidPosition position;
+};
+
 struct CuboidCommandList {
     CuboidColor active_fill_color;
     CuboidColor out_of_bounds_fill_color;
@@ -56,7 +61,7 @@ struct CuboidCommandList {
     CuboidColor active_border_color;
     CuboidColor inactive_border_color;
     std::vector<CuboidCommand> commands;
-    std::vector<std::tuple<CuboidPosition, CuboidSize>> positions;
+    std::vector<CuboidInfo> positions;
     std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> position_index_map;
 };
 
