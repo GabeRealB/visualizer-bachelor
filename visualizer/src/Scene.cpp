@@ -1763,6 +1763,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                 CompositionGUIGroup group{};
                 group.position = { 0.0f, 0.0f };
                 group.group_name = component_group.first;
+                group.transparent = component_group.second.transparent;
 
                 for (auto& component_window : component_group.second.windows) {
                     group.position += glm::make_vec2(component_window.position.data());
@@ -1774,6 +1775,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                     window.window_name = component_window.name;
                     window.scaling = glm::make_vec2(component_window.scaling.data());
                     window.position = glm::make_vec2(component_window.position.data()) - group.position;
+                    window.flip_vertically = component_window.flip_vertical;
                     window.texture = std::static_pointer_cast<const Texture2D>(
                         AssetDatabase::getAsset(component_window.texture_name).data);
 

@@ -356,12 +356,14 @@ struct LegendGUI {
 
 struct CompositionGUIWindow {
     std::string name;
+    bool flip_vertical;
     std::string texture_name;
     std::array<float, 2> scaling;
     std::array<float, 2> position;
 };
 
 struct CompositionGUIGroup {
+    bool transparent;
     std::vector<CompositionGUIWindow> windows;
 };
 
@@ -576,9 +578,9 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, descrip
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, entity, pass, label, description, attribute)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, name, texture_name, scaling, position)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, name, flip_vertical, texture_name, scaling, position)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, windows)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, windows)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, groups, group_connections)
 

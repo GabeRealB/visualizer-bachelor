@@ -397,6 +397,24 @@ void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& 
     });
 }
 
+void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& name,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position)
+{
+    auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
+        coordinator_entity.components[coordinator_canvas_idx].data);
+    auto& composition_gui
+        = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
+
+    Visconfig::Components::CompositionGUIWindow gui_window{ name, false, texture, scaling, position };
+
+    std::string group_name = "conf2_resources";
+    if (composition_gui.groups.contains(group_name)) {
+        composition_gui.groups[group_name].windows.push_back(std::move(gui_window));
+    } else {
+        composition_gui.groups.insert({ group_name, { true, { std::move(gui_window) } } });
+    }
+}
+
 void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
     const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
     const std::array<float, 2>& position)
@@ -406,12 +424,12 @@ void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std
     auto& composition_gui
         = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
 
-    Visconfig::Components::CompositionGUIWindow gui_window{ window, texture, scaling, position };
+    Visconfig::Components::CompositionGUIWindow gui_window{ window, true, texture, scaling, position };
 
     if (composition_gui.groups.contains(group)) {
         composition_gui.groups[group].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert({ group, { { std::move(gui_window) } } });
+        composition_gui.groups.insert({ group, { false, { std::move(gui_window) } } });
     }
 }
 

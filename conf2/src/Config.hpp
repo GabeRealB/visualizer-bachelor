@@ -379,6 +379,38 @@ private:
     std::string m_description;
 };
 
+class ImageResource {
+public:
+    ImageResource(
+        float size, const std::string& name, const std::array<float, 2>& position, const std::filesystem::path& path)
+        : m_size{ size }
+        , m_name{ name }
+        , m_path{ path }
+        , m_position{ position }
+    {
+    }
+
+    ImageResource(const ImageResource& other) = default;
+    ImageResource(ImageResource&& other) noexcept = default;
+
+    ImageResource& operator=(const ImageResource& other) = default;
+    ImageResource& operator=(ImageResource&& other) noexcept = default;
+
+    float size() const { return m_size; }
+
+    const std::string& name() const { return m_name; }
+
+    const std::filesystem::path& path() const { return m_path; }
+
+    const std::array<float, 2>& position() const { return m_position; }
+
+private:
+    float m_size;
+    std::string m_name;
+    std::filesystem::path m_path;
+    std::array<float, 2> m_position;
+};
+
 class ConfigContainer {
 public:
     using LegendVariant = std::variant<ColorLegend, ImageLegend>;
@@ -421,6 +453,14 @@ public:
     {
         m_legend.push_back(ImageLegend{ label, image_name, image_path, scaling, absolute });
     }
+
+    void add_image_resource(
+        float size, const std::string& name, const std::array<float, 2>& position, const std::filesystem::path& path)
+    {
+        m_resources.push_back(ImageResource{ size, name, position, path });
+    }
+
+    std::span<const ImageResource> get_resources() const { return { m_resources.data(), m_resources.size() }; }
 
     const ViewContainer& get_view_container(const std::string& name) const
     {
@@ -520,6 +560,7 @@ private:
     std::vector<ViewContainer> m_views;
     std::vector<LegendVariant> m_legend;
     std::vector<std::string> m_view_names;
+    std::vector<ImageResource> m_resources;
     std::map<std::string, std::string> m_group_associations;
     std::map<std::string, std::vector<std::string>> m_groups;
     std::vector<std::array<std::string, 2>> m_group_connections;

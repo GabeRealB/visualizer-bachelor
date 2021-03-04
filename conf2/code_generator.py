@@ -16,6 +16,7 @@ def generate(config, template, output):
     views = {}
     legend = {}
     groups = {}
+    resources = {}
     variables = {"sequential": {}, "parallel": {}}
 
     mapping_template = """[=]() -> int {{
@@ -55,6 +56,7 @@ def generate(config, template, output):
     # Extract legend
     legend = config_data["LEGEND"]
     groups = config_data["STRUCTURE"]
+    resources = config_data["IMAGES"]
 
     # Extract views
     for name, view in config_data["CUBES"].items():
@@ -166,6 +168,18 @@ def generate(config, template, output):
     for connection in groups["ARROWS"]:
         code_str = code_str + """\tconfig_instance.add_group_connection("{}", "{}");\n""" \
             .format(connection[0], connection[1]) \
+            .expandtabs(4)
+
+    code_str = code_str + "\n"
+
+    # Generate resources
+    for resource_name, resource, in resources.items():
+        resource_size = resource["size"]
+        resource_position = resource["position"]
+        resource_path = resource["path"]
+
+        code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", {{ {}, {} }}, "{}");\n""" \
+            .format(resource_size, resource_name, resource_position[0], resource_position[1], resource_path) \
             .expandtabs(4)
 
     # Output the code

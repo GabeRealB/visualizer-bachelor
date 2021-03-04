@@ -87,7 +87,8 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             };
 
             auto texture_path = generation_options.resource_directory / image.image_path();
-            auto asset_texture_path = generation_options.assets_texture_directory_path / image.image_path();
+            auto asset_texture_relative_path = generation_options.assets_texture_directory_path / image.image_path();
+            auto asset_texture_path = generation_options.working_directory / asset_texture_relative_path;
             if (!std::filesystem::exists(texture_path)) {
                 std::cerr << "Could not find asset " << texture_path << std::endl;
                 std::abort();
@@ -95,7 +96,7 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
                 std::filesystem::copy(texture_path, asset_texture_path);
             }
 
-            assets.push_back(create_texture_asset(image.image_name(), asset_texture_path, texture_attributes));
+            assets.push_back(create_texture_asset(image.image_name(), asset_texture_relative_path, texture_attributes));
             add_image_legend(
                 world.entities.front(), image.image_name(), image.description(), image.scaling(), image.absolute());
         }
@@ -104,6 +105,30 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
     auto group_connections = ConfigContainer::get_instance().get_group_connections();
     for (auto& connection : group_connections) {
         add_composition_gui_connection(world.entities.front(), connection[0], connection[1]);
+    }
+
+    auto resources = ConfigContainer::get_instance().get_resources();
+    for (auto& resource : resources) {
+        std::vector<Visconfig::Assets::TextureAttributes> texture_attributes = {
+            Visconfig::Assets::TextureAttributes::MagnificationLinear,
+            Visconfig::Assets::TextureAttributes::MinificationLinear,
+            Visconfig::Assets::TextureAttributes::GenerateMipMaps,
+        };
+
+        auto texture_name = "conf2_generated_" + resource.name();
+        auto texture_path = generation_options.resource_directory / resource.path();
+        auto asset_texture_relative_path = generation_options.assets_texture_directory_path / resource.path();
+        auto asset_texture_path = generation_options.working_directory / asset_texture_relative_path;
+        if (!std::filesystem::exists(texture_path)) {
+            std::cerr << "Could not find asset " << texture_path << std::endl;
+            std::abort();
+        } else {
+            std::filesystem::copy(texture_path, asset_texture_path);
+        }
+
+        assets.push_back(create_texture_asset(texture_name, asset_texture_relative_path, texture_attributes));
+        add_composition_gui_image(world.entities.front(), resource.name(), texture_name,
+            { resource.size(), resource.size() }, resource.position());
     }
 
     return world;

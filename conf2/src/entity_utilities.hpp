@@ -26,6 +26,8 @@ void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& 
 void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
     const std::array<float, 2>& scaling, bool absolute);
 
+void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& name,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position);
 void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
     const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
     const std::array<float, 2>& position);

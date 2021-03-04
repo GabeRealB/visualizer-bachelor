@@ -35,11 +35,13 @@ struct LegendGUI {
 struct CompositionGUIWindow {
     glm::vec2 scaling;
     glm::vec2 position;
+    bool flip_vertically;
     std::string window_name;
     std::weak_ptr<const Texture2D> texture;
 };
 
 struct CompositionGUIGroup {
+    bool transparent;
     glm::vec2 position;
     std::string group_name;
     std::vector<CompositionGUIWindow> windows;

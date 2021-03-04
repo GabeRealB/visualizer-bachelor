@@ -195,9 +195,12 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
                 group_created = true;
             }
 
+            auto start_uv = window.flip_vertically ? ImVec2{ 0.0f, 1.0f } : ImVec2{ 0.0f, 0.0f };
+            auto end_uv = window.flip_vertically ? ImVec2{ 1.0f, 0.0f } : ImVec2{ 1.0f, 1.0f };
+
             ImGui::BeginGroup();
-            ImGui::Image(reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size,
-                ImVec2{ 0.0f, 1.0f }, ImVec2{ 1.0f, 0.0f });
+            ImGui::Image(
+                reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size, start_uv, end_uv);
             ImGui::Text("%s", window.window_name.c_str());
             ImGui::EndGroup();
 
@@ -230,12 +233,14 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
         rect_max.x += rect_padding;
         rect_max.y += rect_padding;
 
-        ImGui::SetCursorScreenPos({ rect_min.x, rect_min.y - 15.0f });
-        ImGui::Text("%s", group.group_name.c_str());
-        draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
-        if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0 && gui.selected_group == 0
-            && gui.selected_window == 0) {
-            group_selected = i + 1;
+        if (!group.transparent) {
+            ImGui::SetCursorScreenPos({ rect_min.x, rect_min.y - 15.0f });
+            ImGui::Text("%s", group.group_name.c_str());
+            draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
+            if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0 && gui.selected_group == 0
+                && gui.selected_window == 0) {
+                group_selected = i + 1;
+            }
         }
 
         group_rects.push_back({ rect_min, rect_max });
@@ -264,6 +269,15 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
             }
             window.scaling.x += mouse_wheel * scaling_stepping;
             window.scaling.y += mouse_wheel * scaling_stepping;
+
+            constexpr float min_size = 0.05f;
+
+            if (window.scaling.x <= min_size) {
+                window.scaling.x = min_size;
+            }
+            if (window.scaling.y <= min_size) {
+                window.scaling.y = min_size;
+            }
         }
     }
 
