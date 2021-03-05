@@ -315,6 +315,16 @@ std::span<std::string_view> ShaderEnvironment::parameters() const
     return { const_cast<std::string_view*>(m_parameterNames.data()), m_parameterNames.size() };
 }
 
+std::size_t ShaderEnvironment::parameter_length(std::string_view name) const
+{
+    if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {
+        return pos->second.size;
+    } else {
+        assert(false);
+        return 0;
+    }
+}
+
 ParameterType ShaderEnvironment::parameter_type(std::string_view name) const
 {
     if (auto pos{ m_parameterInfos.find(name) }; pos != m_parameterInfos.end()) {

@@ -1552,7 +1552,10 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
     mesh->set_complex_attribute("model_matrix", model_matrix_buffer, cuboid_model_matrices.size() * sizeof(glm::mat4),
         GL_STATIC_DRAW, glm::value_ptr(cuboid_model_matrices.front()));
 
-    database_context.write_component(entity, CuboidCommandList{ 0, 0, std::move(cuboid_commands) });
+    std::size_t zero = 0;
+    database_context.write_component(entity,
+        CuboidCommandList{ component.draw_heatmap, 0, 0, component.heatmap_stepping, std::move(cuboid_commands),
+            std::vector(component.positions.size(), zero) });
 }
 
 void initialize_component(

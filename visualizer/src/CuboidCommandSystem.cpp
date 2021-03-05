@@ -20,9 +20,12 @@ constexpr double TICK_INTERVAL_3 = 0.001;
 constexpr double TICK_INTERVAL_4 = 0.0001;
 constexpr double TICK_INTERVAL_STOPPED = std::numeric_limits<double>::max();
 
-constexpr unsigned int DISABLED = 0;
-constexpr unsigned int ENABLED = 1;
-constexpr unsigned int OUT_OF_BOUNDS = 2;
+constexpr unsigned int ACTIVE_FLAG = 1u << 31;
+constexpr unsigned int OUT_OF_BOUNDS_FLAG = 1u << 30;
+constexpr unsigned int HEATMAP_FLAG = 1u << 29;
+
+constexpr unsigned int HEATMAP_COUNTER_BITS = 16;
+constexpr unsigned int HEATMAP_COUNTER_MASK = (1u << HEATMAP_COUNTER_BITS) - 1;
 
 void step_iteration(
     CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh, Material& material, Transform& transform);
@@ -82,29 +85,36 @@ void CuboidCommandSystem::run(void*)
     }
 }
 
-bool step_iteration(const NoopCommand& command, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&,
-    std::size_t command_counter)
+bool step_iteration(CuboidCommandList&, const NoopCommand& command, const CuboidCommand&, std::shared_ptr<Mesh>&,
+    Material&, Transform&, std::size_t command_counter)
 {
     return command_counter + 1 >= command.counter;
 }
 
-bool step_iteration(const DrawCommand& command, const CuboidCommand& previous, std::shared_ptr<Mesh>& mesh, Material&,
-    Transform&, std::size_t)
+bool step_iteration(CuboidCommandList& command_list, const DrawCommand& command, const CuboidCommand& previous,
+    std::shared_ptr<Mesh>& mesh, Material&, Transform&, std::size_t)
 {
     auto& enabled_buffer
         = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
     auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
     auto& previous_command = std::get<DrawCommand>(previous.command);
+    auto accesses = ++command_list.cuboid_accesses[command.cuboid_idx];
 
-    buffer_ptr[previous_command.cuboid_idx] = DISABLED;
-    buffer_ptr[command.cuboid_idx] = command.out_of_bounds ? OUT_OF_BOUNDS : ENABLED;
+    buffer_ptr[previous_command.cuboid_idx]
+        &= previous_command.out_of_bounds ? ~(ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG) : ~ACTIVE_FLAG;
+    buffer_ptr[command.cuboid_idx] |= command.out_of_bounds ? (ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG) : ACTIVE_FLAG;
+
+    if (command_list.heat_map) {
+        buffer_ptr[command.cuboid_idx] &= ~HEATMAP_COUNTER_MASK;
+        buffer_ptr[command.cuboid_idx] |= (HEATMAP_FLAG | (accesses / command_list.access_stepping));
+    }
 
     enabled_buffer->unmap();
     return true;
 }
 
-bool step_iteration(const DrawMultipleCommand& command, const CuboidCommand& previous, std::shared_ptr<Mesh>& mesh,
-    Material&, Transform&, std::size_t)
+bool step_iteration(CuboidCommandList& command_list, const DrawMultipleCommand& command, const CuboidCommand& previous,
+    std::shared_ptr<Mesh>& mesh, Material&, Transform&, std::size_t)
 {
     auto& enabled_buffer
         = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
@@ -112,17 +122,29 @@ bool step_iteration(const DrawMultipleCommand& command, const CuboidCommand& pre
     auto& previous_command = std::get<DrawMultipleCommand>(previous.command);
 
     for (auto idx : previous_command.cuboid_indices) {
-        buffer_ptr[idx] = DISABLED;
+        buffer_ptr[idx] &= ~ACTIVE_FLAG;
     }
     for (auto idx : previous_command.out_of_bounds) {
-        buffer_ptr[idx] = DISABLED;
+        buffer_ptr[idx] &= ~(ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
     }
 
     for (auto idx : command.cuboid_indices) {
-        buffer_ptr[idx] = ENABLED;
+        buffer_ptr[idx] |= ACTIVE_FLAG;
+        auto accesses = ++command_list.cuboid_accesses[idx];
+
+        if (command_list.heat_map) {
+            buffer_ptr[idx] &= ~HEATMAP_COUNTER_MASK;
+            buffer_ptr[idx] |= (HEATMAP_FLAG | (accesses / command_list.access_stepping));
+        }
     }
     for (auto idx : command.out_of_bounds) {
-        buffer_ptr[idx] = OUT_OF_BOUNDS;
+        buffer_ptr[idx] |= (ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
+        auto accesses = ++command_list.cuboid_accesses[idx];
+
+        if (command_list.heat_map) {
+            buffer_ptr[idx] &= ~HEATMAP_COUNTER_MASK;
+            buffer_ptr[idx] |= (HEATMAP_FLAG | (accesses / command_list.access_stepping));
+        }
     }
 
     enabled_buffer->unmap();
@@ -130,14 +152,14 @@ bool step_iteration(const DrawMultipleCommand& command, const CuboidCommand& pre
     return true;
 }
 
-bool step_iteration(
-    const DeleteCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&, std::size_t)
+bool step_iteration(CuboidCommandList&, const DeleteCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&,
+    Transform&, std::size_t)
 {
     return true;
 }
 
-bool step_iteration(
-    const DeleteMultipleCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&, Material&, Transform&, std::size_t)
+bool step_iteration(CuboidCommandList&, const DeleteMultipleCommand&, const CuboidCommand&, std::shared_ptr<Mesh>&,
+    Material&, Transform&, std::size_t)
 {
     return true;
 }
@@ -166,7 +188,8 @@ void step_iteration(
 
     step_command = std::visit(
         [&](auto&& command) -> auto {
-            return step_iteration(command, previous_command, mesh, material, transform, command_list.command_counter);
+            return step_iteration(
+                command_list, command, previous_command, mesh, material, transform, command_list.command_counter);
         },
         command.command);
 
@@ -177,6 +200,7 @@ void step_iteration(
 
         if (command_list.current_index == command_list.commands.size()) {
             command_list.current_index = 0;
+            std::fill(command_list.cuboid_accesses.begin(), command_list.cuboid_accesses.end(), 0);
         }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <array>
 #include <map>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_set>
@@ -54,7 +55,13 @@ struct CuboidInfo {
     CuboidPosition position;
 };
 
+struct HeatmapData {
+    std::vector<float> colors_start;
+    std::vector<CuboidColor> colors;
+};
+
 struct CuboidCommandList {
+    std::size_t max_accesses;
     CuboidColor active_fill_color;
     CuboidColor out_of_bounds_fill_color;
     CuboidColor inactive_fill_color;
@@ -62,7 +69,9 @@ struct CuboidCommandList {
     CuboidColor inactive_border_color;
     std::vector<CuboidCommand> commands;
     std::vector<CuboidInfo> positions;
+    std::optional<HeatmapData> heatmap;
     std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> position_index_map;
+    std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> cuboid_access_counter;
 };
 
 struct ViewCommandList {

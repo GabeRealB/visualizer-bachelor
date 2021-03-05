@@ -17,12 +17,15 @@ uniform sampler2D grid_texture_side;
 uniform sampler2D grid_texture_top;
 
 flat in int side;
-flat in uint enabled;
+flat in uint status_flags;
 in vec2 texture_coordinates;
 in vec4 vs_position;
 in vec3 vs_normal;
 
 out vec4 out_color;
+
+const uint ACTIVE_FLAG = 1u << 31;
+const uint OUT_OF_BOUNDS_FLAG = 1u << 30;
 
 vec3 compute_diffuse_reflection(vec3 diffuse, vec3 vs_normal, vec3 vs_point_to_light) {
     return diffuse * max(dot(vs_normal, vs_point_to_light), 0);
@@ -79,7 +82,7 @@ void main() {
     vec4 diffuse_color;
 
     if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
-        if (enabled == 1) {
+        if ((status_flags & ACTIVE_FLAG) != 0) {
             diffuse_color = active_border_color;
         } else {
             diffuse_color = inactive_border_color;

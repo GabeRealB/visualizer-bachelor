@@ -65,6 +65,8 @@ def generate(config, template, output):
         for mapping, color in view_zip:
             cuboids.append({"mapping": mapping, "color": color})
         views[name] = {"cuboids": cuboids, "arrangement": view["arrangement"]}
+        if "heatmap" in view:
+            views[name]["heatmap"] = view["heatmap"]
 
     # Generate cuboid mappings
     for view_name, view in views.items():
@@ -129,6 +131,24 @@ def generate(config, template, output):
             code_str = code_str + """\t{}.add_cuboid({}, {});\n\n""" \
                 .format(container_name, cuboid_name, requirements_name) \
                 .expandtabs(4)
+
+        if "heatmap" in view:
+            heatmap = view["heatmap"]
+            heatmap_cuboid = heatmap["cuboid"]
+            heatmap_colors = heatmap["colors"]
+            heatmap_colors_start = heatmap["colors_start"]
+
+            code_str = code_str + """\t{}.add_heatmap({});\n""" \
+                .format(container_name, heatmap_cuboid) \
+                .expandtabs(4)
+
+            for color, color_start in zip(heatmap_colors, heatmap_colors_start):
+                color_str = ", ".join([str(c) for c in color])
+                code_str = code_str + """\t{}.add_heatmap_color({}, {{ {} }});\n""" \
+                    .format(container_name, color_start, color_str) \
+                    .expandtabs(4)
+
+        code_str = code_str + "\n"
 
         code_str = code_str + """\tconfig_instance.add_view_container("{}", {});\n\n""" \
             .format(view_name, container_name) \

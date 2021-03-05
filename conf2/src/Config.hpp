@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <iostream>
 #include <map>
+#include <optional>
 #include <set>
 #include <span>
 #include <string>
@@ -237,6 +238,12 @@ struct CuboidContainer {
     ViewCuboidCallable pos_size_callable;
 };
 
+struct HeatmapInfo {
+    std::size_t idx;
+    std::vector<float> colors_start;
+    std::vector<std::array<std::size_t, 4>> colors;
+};
+
 class ViewContainer {
 public:
     ViewContainer() = default;
@@ -251,6 +258,8 @@ public:
 
     std::array<float, 2> position() const { return m_position; }
 
+    const std::optional<HeatmapInfo>& heatmap() const { return m_heatmap; }
+
     void set_size(float size) { m_size = size; }
 
     void set_position(float x, float y)
@@ -263,6 +272,21 @@ public:
     {
         m_cuboids.push_back(cuboid);
         m_variable_requirements.push_back(requirements);
+    }
+
+    void add_heatmap(std::size_t idx) { m_heatmap = { idx, {}, {} }; }
+
+    void add_heatmap_color(float start, std::array<std::size_t, 4> color)
+    {
+        if (!m_heatmap.has_value()) {
+            std::cerr << "No heatmap is defined." << std::endl;
+            std::abort();
+        } else {
+            auto& heatmap = m_heatmap.value();
+            assert(heatmap.colors_start.size() == 0 || heatmap.colors_start.back() < start);
+            heatmap.colors.push_back(color);
+            heatmap.colors_start.push_back(start);
+        }
     }
 
     std::size_t get_num_cuboids() const { return m_cuboids.size(); }
@@ -283,6 +307,7 @@ public:
 private:
     float m_size;
     std::array<float, 2> m_position;
+    std::optional<HeatmapInfo> m_heatmap;
     std::vector<CuboidContainer> m_cuboids;
     std::vector<std::set<std::string>> m_variable_requirements;
 };

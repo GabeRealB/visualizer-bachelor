@@ -253,6 +253,8 @@ struct CuboidCommand {
 
 struct CuboidCommandListComponent : public ComponentData {
     bool global;
+    bool draw_heatmap;
+    std::size_t heatmap_stepping;
     std::array<int, 3> global_size;
     std::vector<CuboidCommand> commands;
     std::vector<std::tuple<std::array<int, 3>, std::array<int, 3>>> positions;
@@ -617,7 +619,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshIterationComponent, dimensions, positions
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ExplicitHeterogeneousIterationComponent, scales, positions, ticksPerIteration)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CuboidCommandListComponent, global, global_size, commands, positions)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    CuboidCommandListComponent, global, draw_heatmap, heatmap_stepping, global_size, commands, positions)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CameraComponent, active, fixed, perspective, fov, far, near, aspect,
     orthographicWidth, orthographicHeight, layerMask, targets)

@@ -16,6 +16,59 @@
 
 namespace Visualizer {
 
+void display_parameter(ShaderEnvironment& env, const std::string& parameter, const std::string& header_label)
+{
+    auto parameter_length = env.parameter_length(parameter);
+    auto parameter_type = env.parameter_type(parameter);
+
+    switch (parameter_type) {
+    case ParameterType::Float: {
+        auto val = env.getPtr<float>(parameter, parameter_length);
+
+        if (parameter_length == 1) {
+            auto label = "Value##" + header_label + std::string{ parameter };
+            ImGui::InputFloat(label.c_str(), val, 0.01f, 0.1f, 3);
+        } else {
+            for (std::size_t i = 0; i < parameter_length; i++) {
+                auto label = "Value " + std::to_string(i) + "##" + header_label + std::string{ parameter };
+                ImGui::InputFloat(label.c_str(), &val[i], 0.01f, 0.1f, 3);
+            }
+        }
+        break;
+    } case ParameterType::UInt: {
+        auto val = env.getPtr<unsigned int>(parameter, parameter_length);
+
+        if (parameter_length == 1) {
+            auto label = "Value##" + header_label + std::string{ parameter };
+            ImGui::InputScalar(label.c_str(), ImGuiDataType_U32, val);
+        } else {
+            for (std::size_t i = 0; i < parameter_length; i++) {
+                auto label = "Value " + std::to_string(i) + "##" + header_label + std::string{ parameter };
+                ImGui::InputScalar(label.c_str(), ImGuiDataType_U32, &val[i]);
+            }
+        }
+        break;
+    }
+    case ParameterType::Vec4: {
+        auto val = env.getPtr<glm::vec4>(parameter, parameter_length);
+
+        if (parameter_length == 1) {
+            auto label = "Color##" + header_label + std::string{ parameter };
+            ImGui::ColorEdit4(label.c_str(), glm::value_ptr(*val));
+        } else {
+            for (std::size_t i = 0; i < parameter_length; i++) {
+                auto label = "Color " + std::to_string(i) + "##" + header_label + std::string{ parameter };
+                ImGui::ColorEdit4(label.c_str(), glm::value_ptr(val[i]));
+            }
+        }
+        break;
+    }
+    default:
+        ImGui::Text("No preview available");
+        break;
+    }
+}
+
 MaterialWindowSystem::MaterialWindowSystem()
     : m_active{ false }
     , m_camera_query{ EntityDBQuery{}.with_component<Camera>() }
@@ -81,21 +134,8 @@ void MaterialWindowSystem::run(void*)
                                                     ImGui::BulletText("Name: %s", parameter.data());
                                                     ImGui::NextColumn();
 
-                                                    switch (material->m_passes[i].m_material_variables.parameter_type(
-                                                        parameter)) {
-                                                    case ParameterType::Vec4: {
-                                                        auto val
-                                                            = material->m_passes[i]
-                                                                  .m_material_variables.getPtr<glm::vec4>(parameter, 1);
-                                                        auto label
-                                                            = "Color##" + header_label + std::string{ parameter };
-                                                        ImGui::ColorEdit4(label.c_str(), glm::value_ptr(*val));
-                                                        break;
-                                                    }
-                                                    default:
-                                                        ImGui::Text("No preview available");
-                                                        break;
-                                                    }
+                                                    display_parameter(material->m_passes[i].m_material_variables,
+                                                        std::string{ parameter }, header_label);
 
                                                     ImGui::NextColumn();
                                                 }

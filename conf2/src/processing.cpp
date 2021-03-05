@@ -1,6 +1,7 @@
 #include "processing.hpp"
 #include "Config.hpp"
 
+#include <algorithm>
 #include <thread>
 
 namespace Config {
@@ -94,6 +95,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
+                    cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
                     CuboidInfo cuboid_info = {
@@ -102,6 +104,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     };
 
                     cuboid_idx = cuboid_list.positions.size();
+                    cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
                     cuboid_list.positions.push_back(cuboid_info);
                 }
@@ -146,6 +149,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
+                    cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
                     CuboidInfo cuboid_info = {
@@ -154,6 +158,7 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     };
 
                     cuboid_idx = cuboid_list.positions.size();
+                    cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
                     cuboid_list.positions.push_back(cuboid_info);
                 }
@@ -416,6 +421,14 @@ void generate_bounds_information(const CuboidCommandList& parent_layer, CuboidCo
     }
 }
 
+void find_max_accesses(CuboidCommandList& command_list)
+{
+    command_list.max_accesses = std::max_element(
+        command_list.cuboid_access_counter.begin(), command_list.cuboid_access_counter.end(), [](auto&& p1, auto&& p2) {
+            return p1.second < p2.second;
+        })->second;
+}
+
 using VariablePowerSet = std::vector<std::vector<std::set<std::string>>>;
 
 ViewCommandList generate_view_command_list(const std::string& view_name, const ViewContainer& view_container,
@@ -436,6 +449,12 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         cuboid_command_list.active_border_color = cuboid_container.active_color;
         cuboid_command_list.inactive_border_color = cuboid_container.unused_color;
         command_list.cuboids.push_back(std::move(cuboid_command_list));
+    }
+
+    auto& heatmap_opt = view_container.heatmap();
+    if (heatmap_opt.has_value()) {
+        auto& heatmap = heatmap_opt.value();
+        command_list.cuboids[heatmap.idx].heatmap = { heatmap.colors_start, heatmap.colors };
     }
 
     ContainerList container_list{};
@@ -459,6 +478,8 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
 
     for (auto layer = command_list.cuboids.begin(); layer != command_list.cuboids.end(); layer++) {
+        find_max_accesses(*layer);
+
         for (auto sub_layer = layer + 1; sub_layer != command_list.cuboids.end(); sub_layer++) {
             generate_bounds_information(*layer, *sub_layer);
         }

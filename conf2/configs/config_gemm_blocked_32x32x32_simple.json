@@ -154,6 +154,11 @@
       }
     },
     "computation": {
+      "heatmap": {
+        "cuboid": 5,
+        "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ] ],
+        "colors_start": [ 0.0, 1.0 ]
+      },
       "mapping": [
         [ [  ],
           [ 0, "32  - 1" ] ,

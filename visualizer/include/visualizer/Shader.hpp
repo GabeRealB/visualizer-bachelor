@@ -238,6 +238,7 @@ public:
 
     std::span<std::string_view> parameters() const;
 
+    std::size_t parameter_length(std::string_view name) const;
     ParameterType parameter_type(std::string_view name) const;
 
     template <typename T>

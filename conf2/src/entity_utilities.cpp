@@ -124,6 +124,12 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     constexpr auto transform_index{ 4 };
     constexpr auto cuboid_command_list_index{ 5 };
 
+    constexpr unsigned int HEATMAP_COUNTER_BITS = 16;
+    constexpr unsigned int HEATMAP_COUNTER_MAX = (1u << HEATMAP_COUNTER_BITS) - 1;
+    unsigned int heatmap_stepping
+        = command_list.max_accesses <= HEATMAP_COUNTER_MAX ? 1 : command_list.max_accesses / HEATMAP_COUNTER_MAX;
+    unsigned int heatmap_max = heatmap_stepping * (command_list.max_accesses / heatmap_stepping);
+
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[mesh_index].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
         entity.components[material_index].data) };
@@ -146,6 +152,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+
+    auto max_access_count_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
+    auto heatmap_color_count_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
+    auto heatmap_color_start_attribute{ std::make_shared<Visconfig::Components::FloatArrayMaterialAttribute>() };
+    auto heatmap_fill_colors_attribute{ std::make_shared<Visconfig::Components::Vec4ArrayMaterialAttribute>() };
 
     texture_front_attribute->asset = front_texture;
     texture_front_attribute->slot = 0;
@@ -193,6 +204,26 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         command_list.inactive_border_color[3] / 255.0f,
     };
 
+    max_access_count_attribute->value = heatmap_max;
+    heatmap_color_count_attribute->value = 0;
+    heatmap_color_start_attribute->value = { 10, 0.0f };
+    heatmap_fill_colors_attribute->value = { 10, { 0.0f, 0.0f, 0.0f, 0.0f } };
+
+    if (command_list.heatmap.has_value()) {
+        auto& heatmap = command_list.heatmap.value();
+        heatmap_color_count_attribute->value = heatmap.colors.size();
+
+        for (std::size_t i = 0; i < heatmap.colors.size(); i++) {
+            heatmap_color_start_attribute->value[i] = heatmap.colors_start[i];
+            heatmap_fill_colors_attribute->value[i] = {
+                heatmap.colors[i][0] / 255.0f,
+                heatmap.colors[i][1] / 255.0f,
+                heatmap.colors[i][2] / 255.0f,
+                heatmap.colors[i][3] / 255.0f,
+            };
+        }
+    }
+
     std::vector<Visconfig::Components::MaterialPass> material_passes{};
 
     // diffuse pass
@@ -228,6 +259,26 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     // transparent pass
     material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[1],
         {
+            {
+                "heatmap_color_start",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Float, heatmap_color_start_attribute, true },
+            },
+            {
+                "heatmap_fill_colors",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, heatmap_fill_colors_attribute, true },
+            },
+            {
+                "max_access_count",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::UInt, max_access_count_attribute, false },
+            },
+            {
+                "heatmap_color_count",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::UInt, heatmap_color_count_attribute, false },
+            },
             {
                 "grid_texture_front",
                 Visconfig::Components::MaterialAttribute{
@@ -293,6 +344,8 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     transform.position[2] = 0;
 
     cuboid_command_list.global = global;
+    cuboid_command_list.draw_heatmap = command_list.heatmap.has_value();
+    cuboid_command_list.heatmap_stepping = heatmap_stepping;
     cuboid_command_list.global_size = global_size;
     cuboid_command_list.commands.reserve(command_list.commands.size());
     cuboid_command_list.positions.reserve(command_list.positions.size());

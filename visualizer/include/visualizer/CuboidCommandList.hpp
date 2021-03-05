@@ -35,9 +35,12 @@ struct CuboidCommand {
 };
 
 struct CuboidCommandList {
+    bool heat_map;
     std::size_t current_index;
     std::size_t command_counter;
+    std::size_t access_stepping;
     std::vector<CuboidCommand> commands;
+    std::vector<std::size_t> cuboid_accesses;
 };
 
 }
