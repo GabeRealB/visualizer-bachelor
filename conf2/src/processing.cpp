@@ -147,9 +147,10 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 auto& cuboid_list = command_list[cuboids[i].second];
 
+                bool existing_cuboid = false;
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
-                    cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
+                    existing_cuboid = true;
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
                     CuboidInfo cuboid_info = {
@@ -158,7 +159,6 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     };
 
                     cuboid_idx = cuboid_list.positions.size();
-                    cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
                     cuboid_list.positions.push_back(cuboid_info);
                 }
@@ -180,11 +180,24 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                             { box },
                             { cuboid_idx },
                         } });
+
+                    if (existing_cuboid) {
+                        cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
+                    } else {
+                        cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
+                    }
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
                     [[maybe_unused]] auto [it, new_idx] = command.cuboid_indices.insert(cuboid_idx);
 
                     if (new_idx) {
+                        if (existing_cuboid) {
+                            cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
+                        } else {
+                            cuboid_list.cuboid_access_counter.insert(
+                                { std::make_tuple(start_position, cuboid_size), 1 });
+                        }
+
                         bool intersects = false;
                         for (auto& bounding_box : command.bounding_boxes) {
                             if (aabb_intersects(bounding_box, box) && !aabb_contains(bounding_box, box)) {

@@ -96,7 +96,7 @@ bool step_iteration(CuboidCommandList& command_list, const DrawCommand& command,
 {
     auto& enabled_buffer
         = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
-    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
+    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
     auto& previous_command = std::get<DrawCommand>(previous.command);
     auto accesses = ++command_list.cuboid_accesses[command.cuboid_idx];
 
@@ -118,7 +118,7 @@ bool step_iteration(CuboidCommandList& command_list, const DrawMultipleCommand& 
 {
     auto& enabled_buffer
         = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
-    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_WRITE_ONLY));
+    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
     auto& previous_command = std::get<DrawMultipleCommand>(previous.command);
 
     for (auto idx : previous_command.cuboid_indices) {
@@ -201,6 +201,12 @@ void step_iteration(
         if (command_list.current_index == command_list.commands.size()) {
             command_list.current_index = 0;
             std::fill(command_list.cuboid_accesses.begin(), command_list.cuboid_accesses.end(), 0);
+
+            auto& enabled_buffer
+                = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
+            auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
+            std::memset(buffer_ptr, 0, enabled_buffer->size());
+            enabled_buffer->unmap();
         }
     }
 }

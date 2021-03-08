@@ -56,18 +56,15 @@ vec4 fetch_heatmap_color() {
         return vec4(0.0f);
     }
 
-    for (uint i = heatmap_color_count - 1; i <= 0; i++) {
-        if (mix_factor >= heatmap_color_start[i]) {
+    for (uint i = 0; i < heatmap_color_count; i++) {
+        if (mix_factor == heatmap_color_start[i]) {
+            return heatmap_fill_colors[i];
+        } else if (mix_factor > heatmap_color_start[i]) {
             color_idx = i;
-            break;
-        }
-
-        if (i == 0) {
-            break;
         }
     }
 
-    if (mix_factor == heatmap_color_start[color_idx] || color_idx + 1 == heatmap_color_count) {
+    if (color_idx + 1 == heatmap_color_count) {
         return heatmap_fill_colors[color_idx];
     } else {
         // Mix colors

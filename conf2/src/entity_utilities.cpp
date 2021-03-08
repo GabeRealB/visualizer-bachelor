@@ -208,7 +208,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     max_access_count_attribute->value = heatmap_max;
     heatmap_color_count_attribute->value = 0;
-    heatmap_color_start_attribute->value = { 10, 0.0f };
+    heatmap_color_start_attribute->value = std::vector( 10, 0.0f );
     heatmap_fill_colors_attribute->value = { 10, { 0.0f, 0.0f, 0.0f, 0.0f } };
 
     if (command_list.heatmap.has_value()) {
