@@ -1,6 +1,7 @@
 #version 410 core
 
 @program float 1 far_plane
+@program uint 1 projection_mode
 @material vec4 1 active_border_color
 @material vec4 1 inactive_border_color
 @material sampler2D 1 grid_texture_front
@@ -8,6 +9,7 @@
 @material sampler2D 1 grid_texture_top
 
 uniform float far_plane;
+uniform uint projection_mode;
 
 uniform vec4 active_border_color;
 uniform vec4 inactive_border_color;
@@ -23,6 +25,9 @@ in vec4 vs_position;
 in vec3 vs_normal;
 
 out vec4 out_color;
+
+const uint PERSPECTIVE_PROJECTION = 0u;
+const uint ORTHOGRAPHIC_PROJECTION = 1u;
 
 const uint ACTIVE_FLAG = 1u << 31;
 const uint OUT_OF_BOUNDS_FLAG = 1u << 30;
@@ -53,8 +58,14 @@ vec4 compute_blinn_phong(vec3 vs_normal, vec3 vs_view, vec4 diffuse_color) {
 void main() {
     vec4 texture_color = vec4(0.0f);
 
-    float camera_distance = (gl_FragCoord.z / gl_FragCoord.w) / far_plane;
-    float border_thickness = mix(0.0f, 0.1f, camera_distance);
+    float border_thickness = 0.0f;
+
+    if (projection_mode == PERSPECTIVE_PROJECTION) {
+        float camera_distance = (gl_FragCoord.z / gl_FragCoord.w) / far_plane;
+        border_thickness = mix(0.0f, 0.1f, camera_distance);
+    } else if (projection_mode == ORTHOGRAPHIC_PROJECTION) {
+        border_thickness = mix(0.0f, 0.025f, far_plane);
+    }
 
     vec2 tex_coords = texture_coordinates;
 

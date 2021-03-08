@@ -210,15 +210,17 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
         auto& material{ std::get<2>(mesh_info) };
 
         if (last_program != material->m_passes[diffuse_pass_idx].m_shader) {
-            constexpr float orthographic_far_factor = 1.4f;
-            constexpr float orthographic_near_factor = 3.5f;
-            auto orthographic_depth = 1 - std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
-            auto orthographic_factor = std::lerp(orthographic_far_factor, orthographic_near_factor, orthographic_depth);
+            constexpr unsigned int PERSPECTIVE_PROJECTION = 0;
+            constexpr unsigned int ORTHOGRAPHIC_PROJECTION = 1;
+
+            auto orthographic_factor = std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
 
             last_program = material->m_passes[diffuse_pass_idx].m_shader;
             camera_variables
                 = ShaderEnvironment{ *material->m_passes[diffuse_pass_idx].m_shader, ParameterQualifier::Program };
             camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
+            camera_variables.set(
+                "projection_mode", camera.perspective ? PERSPECTIVE_PROJECTION : ORTHOGRAPHIC_PROJECTION);
             camera_variables.set("view_matrix", view_matrix);
             camera_variables.set("projection_matrix", projection_matrix);
             material->m_passes[diffuse_pass_idx].m_shader->bind();
