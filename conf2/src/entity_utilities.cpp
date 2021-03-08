@@ -126,9 +126,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     constexpr unsigned int HEATMAP_COUNTER_BITS = 16;
     constexpr unsigned int HEATMAP_COUNTER_MAX = (1u << HEATMAP_COUNTER_BITS) - 1;
-    unsigned int heatmap_stepping
-        = command_list.max_accesses <= HEATMAP_COUNTER_MAX ? 1 : command_list.max_accesses / HEATMAP_COUNTER_MAX;
-    unsigned int heatmap_max = heatmap_stepping * (command_list.max_accesses / heatmap_stepping);
+    unsigned int heatmap_stepping = command_list.max_accesses <= HEATMAP_COUNTER_MAX
+        ? 1
+        : static_cast<unsigned int>(command_list.max_accesses / HEATMAP_COUNTER_MAX);
+    unsigned int heatmap_max
+        = static_cast<unsigned int>(heatmap_stepping * (command_list.max_accesses / heatmap_stepping));
 
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[mesh_index].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
@@ -211,7 +213,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     if (command_list.heatmap.has_value()) {
         auto& heatmap = command_list.heatmap.value();
-        heatmap_color_count_attribute->value = heatmap.colors.size();
+        heatmap_color_count_attribute->value = static_cast<std::uint32_t>(heatmap.colors.size());
 
         for (std::size_t i = 0; i < heatmap.colors.size(); i++) {
             heatmap_color_start_attribute->value[i] = heatmap.colors_start[i];

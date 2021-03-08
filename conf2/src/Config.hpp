@@ -576,7 +576,8 @@ public:
     {
         auto var_map = VariableMap{};
         for (const auto& var : m_variables) {
-            var_map.initialize_variable(std::get<0>(var), std::get<1>(var), std::get<2>(var), std::get<3>(var));
+            var_map.initialize_variable(std::get<0>(var), std::get<1>(var), static_cast<int>(std::get<2>(var)),
+                static_cast<int>(std::get<3>(var)));
         }
         return var_map;
     }

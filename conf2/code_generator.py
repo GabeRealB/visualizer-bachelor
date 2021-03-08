@@ -103,10 +103,10 @@ def generate(config, template, output):
             .format(container_name) \
             .expandtabs(4)
 
-        code_str = code_str + """\t{}.set_size({});\n""" \
+        code_str = code_str + """\t{}.set_size({}f);\n""" \
             .format(container_name, view["arrangement"]["size"])
 
-        code_str = code_str + """\t{}.set_position({}, {});\n""" \
+        code_str = code_str + """\t{}.set_position({}f, {}f);\n""" \
             .format(container_name, view["arrangement"]["position"][0], view["arrangement"]["position"][1])
 
         for cuboid in view["cuboids"]:

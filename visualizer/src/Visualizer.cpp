@@ -52,7 +52,7 @@ void attach(bool attached)
         GLint width;
         GLint height;
         glfwGetWindowSize(g_window, &width, &height);
-        glfwSetCursorPos(g_window, width / 2.0L, height / 2.0L);
+        glfwSetCursorPos(g_window, width / 2.0, height / 2.0);
     }
     g_detached = !attached;
 }
