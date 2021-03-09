@@ -95,7 +95,6 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
-                    cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
                     CuboidInfo cuboid_info = {
@@ -104,7 +103,6 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                     };
 
                     cuboid_idx = cuboid_list.positions.size();
-                    cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
                     cuboid_list.position_index_map.insert({ std::make_tuple(start_position, cuboid_size), cuboid_idx });
                     cuboid_list.positions.push_back(cuboid_info);
                 }
@@ -147,10 +145,8 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
 
                 auto& cuboid_list = command_list[cuboids[i].second];
 
-                bool existing_cuboid = false;
                 std::size_t cuboid_idx;
                 if (cuboid_list.position_index_map.contains(std::make_tuple(start_position, cuboid_size))) {
-                    existing_cuboid = true;
                     cuboid_idx = cuboid_list.position_index_map.at(std::make_tuple(start_position, cuboid_size));
                 } else {
                     CuboidInfo cuboid_info = {
@@ -180,24 +176,11 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                             { box },
                             { cuboid_idx },
                         } });
-
-                    if (existing_cuboid) {
-                        cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
-                    } else {
-                        cuboid_list.cuboid_access_counter.insert({ std::make_tuple(start_position, cuboid_size), 1 });
-                    }
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
                     [[maybe_unused]] auto [it, new_idx] = command.cuboid_indices.insert(cuboid_idx);
 
                     if (new_idx) {
-                        if (existing_cuboid) {
-                            cuboid_list.cuboid_access_counter.at(std::make_tuple(start_position, cuboid_size))++;
-                        } else {
-                            cuboid_list.cuboid_access_counter.insert(
-                                { std::make_tuple(start_position, cuboid_size), 1 });
-                        }
-
                         bool intersects = false;
                         for (auto& bounding_box : command.bounding_boxes) {
                             if (aabb_intersects(bounding_box, box) && !aabb_contains(bounding_box, box)) {
@@ -434,12 +417,34 @@ void generate_bounds_information(const CuboidCommandList& parent_layer, CuboidCo
     }
 }
 
+void count_accesses(CuboidCommandList& command_list)
+{
+    command_list.access_counters = std::vector<std::size_t>(command_list.positions.size(), 0);
+
+    for (auto& command : command_list.commands) {
+        switch (command.type) {
+        case CuboidCommandType::DRAW: {
+            auto& draw_command = std::get<DrawCommand>(command.command);
+            command_list.access_counters[draw_command.cuboid_idx]++;
+            break;
+        }
+        case CuboidCommandType::DRAW_MULTIPLE: {
+            auto& draw_command = std::get<DrawMultipleCommand>(command.command);
+            for (auto idx : draw_command.cuboid_indices) {
+                command_list.access_counters[idx]++;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
+}
+
 void find_max_accesses(CuboidCommandList& command_list)
 {
-    command_list.max_accesses = std::max_element(
-        command_list.cuboid_access_counter.begin(), command_list.cuboid_access_counter.end(), [](auto&& p1, auto&& p2) {
-            return p1.second < p2.second;
-        })->second;
+    command_list.max_accesses = *std::max_element(command_list.access_counters.begin(),
+        command_list.access_counters.end(), [](auto&& p1, auto&& p2) { return p1 < p2; });
 }
 
 using VariablePowerSet = std::vector<std::vector<std::set<std::string>>>;
@@ -491,6 +496,7 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
 
     for (auto layer = command_list.cuboids.begin(); layer != command_list.cuboids.end(); layer++) {
+        count_accesses(*layer);
         find_max_accesses(*layer);
 
         for (auto sub_layer = layer + 1; sub_layer != command_list.cuboids.end(); sub_layer++) {

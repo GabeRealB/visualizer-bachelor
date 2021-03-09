@@ -69,9 +69,9 @@ struct CuboidCommandList {
     CuboidColor inactive_border_color;
     std::vector<CuboidCommand> commands;
     std::vector<CuboidInfo> positions;
+    std::vector<std::size_t> access_counters;
     std::optional<HeatmapData> heatmap;
     std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> position_index_map;
-    std::map<std::tuple<CuboidPosition, CuboidSize>, std::size_t> cuboid_access_counter;
 };
 
 struct ViewCommandList {
