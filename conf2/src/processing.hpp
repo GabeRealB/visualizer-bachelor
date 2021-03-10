@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -36,6 +37,7 @@ struct DrawMultipleCommand {
     std::vector<std::size_t> out_of_bounds;
     std::vector<BoundingBox> bounding_boxes;
     std::unordered_set<std::size_t> cuboid_indices;
+    std::unordered_map<std::size_t, std::size_t> cuboid_accesses;
 };
 
 struct DeleteCommand {

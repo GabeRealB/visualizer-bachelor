@@ -121,29 +121,31 @@ bool step_iteration(CuboidCommandList& command_list, const DrawMultipleCommand& 
     auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
     auto& previous_command = std::get<DrawMultipleCommand>(previous.command);
 
-    for (auto idx : previous_command.cuboid_indices) {
-        buffer_ptr[idx] &= ~ACTIVE_FLAG;
+    for (auto& info : previous_command.cuboid_indices) {
+        buffer_ptr[info.idx] &= ~ACTIVE_FLAG;
     }
-    for (auto idx : previous_command.out_of_bounds) {
-        buffer_ptr[idx] &= ~(ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
+    for (auto& info : previous_command.out_of_bounds) {
+        buffer_ptr[info.idx] &= ~(ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
     }
 
-    for (auto idx : command.cuboid_indices) {
-        buffer_ptr[idx] |= ACTIVE_FLAG;
-        auto accesses = ++command_list.cuboid_accesses[idx];
+    for (auto& info : command.cuboid_indices) {
+        buffer_ptr[info.idx] |= ACTIVE_FLAG;
+        command_list.cuboid_accesses[info.idx] += info.accesses;
+        auto accesses = command_list.cuboid_accesses[info.idx];
 
         if (command_list.heat_map) {
-            buffer_ptr[idx] &= ~HEATMAP_COUNTER_MASK;
-            buffer_ptr[idx] |= (HEATMAP_FLAG | (accesses / command_list.access_stepping));
+            buffer_ptr[info.idx] &= ~HEATMAP_COUNTER_MASK;
+            buffer_ptr[info.idx] |= (HEATMAP_FLAG | ((accesses / command_list.access_stepping) & HEATMAP_COUNTER_MASK));
         }
     }
-    for (auto idx : command.out_of_bounds) {
-        buffer_ptr[idx] |= (ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
-        auto accesses = ++command_list.cuboid_accesses[idx];
+    for (auto& info : command.out_of_bounds) {
+        buffer_ptr[info.idx] |= (ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
+        command_list.cuboid_accesses[info.idx] += info.accesses;
+        auto accesses = command_list.cuboid_accesses[info.idx];
 
         if (command_list.heat_map) {
-            buffer_ptr[idx] &= ~HEATMAP_COUNTER_MASK;
-            buffer_ptr[idx] |= (HEATMAP_FLAG | (accesses / command_list.access_stepping));
+            buffer_ptr[info.idx] &= ~HEATMAP_COUNTER_MASK;
+            buffer_ptr[info.idx] |= (HEATMAP_FLAG | ((accesses / command_list.access_stepping) & HEATMAP_COUNTER_MASK));
         }
     }
 

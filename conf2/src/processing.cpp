@@ -175,10 +175,17 @@ void generate_cuboid_command_list(std::vector<CuboidCommandList>& command_list, 
                             {},
                             { box },
                             { cuboid_idx },
+                            { { cuboid_idx, 1 } },
                         } });
                 } else {
                     auto& command = std::get<DrawMultipleCommand>(cuboid_commands.back().command);
                     [[maybe_unused]] auto [it, new_idx] = command.cuboid_indices.insert(cuboid_idx);
+
+                    if (new_idx) {
+                        command.cuboid_accesses.insert({ cuboid_idx, 1 });
+                    } else {
+                        command.cuboid_accesses.at(cuboid_idx)++;
+                    }
 
                     if (new_idx) {
                         bool intersects = false;
@@ -431,7 +438,7 @@ void count_accesses(CuboidCommandList& command_list)
         case CuboidCommandType::DRAW_MULTIPLE: {
             auto& draw_command = std::get<DrawMultipleCommand>(command.command);
             for (auto idx : draw_command.cuboid_indices) {
-                command_list.access_counters[idx]++;
+                command_list.access_counters[idx] += draw_command.cuboid_accesses[idx];
             }
             break;
         }

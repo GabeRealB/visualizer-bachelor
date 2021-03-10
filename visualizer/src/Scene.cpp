@@ -1365,12 +1365,20 @@ CuboidCommand construct_command(const Visconfig::Components::DrawCommand& comman
 
 CuboidCommand construct_command(const Visconfig::Components::DrawMultipleCommand& command)
 {
+    DrawMultipleCommand draw_command = {};
+    draw_command.cuboid_indices.reserve(command.cuboid_indices.size());
+    draw_command.out_of_bounds.reserve(command.out_of_bounds_indices.size());
+
+    for (auto info : command.cuboid_indices) {
+        draw_command.cuboid_indices.push_back(CuboidDrawInfo{ std::get<0>(info), std::get<1>(info) });
+    }
+    for (auto info : command.out_of_bounds_indices) {
+        draw_command.out_of_bounds.push_back(CuboidDrawInfo{ std::get<0>(info), std::get<1>(info) });
+    }
+
     return CuboidCommand{
         CuboidCommandType::DRAW_MULTIPLE,
-        DrawMultipleCommand{
-            command.out_of_bounds_indices,
-            command.cuboid_indices,
-        },
+        std::move(draw_command),
     };
 }
 

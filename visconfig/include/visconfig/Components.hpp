@@ -232,8 +232,8 @@ struct DrawCommand {
 };
 
 struct DrawMultipleCommand {
-    std::vector<std::size_t> cuboid_indices;
-    std::vector<std::size_t> out_of_bounds_indices;
+    std::vector<std::tuple<std::size_t, std::size_t>> cuboid_indices;
+    std::vector<std::tuple<std::size_t, std::size_t>> out_of_bounds_indices;
 };
 
 struct DeleteCommand {

@@ -17,9 +17,14 @@ struct DrawCommand {
     std::size_t cuboid_idx;
 };
 
+struct CuboidDrawInfo {
+    std::size_t idx;
+    std::size_t accesses;
+};
+
 struct DrawMultipleCommand {
-    std::vector<std::size_t> out_of_bounds;
-    std::vector<std::size_t> cuboid_indices;
+    std::vector<CuboidDrawInfo> out_of_bounds;
+    std::vector<CuboidDrawInfo> cuboid_indices;
 };
 
 struct DeleteCommand {

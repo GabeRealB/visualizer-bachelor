@@ -208,7 +208,7 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     max_access_count_attribute->value = heatmap_max;
     heatmap_color_count_attribute->value = 0;
-    heatmap_color_start_attribute->value = std::vector( 10, 0.0f );
+    heatmap_color_start_attribute->value = std::vector(10, 0.0f);
     heatmap_fill_colors_attribute->value = { 10, { 0.0f, 0.0f, 0.0f, 0.0f } };
 
     if (command_list.heatmap.has_value()) {
@@ -381,9 +381,22 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
             visconfig_command.type = Visconfig::Components::CuboidCommandType::DRAW_MULTIPLE;
             visconfig_command.command = [=](auto&& command) -> auto
             {
+                std::vector<std::tuple<std::size_t, std::size_t>> cuboid_indices;
+                std::vector<std::tuple<std::size_t, std::size_t>> out_of_bounds_indices;
+
+                cuboid_indices.reserve(command.cuboid_indices.size());
+                out_of_bounds_indices.reserve(command.out_of_bounds.size());
+
+                for (auto idx : command.cuboid_indices) {
+                    cuboid_indices.push_back({ idx, command.cuboid_accesses.at(idx) });
+                }
+                for (auto idx : command.out_of_bounds) {
+                    out_of_bounds_indices.push_back({ idx, command.cuboid_accesses.at(idx) });
+                }
+
                 return Visconfig::Components::DrawMultipleCommand{
-                    { command.cuboid_indices.begin(), command.cuboid_indices.end() },
-                    command.out_of_bounds,
+                    std::move(cuboid_indices),
+                    std::move(out_of_bounds_indices),
                 };
             }
             (std::get<DrawMultipleCommand>(command.command));
