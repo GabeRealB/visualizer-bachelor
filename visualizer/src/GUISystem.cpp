@@ -1,5 +1,6 @@
 #include <visualizer/GUISystem.hpp>
 
+#include <algorithm>
 #include <imgui.h>
 #include <variant>
 
@@ -77,8 +78,11 @@ void render_legend_entry(EntityDatabaseContext&, const LegendGUIImage& image_ent
     if (image_entry.absolute) {
         texture_size = { static_cast<float>(texture_2d->width()), static_cast<float>(texture_2d->height()) };
     } else {
+        auto texture_aspect = static_cast<float>(texture_2d->width()) / static_cast<float>(texture_2d->height());
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         texture_size = viewport->Size;
+        texture_size.x = std::min(texture_size.x, texture_size.y);
+        texture_size.y = texture_size.x / texture_aspect;
     }
 
     texture_size.x *= image_entry.scaling.x;
@@ -160,7 +164,12 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
             assert(!window.texture.expired());
             ImGui::PushID(window.window_name.c_str());
 
+            auto texture_2d = window.texture.lock();
+            auto texture_aspect = static_cast<float>(texture_2d->width()) / static_cast<float>(texture_2d->height());
+
             auto texture_size = viewport->Size;
+            texture_size.x = std::min(texture_size.x, texture_size.y);
+            texture_size.y = texture_size.x / texture_aspect;
             texture_size.x *= window.scaling.x;
             texture_size.y *= window.scaling.y;
 
@@ -185,8 +194,6 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
                 max_pos.y = max_screen_pos.y + size_padding;
             }
             content_size = { max_screen_pos.x - min_pos.x, max_screen_pos.y - min_pos.y };
-
-            auto texture_2d = window.texture.lock();
 
             ImGui::SetCursorScreenPos(screen_pos);
 
