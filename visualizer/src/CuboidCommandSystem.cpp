@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 
 #include <GLFW/glfw3.h>
+#include <algorithm>
 
 #include <visualizer/Cube.hpp>
 #include <visualizer/CuboidCommandList.hpp>
@@ -131,7 +132,8 @@ bool step_iteration(CuboidCommandList& command_list, const DrawMultipleCommand& 
     for (auto& info : command.cuboid_indices) {
         buffer_ptr[info.idx] |= ACTIVE_FLAG;
         command_list.cuboid_accesses[info.idx] += info.accesses;
-        auto accesses = command_list.cuboid_accesses[info.idx];
+        auto accesses
+            = std::min(command_list.cuboid_accesses[info.idx], static_cast<std::size_t>(HEATMAP_COUNTER_MASK));
 
         if (command_list.heat_map) {
             buffer_ptr[info.idx] &= ~HEATMAP_COUNTER_MASK;
@@ -141,7 +143,8 @@ bool step_iteration(CuboidCommandList& command_list, const DrawMultipleCommand& 
     for (auto& info : command.out_of_bounds) {
         buffer_ptr[info.idx] |= (ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
         command_list.cuboid_accesses[info.idx] += info.accesses;
-        auto accesses = command_list.cuboid_accesses[info.idx];
+        auto accesses
+            = std::min(command_list.cuboid_accesses[info.idx], static_cast<std::size_t>(HEATMAP_COUNTER_MASK));
 
         if (command_list.heat_map) {
             buffer_ptr[info.idx] &= ~HEATMAP_COUNTER_MASK;

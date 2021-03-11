@@ -448,6 +448,132 @@ void count_accesses(CuboidCommandList& command_list)
     }
 }
 
+void generate_heatmap(const CuboidCommandList& access_layer, CuboidCommandList& grid_layer)
+{
+    for (auto& info : access_layer.position_index_map) {
+        auto& position = std::get<0>(info.first);
+        auto& size = std::get<1>(info.first);
+
+        for (auto x = position[0]; x < position[0] + size[0]; ++x) {
+            for (auto y = position[1]; y < position[1] + size[1]; ++y) {
+                for (auto z = position[2]; z < position[2] + size[2]; ++z) {
+                    CuboidPosition cuboid_position = { x, y, z };
+                    CuboidSize cuboid_size = { 1, 1, 1 };
+
+                    if (!grid_layer.position_index_map.contains(std::make_tuple(cuboid_position, cuboid_size))) {
+                        CuboidInfo cuboid_info{ cuboid_size, cuboid_position };
+                        auto insertion_idx = grid_layer.positions.size();
+                        grid_layer.positions.push_back(cuboid_info);
+                        grid_layer.position_index_map.insert(
+                            { std::make_tuple(cuboid_position, cuboid_size), insertion_idx });
+                    }
+                }
+            }
+        }
+    }
+
+    for (auto& command : access_layer.commands) {
+        switch (command.type) {
+        case CuboidCommandType::DRAW: {
+            auto& access_draw_command = std::get<DrawCommand>(command.command);
+            auto& access_cuboid_info = access_layer.positions[access_draw_command.cuboid_idx];
+
+            auto& position = access_cuboid_info.position;
+            auto& size = access_cuboid_info.size;
+
+            if (size[0] > 1 || size[1] > 1 || size[2] > 1) {
+                DrawMultipleCommand draw_command = {};
+                draw_command.bounding_boxes.push_back(access_draw_command.bounding_box);
+
+                for (auto x = position[0]; x < position[0] + size[0]; ++x) {
+                    for (auto y = position[1]; y < position[1] + size[1]; ++y) {
+                        for (auto z = position[2]; z < position[2] + size[2]; ++z) {
+                            CuboidPosition cuboid_position = { x, y, z };
+                            CuboidSize cuboid_size = { 1, 1, 1 };
+
+                            auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
+                            draw_command.cuboid_accesses.insert({ idx, 1 });
+
+                            if (access_draw_command.out_of_bounds) {
+                                draw_command.out_of_bounds.push_back(idx);
+                            } else {
+                                draw_command.cuboid_indices.insert(idx);
+                            }
+                        }
+                    }
+                }
+
+                grid_layer.commands.push_back(CuboidCommand{ CuboidCommandType::DRAW_MULTIPLE, draw_command });
+            } else {
+                DrawCommand draw_command = {};
+                CuboidPosition cuboid_position = access_draw_command.bounding_box.start;
+                CuboidSize cuboid_size = { 1, 1, 1 };
+
+                draw_command.out_of_bounds = access_draw_command.out_of_bounds;
+                draw_command.bounding_box = access_draw_command.bounding_box;
+                draw_command.cuboid_idx
+                    = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
+
+                grid_layer.commands.push_back(CuboidCommand{ CuboidCommandType::DRAW, draw_command });
+            }
+
+            break;
+        }
+        case CuboidCommandType::DRAW_MULTIPLE: {
+            DrawMultipleCommand draw_command = {};
+            auto& access_draw_command = std::get<DrawMultipleCommand>(command.command);
+            draw_command.bounding_boxes = access_draw_command.bounding_boxes;
+
+            for (auto access_idx : access_draw_command.cuboid_indices) {
+                auto& access_cuboid_info = access_layer.positions[access_idx];
+                auto& position = access_cuboid_info.position;
+                auto& size = access_cuboid_info.size;
+                auto accesses = access_draw_command.cuboid_accesses.at(access_idx);
+
+                for (auto x = position[0]; x < position[0] + size[0]; ++x) {
+                    for (auto y = position[1]; y < position[1] + size[1]; ++y) {
+                        for (auto z = position[2]; z < position[2] + size[2]; ++z) {
+                            CuboidPosition cuboid_position = { x, y, z };
+                            CuboidSize cuboid_size = { 1, 1, 1 };
+
+                            auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
+                            draw_command.cuboid_accesses.insert({ idx, accesses });
+                            draw_command.cuboid_indices.insert(idx);
+                        }
+                    }
+                }
+            }
+
+            for (auto access_idx : access_draw_command.out_of_bounds) {
+                auto& access_cuboid_info = access_layer.positions[access_idx];
+                auto& position = access_cuboid_info.position;
+                auto& size = access_cuboid_info.size;
+                auto accesses = access_draw_command.cuboid_accesses.at(access_idx);
+
+                for (auto x = position[0]; x < position[0] + size[0]; ++x) {
+                    for (auto y = position[1]; y < position[1] + size[1]; ++y) {
+                        for (auto z = position[2]; z < position[2] + size[2]; ++z) {
+                            CuboidPosition cuboid_position = { x, y, z };
+                            CuboidSize cuboid_size = { 1, 1, 1 };
+
+                            auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
+                            draw_command.cuboid_accesses.insert({ idx, accesses });
+                            draw_command.out_of_bounds.push_back(idx);
+                        }
+                    }
+                }
+            }
+
+            grid_layer.commands.push_back(CuboidCommand{ CuboidCommandType::DRAW_MULTIPLE, draw_command });
+            break;
+        }
+        default:
+            grid_layer.commands.push_back(command);
+            break;
+        }
+    }
+}
+
 void find_max_accesses(CuboidCommandList& command_list)
 {
     command_list.max_accesses = *std::max_element(command_list.access_counters.begin(),
@@ -474,12 +600,6 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         cuboid_command_list.active_border_color = cuboid_container.active_color;
         cuboid_command_list.inactive_border_color = cuboid_container.unused_color;
         command_list.cuboids.push_back(std::move(cuboid_command_list));
-    }
-
-    auto& heatmap_opt = view_container.heatmap();
-    if (heatmap_opt.has_value()) {
-        auto& heatmap = heatmap_opt.value();
-        command_list.cuboids[heatmap.idx].heatmap = { heatmap.colors_start, heatmap.colors };
     }
 
     ContainerList container_list{};
@@ -509,6 +629,24 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
         for (auto sub_layer = layer + 1; sub_layer != command_list.cuboids.end(); sub_layer++) {
             generate_bounds_information(*layer, *sub_layer);
         }
+    }
+
+    auto& heatmap_opt = view_container.heatmap();
+    if (heatmap_opt.has_value()) {
+        auto& heatmap = heatmap_opt.value();
+
+        CuboidCommandList cuboid_command_list{};
+        cuboid_command_list.active_fill_color = { 0, 0, 0, 0 };
+        cuboid_command_list.out_of_bounds_fill_color = { 0, 0, 0, 0 };
+        cuboid_command_list.inactive_fill_color = { 0, 0, 0, 0 };
+        cuboid_command_list.active_border_color = { 0, 0, 0, 0 };
+        cuboid_command_list.inactive_border_color = { 0, 0, 0, 0 };
+        command_list.cuboids.push_back(cuboid_command_list);
+
+        command_list.cuboids.back().heatmap = { heatmap.colors_start, heatmap.colors };
+        generate_heatmap(command_list.cuboids[heatmap.idx], command_list.cuboids.back());
+        count_accesses(command_list.cuboids.back());
+        find_max_accesses(command_list.cuboids.back());
     }
 
     return command_list;
@@ -685,5 +823,4 @@ void print_config_command_list(const ConfigCommandList& config)
 
     std::cout << "DRAW COMMANDS END" << std::endl << std::endl;
 }
-
 }

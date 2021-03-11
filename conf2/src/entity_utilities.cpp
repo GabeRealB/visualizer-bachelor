@@ -126,11 +126,10 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     constexpr unsigned int HEATMAP_COUNTER_BITS = 16;
     constexpr unsigned int HEATMAP_COUNTER_MAX = (1u << HEATMAP_COUNTER_BITS) - 1;
-    unsigned int heatmap_stepping = command_list.max_accesses <= HEATMAP_COUNTER_MAX
-        ? 1
-        : static_cast<unsigned int>(command_list.max_accesses / HEATMAP_COUNTER_MAX);
+    std::size_t heatmap_stepping
+        = command_list.max_accesses <= HEATMAP_COUNTER_MAX ? 1 : command_list.max_accesses / HEATMAP_COUNTER_MAX;
     unsigned int heatmap_max
-        = static_cast<unsigned int>(heatmap_stepping * (command_list.max_accesses / heatmap_stepping));
+        = std::min(static_cast<unsigned int>(command_list.max_accesses / heatmap_stepping), HEATMAP_COUNTER_MAX);
 
     auto& mesh{ *std::static_pointer_cast<Visconfig::Components::MeshComponent>(entity.components[mesh_index].data) };
     auto& material{ *std::static_pointer_cast<Visconfig::Components::MaterialComponent>(
