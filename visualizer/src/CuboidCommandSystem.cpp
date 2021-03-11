@@ -28,6 +28,7 @@ constexpr unsigned int HEATMAP_FLAG = 1u << 29;
 constexpr unsigned int HEATMAP_COUNTER_BITS = 16;
 constexpr unsigned int HEATMAP_COUNTER_MASK = (1u << HEATMAP_COUNTER_BITS) - 1;
 
+void reset_iteration(CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh);
 void step_iteration(
     CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh, Material& material, Transform& transform);
 
@@ -48,6 +49,7 @@ void CuboidCommandSystem::terminate() { m_entity_database = nullptr; }
 
 void CuboidCommandSystem::run(void*)
 {
+    [[maybe_unused]] bool reset = false;
     auto current_time = glfwGetTime();
     auto delta_time = current_time - m_current_time;
     m_current_time = current_time;
@@ -73,17 +75,43 @@ void CuboidCommandSystem::run(void*)
         m_tick_interval = TICK_INTERVAL_STOPPED;
     }
 
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        reset = true;
+    }
+
     m_time_accumulator += delta_time;
-    if (m_time_accumulator >= m_tick_interval) {
-        m_time_accumulator -= m_tick_interval;
+    if (m_time_accumulator >= m_tick_interval || reset) {
+        if (reset) {
+            m_time_accumulator = 0.0;
+        } else {
+            m_time_accumulator -= m_tick_interval;
+        }
 
         m_entity_database->enter_secure_context([&](EntityDatabaseContext& entity_database) {
             m_cuboid_query.query_db_window(entity_database)
                 .for_each<CuboidCommandList, std::shared_ptr<Mesh>, Material, Transform>(
-                    [](CuboidCommandList* command_list, std::shared_ptr<Mesh>* mesh, Material* material,
-                        Transform* transform) { step_iteration(*command_list, *mesh, *material, *transform); });
+                    [reset](CuboidCommandList* command_list, std::shared_ptr<Mesh>* mesh, Material* material,
+                        Transform* transform) {
+                        if (reset) {
+                            reset_iteration(*command_list, *mesh);
+                        }
+                        step_iteration(*command_list, *mesh, *material, *transform);
+                    });
         });
     }
+}
+
+void reset_iteration(CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh)
+{
+    command_list.current_index = 0;
+    command_list.command_counter = 0;
+    std::fill(command_list.cuboid_accesses.begin(), command_list.cuboid_accesses.end(), 0);
+
+    auto& enabled_buffer
+        = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
+    auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
+    std::memset(buffer_ptr, 0, enabled_buffer->size());
+    enabled_buffer->unmap();
 }
 
 bool step_iteration(CuboidCommandList&, const NoopCommand& command, const CuboidCommand&, std::shared_ptr<Mesh>&,
@@ -172,47 +200,51 @@ bool step_iteration(CuboidCommandList&, const DeleteMultipleCommand&, const Cubo
 void step_iteration(
     CuboidCommandList& command_list, std::shared_ptr<Mesh>& mesh, Material& material, Transform& transform)
 {
-    if (command_list.commands.size() == 0) {
+    if (command_list.commands.size() == 0 || command_list.current_index > command_list.commands.size()) {
         return;
     }
 
-    bool step_command = false;
-    const auto& command = command_list.commands[command_list.current_index];
-    const auto& previous_command = [&]() -> auto&
-    {
-        if (command_list.current_index == 0) {
-            return command_list.commands[command_list.commands.size() - 3];
-        } else if (command_list.current_index % 3 == 0) {
-            return command_list.commands[command_list.current_index - 3];
-        } else {
-            auto offset = command_list.current_index % 3;
-            return command_list.commands[command_list.current_index - offset];
+    if (command_list.current_index < command_list.commands.size()) {
+        bool step_command = false;
+        const auto& command = command_list.commands[command_list.current_index];
+        const auto& previous_command = [&]() -> auto&
+        {
+            if (command_list.current_index == 0) {
+                return command_list.commands[command_list.commands.size() - 3];
+            } else if (command_list.current_index % 3 == 0) {
+                return command_list.commands[command_list.current_index - 3];
+            } else {
+                auto offset = command_list.current_index % 3;
+                return command_list.commands[command_list.current_index - offset];
+            }
         }
-    }
-    ();
+        ();
 
-    step_command = std::visit(
-        [&](auto&& command) -> auto {
-            return step_iteration(
-                command_list, command, previous_command, mesh, material, transform, command_list.command_counter);
-        },
-        command.command);
+        step_command = std::visit(
+            [&](auto&& command) -> auto {
+                return step_iteration(
+                    command_list, command, previous_command, mesh, material, transform, command_list.command_counter);
+            },
+            command.command);
 
-    ++command_list.command_counter;
-    if (step_command) {
+        ++command_list.command_counter;
+        if (step_command) {
+            ++command_list.current_index;
+            command_list.command_counter = 0;
+        }
+    } else {
+        auto& enabled_buffer
+            = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
+        auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
+        auto buffer_elements = static_cast<std::size_t>(enabled_buffer->size() / sizeof(GLuint));
+
+        for (std::size_t i = 0; i < buffer_elements; ++i) {
+            buffer_ptr[i] &= ~(ACTIVE_FLAG | OUT_OF_BOUNDS_FLAG);
+        }
+
+        enabled_buffer->unmap();
+
         ++command_list.current_index;
-        command_list.command_counter = 0;
-
-        if (command_list.current_index == command_list.commands.size()) {
-            command_list.current_index = 0;
-            std::fill(command_list.cuboid_accesses.begin(), command_list.cuboid_accesses.end(), 0);
-
-            auto& enabled_buffer
-                = std::get<std::shared_ptr<ComplexVertexAttributeBuffer>>(mesh->get_vertex_buffer("enabled_cuboids"));
-            auto buffer_ptr = static_cast<GLuint*>(enabled_buffer->map(GL_READ_WRITE));
-            std::memset(buffer_ptr, 0, enabled_buffer->size());
-            enabled_buffer->unmap();
-        }
     }
 }
 

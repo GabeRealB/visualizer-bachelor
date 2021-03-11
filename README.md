@@ -31,19 +31,21 @@ cd visualizer
 
 ### General
 
-| Key | Description                     |
-| --- | ------------------------------- |
-| P   | Pause                           |
-| Y   | Run x 1                         |
-| X   | Run x 100                       |
-| C   | Run x 1000                      |
-| V   | Run x 10000                     |
-| B   | Run x 100000                    |
-| F   | Switch free/fixed               |
-| G   | Switch orthographic/perspective |
-| M   | Open materials menu             |
-| Alt | Show/Hide mouse                 |
-| Tab | Switch active window            |
+| Key          | Description                     |
+| ------------ | ------------------------------- |
+| R            | Reset                           |
+| P            | Pause                           |
+| Y            | Run x 1                         |
+| X            | Run x 100                       |
+| C            | Run x 1000                      |
+| V            | Run x 10000                     |
+| B            | Run x 100000                    |
+| F            | Switch free/fixed               |
+| G            | Switch orthographic/perspective |
+| M            | Open materials menu             |
+| Alt          | Show/Hide mouse                 |
+| Tab          | Switch active window            |
+| Scroll wheel | Change window size              |
 
 ### Orthographic (fixed)
 
