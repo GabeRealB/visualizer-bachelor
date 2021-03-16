@@ -1730,8 +1730,9 @@ void initialize_legend_entry(LegendGUI& gui, const Visconfig::Components::Legend
     gui.entries.push_back(std::move(image));
 }
 
-void initialize_component(
-    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CanvasComponent& component)
+void initialize_component(EntityDatabaseContext& database_context, Entity entity,
+    const Visconfig::Components::CanvasComponent& component,
+    const std::unordered_map<std::size_t, Entity>& entity_id_map)
 {
     Canvas canvas{};
 
@@ -1768,12 +1769,14 @@ void initialize_component(
 
             for (auto& component_group : component_gui.groups) {
                 CompositionGUIGroup group{};
+                group.group_id = component_group.second.id;
                 group.group_name = component_group.second.caption;
                 group.transparent = component_group.second.transparent;
                 group.position = glm::make_vec2(component_group.second.position.data());
 
                 for (auto& component_window : component_group.second.windows) {
                     CompositionGUIWindow window{};
+                    window.window_id = component_window.id;
                     window.window_name = component_window.name;
                     window.scaling = glm::make_vec2(component_window.scaling.data());
                     window.position = glm::make_vec2(component_window.position.data()) - group.position;
@@ -1793,6 +1796,31 @@ void initialize_component(
                     group_index_map.at(component_connection[0]),
                     group_index_map.at(component_connection[1]),
                 });
+            }
+
+            canvas.guis.push_back(std::move(gui));
+            break;
+        }
+        case Visconfig::Components::CanvasEntryType::ConfigDumpGUI: {
+            auto& component_gui = std::get<Visconfig::Components::ConfigDumpGUI>(entry.gui_data);
+
+            ConfigDumpGUI gui{};
+            gui.config_template = component_gui.config_template;
+
+            for (auto& id : component_gui.texture_ids) {
+                gui.windows.insert({ id, ConfigDumpGUITextureWindow{} });
+            }
+
+            for (auto& component_window : component_gui.windows) {
+                ConfigDumpGUICuboidWindow window{};
+                window.heatmap = component_window.heatmap;
+                window.heatmap_idx = component_window.heatmap_idx;
+
+                for (auto component_entity : component_window.entities) {
+                    window.entities.push_back(entity_id_map.at(component_entity));
+                }
+
+                gui.windows.insert({ component_window.id, std::move(window) });
             }
 
             canvas.guis.push_back(std::move(gui));
@@ -1889,7 +1917,7 @@ void initialize_entity(EntityDatabaseContext& database_context,
             break;
         case Visconfig::Components::ComponentType::Canvas:
             initialize_component(database_context, ecs_entity,
-                *std::static_pointer_cast<const Visconfig::Components::CanvasComponent>(component.data));
+                *std::static_pointer_cast<const Visconfig::Components::CanvasComponent>(component.data), entityIdMap);
             break;
         }
     }

@@ -148,6 +148,9 @@ def generate(config, template, output):
                 code_str = code_str + """\t{}.set_position({}f, {}f);\n""" \
                     .format(container_name, element["position"][0], element["position"][1])
 
+                code_str = code_str + """\t{}.set_id("{}");\n""" \
+                    .format(container_name, element["internal_id"])
+
                 for cuboid in element["infos"]:
                     cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")
                     fill_active = ", ".join([str(c) for c in cuboid["color"]["fill_active"]])
@@ -202,15 +205,16 @@ def generate(config, template, output):
             if "image" in element:
                 image = element["image"]
                 caption = element["caption"]
+                internal_id = element["internal_id"]
                 scale = element["scale"]
                 position = element["position"]
 
                 image_name = "img_" + str(uuid.uuid4()).replace("-", "_")
                 position_str = ", ".join([str(c) for c in position])
 
-                code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", "{}", "{}", {{ {} }}, 
-                "{}");\n\n""" \
-                    .format(scale, name, image_name, caption, position_str, image) \
+                code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", "{}", "{}", "{}", 
+                {{ {} }}, "{}");\n\n""" \
+                    .format(scale, name, image_name, caption, internal_id, position_str, image) \
                     .expandtabs(4)
 
     code_str = code_str + "\n"

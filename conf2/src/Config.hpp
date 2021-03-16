@@ -260,6 +260,8 @@ public:
 
     std::array<float, 2> position() const { return m_position; }
 
+    const std::string& id() const { return m_id; }
+
     const std::optional<HeatmapInfo>& heatmap() const { return m_heatmap; }
 
     void set_size(float size) { m_size = size; }
@@ -269,6 +271,8 @@ public:
         m_position[0] = x;
         m_position[1] = y;
     }
+
+    void set_id(const std::string& id) { m_id = id; }
 
     void add_cuboid(const CuboidContainer& cuboid, const std::set<std::string>& requirements)
     {
@@ -308,6 +312,7 @@ public:
 
 private:
     float m_size;
+    std::string m_id;
     std::array<float, 2> m_position;
     std::optional<HeatmapInfo> m_heatmap;
     std::vector<CuboidContainer> m_cuboids;
@@ -404,11 +409,12 @@ private:
 class ImageResource {
 public:
     ImageResource(float size, const std::string& group, const std::string& name, const std::string& caption,
-        const std::array<float, 2>& position, const std::filesystem::path& path)
+        const std::string& id, const std::array<float, 2>& position, const std::filesystem::path& path)
         : m_size{ size }
         , m_name{ name }
         , m_group{ group }
         , m_caption{ caption }
+        , m_id{ id }
         , m_path{ path }
         , m_position{ position }
     {
@@ -428,6 +434,8 @@ public:
 
     const std::string& caption() const { return m_caption; }
 
+    const std::string& id() const { return m_id; }
+
     const std::filesystem::path& path() const { return m_path; }
 
     const std::array<float, 2>& position() const { return m_position; }
@@ -437,6 +445,7 @@ private:
     std::string m_name;
     std::string m_group;
     std::string m_caption;
+    std::string m_id;
     std::filesystem::path m_path;
     std::array<float, 2> m_position;
 };
@@ -484,9 +493,9 @@ public:
     }
 
     void add_image_resource(float size, const std::string& group, const std::string& name, const std::string& caption,
-        const std::array<float, 2>& position, const std::filesystem::path& path)
+        const std::string& id, const std::array<float, 2>& position, const std::filesystem::path& path)
     {
-        m_resources.push_back(ImageResource{ size, group, name, caption, position, path });
+        m_resources.push_back(ImageResource{ size, group, name, caption, id, position, path });
     }
 
     std::span<const ImageResource> get_resources() const { return { m_resources.data(), m_resources.size() }; }

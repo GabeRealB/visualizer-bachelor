@@ -325,7 +325,7 @@ struct CopyComponent : public ComponentData {
     std::vector<CopyOperation> operations;
 };
 
-enum class CanvasEntryType { LegendGUI, CompositionGUI };
+enum class CanvasEntryType { LegendGUI, CompositionGUI, ConfigDumpGUI };
 
 enum class LegendGUIEntryType { ColorEntry, ImageEntry };
 
@@ -355,6 +355,7 @@ struct LegendGUI {
 };
 
 struct CompositionGUIWindow {
+    std::string id;
     std::string name;
     bool flip_vertical;
     std::string texture_name;
@@ -364,6 +365,7 @@ struct CompositionGUIWindow {
 
 struct CompositionGUIGroup {
     bool transparent;
+    std::string id;
     std::string caption;
     std::array<float, 2> position;
     std::vector<CompositionGUIWindow> windows;
@@ -375,11 +377,24 @@ struct CompositionGUI {
     std::vector<std::array<std::string, 2>> group_connections;
 };
 
+struct ConfigDumpGUIWindow {
+    bool heatmap;
+    std::string id;
+    std::size_t heatmap_idx;
+    std::vector<std::size_t> entities;
+};
+
+struct ConfigDumpGUI {
+    std::string config_template;
+    std::vector<std::string> texture_ids;
+    std::vector<ConfigDumpGUIWindow> windows;
+};
+
 struct CanvasEntry {
     CanvasEntryType type;
     std::array<float, 2> size;
     std::array<float, 2> position;
-    std::variant<LegendGUI, CompositionGUI> gui_data;
+    std::variant<LegendGUI, CompositionGUI, ConfigDumpGUI> gui_data;
 
     static constexpr const char* type_json{ "type" };
     static constexpr const char* size_json{ "size" };
@@ -515,6 +530,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(CanvasEntryType,
     {
         { CanvasEntryType::LegendGUI, "legend_gui" },
         { CanvasEntryType::CompositionGUI, "composition_gui" },
+        { CanvasEntryType::ConfigDumpGUI, "config_dump_gui" },
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
@@ -581,11 +597,15 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, descrip
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, label, caption, color)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, name, flip_vertical, texture_name, scaling, position)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, id, name, flip_vertical, texture_name, scaling, position)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, caption, position, windows)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, id, caption, position, windows)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, background_color, groups, group_connections)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConfigDumpGUIWindow, heatmap, id, heatmap_idx, entities)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConfigDumpGUI, config_template, texture_ids, windows)
 
 void to_json(nlohmann::json& j, const LegendGUIEntry& v);
 void from_json(const nlohmann::json& j, LegendGUIEntry& v);

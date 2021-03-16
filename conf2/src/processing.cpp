@@ -588,6 +588,7 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
     ViewCommandList command_list{};
 
     command_list.view_name = view_name;
+    command_list.id = view_container.id();
     command_list.size = view_container.size();
     command_list.position = view_container.position();
     command_list.cuboids.reserve(view_container.get_num_cuboids());
@@ -635,6 +636,9 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
     auto& heatmap_opt = view_container.heatmap();
     if (heatmap_opt.has_value()) {
         auto& heatmap = heatmap_opt.value();
+
+        command_list.heatmap = true;
+        command_list.heatmap_idx = heatmap.idx;
 
         CuboidCommandList cuboid_command_list{};
         cuboid_command_list.active_fill_color = { 0, 0, 0, 0 };

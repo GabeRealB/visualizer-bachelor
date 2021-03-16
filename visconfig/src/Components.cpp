@@ -763,6 +763,12 @@ void from_json(const nlohmann::json& j, CanvasEntry& v)
         v.gui_data = std::move(gui);
         break;
     }
+    case CanvasEntryType::ConfigDumpGUI: {
+        ConfigDumpGUI gui;
+        from_json(j[CanvasEntry::gui_data_json], gui);
+        v.gui_data = std::move(gui);
+        break;
+    }
     }
 }
 
