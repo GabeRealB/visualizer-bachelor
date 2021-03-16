@@ -5,8 +5,9 @@
 @material uint 1 max_access_count
 @material uint 1 heatmap_color_count
 @material vec4 1 active_fill_color
-@material vec4 1 out_of_bounds_fill_color
 @material vec4 1 inactive_fill_color
+@material vec4 1 oob_active_color
+@material vec4 1 oob_inactive_color
 @material vec4 10 heatmap_fill_colors
 @material sampler2D 1 grid_texture_front
 @material sampler2D 1 grid_texture_side
@@ -18,8 +19,9 @@ uniform uint max_access_count;
 uniform uint heatmap_color_count;
 
 uniform vec4 active_fill_color;
-uniform vec4 out_of_bounds_fill_color;
 uniform vec4 inactive_fill_color;
+uniform vec4 oob_active_color;
+uniform vec4 oob_inactive_color;
 uniform vec4 heatmap_fill_colors[10];
 
 uniform sampler2D grid_texture_front;
@@ -83,7 +85,7 @@ vec4 fetch_sample_color() {
     if (active_bit) {
         if (out_of_bounds_bit) {
             // Draw out of bounds.
-            return out_of_bounds_fill_color;
+            return oob_active_color;
         } else if (heatmap_bit) {
             // Draw heatmap with active tones.
             return mix(active_fill_color, fetch_heatmap_color(), 0.5f);
@@ -96,7 +98,12 @@ vec4 fetch_sample_color() {
         return fetch_heatmap_color();
     } else {
         // Draw inactive
-        return inactive_fill_color;
+        if (out_of_bounds_bit) {
+            // Draw out of bounds.
+            return oob_inactive_color;
+        } else {
+            return inactive_fill_color;
+        }
     }
 }
 

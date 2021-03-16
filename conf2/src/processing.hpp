@@ -65,10 +65,11 @@ struct HeatmapData {
 struct CuboidCommandList {
     std::size_t max_accesses;
     CuboidColor active_fill_color;
-    CuboidColor out_of_bounds_fill_color;
     CuboidColor inactive_fill_color;
     CuboidColor active_border_color;
     CuboidColor inactive_border_color;
+    CuboidColor oob_active_color;
+    CuboidColor oob_inactive_color;
     std::vector<CuboidCommand> commands;
     std::vector<CuboidInfo> positions;
     std::vector<std::size_t> access_counters;

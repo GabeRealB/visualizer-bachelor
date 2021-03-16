@@ -74,10 +74,9 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
     auto legend_entries = ConfigContainer::get_instance().legend_entries();
     for (auto& legend_entry : legend_entries) {
         if (std::holds_alternative<ColorLegend>(legend_entry)) {
-            auto& color = std::get<ColorLegend>(legend_entry);
-            auto entity = view_entity_map[color.view_name()][color.cuboid_idx()];
+            auto& color_legend = std::get<ColorLegend>(legend_entry);
             add_color_legend(
-                world.entities.front(), color.label(), color.description(), "active_fill_color", entity, 1);
+                world.entities.front(), color_legend.label(), color_legend.caption(), color_legend.color());
         } else if (std::holds_alternative<ImageLegend>(legend_entry)) {
             auto& image = std::get<ImageLegend>(legend_entry);
             std::vector<Visconfig::Assets::TextureAttributes> texture_attributes = {
@@ -115,7 +114,6 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             Visconfig::Assets::TextureAttributes::GenerateMipMaps,
         };
 
-        auto texture_name = "conf2_generated_" + resource.name();
         auto texture_path = generation_options.resource_directory / resource.path();
         auto asset_texture_relative_path = generation_options.assets_texture_directory_path / resource.path();
         auto asset_texture_path = generation_options.working_directory / asset_texture_relative_path;
@@ -126,9 +124,11 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             std::filesystem::copy(texture_path, asset_texture_path);
         }
 
-        assets.push_back(create_texture_asset(texture_name, asset_texture_relative_path, texture_attributes));
-        add_composition_gui_image(world.entities.front(), resource.name(), texture_name,
-            { resource.size(), resource.size() }, resource.position());
+        auto& group_caption = ConfigContainer::get_instance().get_group_caption(resource.group());
+        auto& group_position = ConfigContainer::get_instance().get_group_position(resource.group());
+        assets.push_back(create_texture_asset(resource.name(), asset_texture_relative_path, texture_attributes));
+        add_composition_gui_image(world.entities.front(), resource.group(), group_caption, group_position,
+            resource.caption(), resource.name(), { resource.size(), resource.size() }, resource.position());
     }
 
     return world;
@@ -291,8 +291,10 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     auto size = view_commands.size;
     extend_camera_switcher(coordinator_entity, camera_entity_id);
     auto& group_name = ConfigContainer::get_instance().get_group_association(view_commands.view_name);
-    add_composition_gui_window(coordinator_entity, group_name, view_commands.view_name, render_texture_name,
-        { size, size }, view_commands.position);
+    auto& group_caption = ConfigContainer::get_instance().get_group_caption(group_name);
+    auto& group_position = ConfigContainer::get_instance().get_group_position(group_name);
+    add_composition_gui_window(coordinator_entity, group_name, group_caption, group_position, view_commands.view_name,
+        render_texture_name, { size, size }, view_commands.position);
 
     return generated_entities;
 }

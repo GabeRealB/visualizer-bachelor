@@ -1,5 +1,5 @@
 {
-  "PAR_CLOCK" : {
+  "par_clock" : {
     "wg_id_1": [ 1, 2        ],
     "wg_id_2": [ 1, 2        ],
     "wg_id_3": [ 1, 2        ],
@@ -7,7 +7,7 @@
     "wi_id_2": [ 1, 2        ],
     "wi_id_3": [ 1, 2        ]
   },
-  "SEQ_CLOCK" : {
+  "seq_clock" : {
     "lcl_til_id_1": [ 1, 2         ],
     "lcl_til_id_2": [ 1, 2         ],
     "lcl_til_id_3": [ 1, 2         ],
@@ -18,248 +18,316 @@
     "seq_til_id_2": [ 1, 2         ],
     "seq_til_id_3": [ 1, 2         ]
   },
-  "LEGEND": {
-    "sample": {
-      "type": "color",
-      "data": {
-        "color": ["computation", 2],
-        "description": "... layer"
-      }
+  "cubes" : {
+    "A": [
+      // 1. Würfel: IS (global memory)
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, 0         ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_1", "wg_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ,
+        [ 0                            , 0                              ] ],
+      // 3. Würfel: local tiles (local memory)
+      [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1)*(32 /2       /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ,
+        [ 0                                                                        , 0                                                                          ] ],
+      // 4. Würfel: private tiles (private memory)
+      [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1)*(32 /2       /2        /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                              , 0                                                                                                                                ] ],
+      // 5. Würfel: sequential tiles
+      [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3", "seq_til_id_1", "seq_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                                                                                              , 0                                                                                                                                                                                                ] ],
+      // 6. Würfel: WIs
+      [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3", "seq_til_id_1", "seq_til_id_3", "wi_id_1", "wi_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                  ] ]
+    ],
+    "B": [
+      // 1. Würfel: IS (global memory)
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, 0         ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_3", "wg_id_2" ],
+        [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
+        [ 0                            , 0                              ] ],
+      // 3. Würfel: local tiles (local memory)
+      [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2" ],
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2)*(32 /2       /2        ) - 1" ] ,
+        [ 0                                                                        , 0                                                                          ] ],
+      // 4. Würfel: private tiles (private memory)
+      [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2" ],
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2)*(32 /2       /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                              , 0                                                                                                                                ] ],
+      // 5. Würfel: sequential tiles
+      [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2", "seq_til_id_3", "seq_til_id_2" ],
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                                                                                              , 0                                                                                                                                                                                                ] ],
+      // 6. Würfel: WIs
+      [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2", "seq_til_id_3", "seq_til_id_2", "wi_id_3", "wi_id_2" ],
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                    ] ]
+    ],
+    "inp_mda": [
+      // 1. Würfel: IS
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ],
+      // 3. Würfel: WIs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ]
+    ],
+    "computation": [
+      // 1. Würfel: IS
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ],
+      // 3. Würfel: local tiles
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1)*(32 /2       /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2)*(32 /2       /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ],
+      // 4. Würfel: private tiles
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1)*(32 /2       /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2)*(32 /2       /2        /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ],
+      // 5. Würfel: sequential tiles
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ],
+      // 6. Würfel: WIs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ]
+    ],
+    "out_mda": [
+      // 1. Würfel: IS
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, 0         ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
+        [ 0                            , 0                              ] ],
+      // 3. Würfel: local tiles (local memory)
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1)*(32 /2       /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2)*(32 /2       /2        ) - 1" ] ,
+        [ 0                                                                        , 0                                                                          ] ],
+      // 4. Würfel: private tiles (private memory)
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1)*(32 /2       /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2)*(32 /2       /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                              , 0                                                                                                                                ] ],
+      // 5. Würfel: sequential tiles
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2)*(32 /2       /2        /2        /2        ) - 1" ] ,
+        [ 0                                                                                                                                                                                              , 0                                                                                                                                                                                                ] ],
+      // 6. Würfel: WIs
+      [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                    ] ]
+    ],
+    "C": [
+      // 1. Würfel: IS (global memory)
+      [ [  ],
+        [ 0, "32  - 1" ] ,
+        [ 0, "32  - 1" ] ,
+        [ 0, 0         ] ],
+      // 2. Würfel: WGs
+      [ [ "wg_id_1", "wg_id_2" ],
+        [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
+        [ 0                            , 0                              ] ],
+      // 3. Würfel: WIs
+      [ [ "wg_id_1", "wg_id_2", "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wi_id_1", "wi_id_2" ],
+        [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
+        [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                    ] ]
+    ]
+  },
+  
+  "appearance": {
+    "background color": [ 0  , 0  , 0  , 255 ],
+
+    "grouping": {
+      "groups": {
+        "input buffer": {
+          "caption": "Input buffer",
+          "position": [0.01, 0.53],
+          "elements": [
+            {
+              "cube": "A",
+              "caption": "Buffer A",
+              "scale": 0.32,
+              "position": [0.01, 0.53],
+              "colors": [
+                { "fill_active": [ 255, 255, 255, 160 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 255, 150, 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 255, 0  , 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ],
+              "heatmap": {
+                "cuboid": 5,
+                "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ] ],
+                "colors_start": [ 0.0, 1.0 ]
+              }
+            },
+            {
+              "cube": "B",
+              "caption": "Buffer B",
+              "scale": 0.32,
+              "position": [0.34, 0.53],
+              "colors": [
+                { "fill_active": [ 255, 255, 255, 160 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 255, 150, 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 255, 0  , 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ],
+              "heatmap": {
+                "cuboid": 5,
+                "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ] ],
+                "colors_start": [ 0.0, 1.0 ]
+              }
+            },
+            {
+              "image": "image.png",
+              "caption": "...",
+              "scale": 0.32,
+              "position": [0.01, 0.6]
+            }
+          ]
+        },
+        "inp_mda": {
+          "caption": "Input MDA",
+          "position": [0.01, 0.15],
+          "elements": [
+            {
+              "cube": "inp_mda",
+              "caption": "Input MDA",
+              "scale": 0.32,
+              "position": [0.01, 0.15],
+              "colors": [
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 128, 128, 128, 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ]
+            }
+          ]
+        },
+        "computation": {
+          "caption": "",
+          "position": [0.34, 0.15],
+          "elements": [
+            {
+              "cube": "computation",
+              "caption": "",
+              "scale": 0.32,
+              "position": [0.34, 0.15],
+              "colors": [
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 3  , 252, 115, 128 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 252, 186, 3  , 128 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 128, 128, 128, 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ]
+            }
+          ]
+        },
+        "out_mda": {
+          "caption": "Output MDA",
+          "position": [0.01, 0.15],
+          "elements": [
+            {
+              "cube": "out_mda",
+              "caption": "Output MDA",
+              "scale": 0.32,
+              "position": [0.01, 0.15],
+              "colors": [
+                { "fill_active": [ 28 , 108, 105, 120 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 229, 197,  75, 200 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 128, 128, 128, 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ]
+            }
+          ]
+        },
+        "output buffer": {
+          "caption": "",
+          "position": [0.67, 0.53],
+          "elements": [
+            {
+              "cube": "C",
+              "caption": "Buffer C",
+              "scale": 0.32,
+              "position": [0.67, 0.53],
+              "colors": [
+                { "fill_active": [ 255, 255, 255, 160 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 0   ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] },
+                { "fill_active": [ 0  , 0  , 0  , 255 ], "fill_inactive": [ 0  , 0  , 0  , 0   ], "border_active": [ 10 , 10 , 10 , 255 ], "border_inactive": [ 80 , 80 , 80 , 255 ], "oob_active": [ 255, 0  , 0  , 255 ], "oob_inactive": [ 0  , 0  , 0  , 0   ] }
+              ]
+            }
+          ]
+        }
+      },
+      "arrows": [
+        ["input buffer", "inp_mda"      ],
+        ["inp_mda"     , "computation"  ],
+        ["computation" , "out_mda"      ],
+        ["out_mda"     , "output buffer"]
+      ]
     },
-    "thread": {
-      "type": "color",
-      "data": {
-        "color": ["computation", 5],
-        "description": "Thread layer"
+    "legend": {
+      "sample": {
+        "color": [100, 100, 100, 255],
+        "caption": "... layer"
+      },
+      "thread": {
+        "color": [100, 100, 100, 255],
+        "caption": "Threads"
       }
     }
-  },
-  "STRUCTURE": {
-    "GROUPS": {
-      "1": [ "buffer A", "buffer B" ],
-      "2": [ "input mda" ],
-      "3": [ "computation" ],
-      "4": [ "output mda" ],
-      "5": [ "buffer C" ]
-    },
-    "ARROWS": [ [ "1", "2" ], [ "2", "3" ], [ "3", "4" ], [ "4", "5" ] ]
-  },
-  "CUBES" : {
-    "buffer A": {
-      "heatmap": {
-        "cuboid": 5,
-        "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ], [ 0  , 0  , 255, 255 ] ],
-        "colors_start": [ 0.0, 0.5, 1.0 ]
-      },
-      "mapping": [
-        [ [  ],
-          [ 0, "32  - 1" ] ,
-          [ 0, "32  - 1" ] ,
-          [ 0, 0         ] ],
-        [ [ "wg_id_1", "wg_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ,
-          [ 0                            , 0                              ] ],
-        [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1)*(32 /2       /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ,
-          [ 0                                                                        , 0                                                                          ] ],
-        [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1)*(32 /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ,
-          [ 0                                                                                                                              , 0                                                                                                                                ] ],
-        [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3", "seq_til_id_1", "seq_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ 0                                                                                                                                                                                              , 0                                                                                                                                                                                                ] ],
-        [ [ "wg_id_1", "wg_id_3", "lcl_til_id_1", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_3", "seq_til_id_1", "seq_til_id_3", "wi_id_1", "wi_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                  ] ]
-      ],
-      "COLOR": [
-        [ [ 255, 255, 255, 160 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 255, 150, 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 255, 0  , 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.01, 0.53]
-      }
-    },
-    "buffer B": {
-      "heatmap": {
-        "cuboid": 5,
-        "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ], [ 0  , 0  , 255, 255 ] ],
-        "colors_start": [ 0.0, 0.5, 1.0 ]
-      },
-      "mapping": [
-        [ [  ],
-          [ 0, "32  - 1" ] ,
-          [ 0, "32  - 1" ] ,
-          [ 0, 0         ] ],
-        [ [ "wg_id_3", "wg_id_2" ],
-          [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
-          [ 0                            , 0                              ] ],
-        [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2" ],
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2)*(32 /2       /2        ) - 1" ] ,
-          [ 0                                                                        , 0                                                                          ] ],
-        [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2" ],
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2)*(32 /2       /2        /2        ) - 1" ] ,
-          [ 0                                                                                                                              , 0                                                                                                                                ] ],
-        [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2", "seq_til_id_3", "seq_til_id_2" ],
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ 0                                                                                                                                                                                              , 0                                                                                                                                                                                                ] ],
-        [ [ "wg_id_3", "wg_id_2", "lcl_til_id_3", "lcl_til_id_2", "prv_til_id_3", "prv_til_id_2", "seq_til_id_3", "seq_til_id_2", "wi_id_3", "wi_id_2" ],
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                    ] ]
-      ],
-      "COLOR": [
-        [ [ 255, 255, 255, 160 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 255, 150, 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 255, 0  , 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.34, 0.53]
-      }
-    },
-    "input mda": {
-      "mapping": [
-        [ [  ],
-          [ 0, "2       *2       -1" ] ,
-          [ 0, "2       *2       -1" ] ,
-          [ 0, "2       *2       -1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
-          [ "(wg_id_1-1)*(2       )" , "(wg_id_1)*(2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(2       )" , "(wg_id_2)*(2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(2       )" , "(wg_id_3)*(2       ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
-          [ "(wg_id_1-1)*(2       ) + (wi_id_1-1)" , "(wg_id_1-1)*(2       ) + (wi_id_1) - 1" ] ,
-          [ "(wg_id_2-1)*(2       ) + (wi_id_2-1)" , "(wg_id_2-1)*(2       ) + (wi_id_2) - 1" ] ,
-          [ "(wg_id_3-1)*(2       ) + (wi_id_3-1)" , "(wg_id_3-1)*(2       ) + (wi_id_3) - 1" ] ]
-      ],
-      "COLOR": [
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 128, 128, 128, 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.01, 0.15]
-      }
-    },
-    "computation": {
-      "mapping": [
-        [ [  ],
-          [ 0, "32  - 1" ] ,
-          [ 0, "32  - 1" ] ,
-          [ 0, "32  - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       )" , "(wg_id_3)*(32 /2       ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1)*(32 /2       /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2)*(32 /2       /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3)*(32 /2       /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1)*(32 /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2)*(32 /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3)*(32 /2       /2        /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2)*(32 /2       /2        /2        /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3)*(32 /2       /2        /2        /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "lcl_til_id_1", "lcl_til_id_2", "lcl_til_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_3-1)*(32 /2       ) + (lcl_til_id_3-1)*(32 /2       /2        ) + (prv_til_id_3-1)*(32 /2       /2        /2        ) + (seq_til_id_3-1)*(32 /2       /2        /2        /2        ) + (wi_id_3)*(32 /2       /2        /2        /2        /2       ) - 1" ] ]
-      ],
-      "COLOR": [
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 3  , 252, 115, 128 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 252, 186, 3  , 128 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 128, 128, 128, 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.34, 0.15]
-      }
-    },
-    "output mda": {
-      "mapping": [
-        [ [  ],
-          [ 0 , "(32 /2        ) - 1" ] ,
-          [ 0 , "(32 /2        ) - 1" ] ,
-          [ 0 , "(32 /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3" ],
-          [ "(wg_id_1-1)*(32 /2        /2       )" , "(wg_id_1)*(32 /2        /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2        /2       )" , "(wg_id_2)*(32 /2        /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2        /2       )" , "(wg_id_3)*(32 /2        /2       ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1-1)*(32 /2        /2       /2        )" , "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1)*(32 /2        /2       /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2-1)*(32 /2        /2       /2        )" , "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2)*(32 /2        /2       /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3-1)*(32 /2        /2       /2        )" , "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3)*(32 /2        /2       /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3" ],
-          [ "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1-1)*(32 /2        /2       /2        ) + (seq_til_id_1-1)*(32 /2        /2       /2        /2        )" , "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1-1)*(32 /2        /2       /2        ) + (seq_til_id_1)*(32 /2        /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2-1)*(32 /2        /2       /2        ) + (seq_til_id_2-1)*(32 /2        /2       /2        /2        )" , "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2-1)*(32 /2        /2       /2        ) + (seq_til_id_2)*(32 /2        /2       /2        /2        ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3-1)*(32 /2        /2       /2        ) + (seq_til_id_3-1)*(32 /2        /2       /2        /2        )" , "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3-1)*(32 /2        /2       /2        ) + (seq_til_id_3)*(32 /2        /2       /2        /2        ) - 1" ] ],
-        [ [ "wg_id_1", "wg_id_2", "wg_id_3", "prv_til_id_1", "prv_til_id_2", "prv_til_id_3", "seq_til_id_1", "seq_til_id_2", "seq_til_id_3", "wi_id_1", "wi_id_2", "wi_id_3" ],
-          [ "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1-1)*(32 /2        /2       /2        ) + (seq_til_id_1-1)*(32 /2        /2       /2        /2        ) + (wi_id_1-1)*(32 /2        /2       /2        /2        /2       )" , "(wg_id_1-1)*(32 /2        /2       ) + (prv_til_id_1-1)*(32 /2        /2       /2        ) + (seq_til_id_1-1)*(32 /2        /2       /2        /2        ) + (wi_id_1)*(32 /2        /2       /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2-1)*(32 /2        /2       /2        ) + (seq_til_id_2-1)*(32 /2        /2       /2        /2        ) + (wi_id_2-1)*(32 /2        /2       /2        /2        /2       )" , "(wg_id_2-1)*(32 /2        /2       ) + (prv_til_id_2-1)*(32 /2        /2       /2        ) + (seq_til_id_2-1)*(32 /2        /2       /2        /2        ) + (wi_id_2)*(32 /2        /2       /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3-1)*(32 /2        /2       /2        ) + (seq_til_id_3-1)*(32 /2        /2       /2        /2        ) + (wi_id_3-1)*(32 /2        /2       /2        /2        /2       )" , "(wg_id_3-1)*(32 /2        /2       ) + (prv_til_id_3-1)*(32 /2        /2       /2        ) + (seq_til_id_3-1)*(32 /2        /2       /2        /2        ) + (wi_id_3)*(32 /2        /2       /2        /2        /2       ) - 1" ] ]
-      ],
-      "COLOR": [
-        [ [ 28 , 108, 105, 120 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 229, 197,  75, 200 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 128, 128, 128, 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.67, 0.15]
-      }
-    },
-    "buffer C": {
-      "mapping": [
-        [ [  ],
-          [ 0, "32  - 1" ] ,
-          [ 0, "32  - 1" ] ,
-          [ 0, 0         ] ],
-        [ [ "wg_id_1", "wg_id_2" ],
-          [ "(wg_id_1-1)*(32 /2       )" , "(wg_id_1)*(32 /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       )" , "(wg_id_2)*(32 /2       ) - 1" ] ,
-          [ 0                            , 0                              ] ],
-        [ [ "wg_id_1", "wg_id_2", "lcl_til_id_1", "lcl_til_id_2", "prv_til_id_1", "prv_til_id_2", "seq_til_id_1", "seq_til_id_2", "wi_id_1", "wi_id_2" ],
-          [ "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_1-1)*(32 /2       ) + (lcl_til_id_1-1)*(32 /2       /2        ) + (prv_til_id_1-1)*(32 /2       /2        /2        ) + (seq_til_id_1-1)*(32 /2       /2        /2        /2        ) + (wi_id_1)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2-1)*(32 /2       /2        /2        /2        /2       )" , "(wg_id_2-1)*(32 /2       ) + (lcl_til_id_2-1)*(32 /2       /2        ) + (prv_til_id_2-1)*(32 /2       /2        /2        ) + (seq_til_id_2-1)*(32 /2       /2        /2        /2        ) + (wi_id_2)*(32 /2       /2        /2        /2        /2       ) - 1" ] ,
-          [ 0                                                                                                                                                                                                                                                                  , 0                                                                                                                                                                                                                                                                    ] ]
-      ],
-      "COLOR": [
-        [ [ 255, 255, 255, 160 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 0   ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ],
-        [ [ 0  , 0  , 0  , 255 ], [ 0  , 0  , 0  , 0   ], [ 10 , 10 , 10 , 255 ], [ 80 , 80 , 80 , 255 ] ]
-      ],
-      "arrangement": {
-        "size": 0.32,
-        "position": [0.67, 0.53]
-      }
-    }
-  },
-  "IMAGES": {}
+  }
 }

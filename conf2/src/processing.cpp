@@ -594,11 +594,12 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
 
     for (auto& cuboid_container : view_container.get_cuboids()) {
         CuboidCommandList cuboid_command_list{};
-        cuboid_command_list.active_fill_color = cuboid_container.fill_color;
-        cuboid_command_list.out_of_bounds_fill_color = cuboid_container.out_of_bounds_color;
-        cuboid_command_list.inactive_fill_color = { 0, 0, 0, 0 };
-        cuboid_command_list.active_border_color = cuboid_container.active_color;
-        cuboid_command_list.inactive_border_color = cuboid_container.unused_color;
+        cuboid_command_list.active_fill_color = cuboid_container.fill_active;
+        cuboid_command_list.inactive_fill_color = cuboid_container.fill_inactive;
+        cuboid_command_list.active_border_color = cuboid_container.border_active;
+        cuboid_command_list.inactive_border_color = cuboid_container.border_inactive;
+        cuboid_command_list.oob_active_color = cuboid_container.oob_active;
+        cuboid_command_list.oob_inactive_color = cuboid_container.oob_inactive;
         command_list.cuboids.push_back(std::move(cuboid_command_list));
     }
 
@@ -637,10 +638,11 @@ ViewCommandList generate_view_command_list(const std::string& view_name, const V
 
         CuboidCommandList cuboid_command_list{};
         cuboid_command_list.active_fill_color = { 0, 0, 0, 0 };
-        cuboid_command_list.out_of_bounds_fill_color = { 0, 0, 0, 0 };
         cuboid_command_list.inactive_fill_color = { 0, 0, 0, 0 };
         cuboid_command_list.active_border_color = { 0, 0, 0, 0 };
         cuboid_command_list.inactive_border_color = { 0, 0, 0, 0 };
+        cuboid_command_list.oob_active_color = { 0, 0, 0, 0 };
+        cuboid_command_list.oob_inactive_color = { 0, 0, 0, 0 };
         command_list.cuboids.push_back(cuboid_command_list);
 
         command_list.cuboids.back().heatmap = { heatmap.colors_start, heatmap.colors };

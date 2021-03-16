@@ -95,21 +95,13 @@ void render_legend_entry(EntityDatabaseContext&, const LegendGUIImage& image_ent
     }
 }
 
-void render_legend_entry(EntityDatabaseContext& database_context, const LegendGUIColor& color_entry)
+void render_legend_entry(EntityDatabaseContext&, const LegendGUIColor& color_entry)
 {
-    assert(database_context.entity_has_component<Material>(color_entry.entity));
-
-    auto& material = database_context.fetch_component_unchecked<Material>(color_entry.entity);
-    auto& color = *material.m_passes[color_entry.pass].m_material_variables.getPtr<glm::vec4>(color_entry.attribute, 1);
-
-    ImVec4 im_color = { color.r, color.g, color.b, color.a };
+    ImVec4 im_color = { color_entry.color.r, color_entry.color.g, color_entry.color.b, color_entry.color.a };
 
     ImGui::ColorButton(color_entry.label.c_str(), im_color);
     ImGui::SameLine(40.0f);
-    ImGui::Text("%s", color_entry.label.c_str());
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", color_entry.description.c_str());
-    }
+    ImGui::Text("%s", color_entry.caption.c_str());
 }
 
 void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
@@ -128,13 +120,18 @@ void render_gui(EntityDatabaseContext&, CompositionGUI& gui)
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings
         | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
+    ImVec4 color = { gui.background_color.r, gui.background_color.g, gui.background_color.b, gui.background_color.a };
+
     ImGui::SetNextWindowPos(window_pos);
     ImGui::SetNextWindowSize(window_size);
-    ImGui::SetNextWindowBgAlpha(0.0f);
+    ImGui::SetNextWindowBgAlpha(gui.background_color.a);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, color);
 
     if (!ImGui::Begin("CompositionGUI", nullptr, window_flags)) {
         ImGui::End();
     }
+
+    ImGui::PopStyleColor();
 
     if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) && (gui.selected_group || gui.selected_window)) {
         gui.selected_group = 0;

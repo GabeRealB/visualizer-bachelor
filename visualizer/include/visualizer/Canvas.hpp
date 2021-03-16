@@ -19,11 +19,9 @@ struct LegendGUIImage {
 };
 
 struct LegendGUIColor {
-    Entity entity;
-    std::size_t pass;
+    glm::vec4 color;
     std::string label;
-    std::string description;
-    std::string attribute;
+    std::string caption;
 };
 
 struct LegendGUI {
@@ -50,6 +48,7 @@ struct CompositionGUIGroup {
 struct CompositionGUI {
     glm::vec2 size;
     glm::vec2 position;
+    glm::vec4 background_color;
     std::size_t selected_group;
     std::size_t selected_window;
     std::vector<CompositionGUIGroup> groups;

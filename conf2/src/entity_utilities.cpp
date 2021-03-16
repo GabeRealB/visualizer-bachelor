@@ -1,5 +1,7 @@
 #include "entity_utilities.hpp"
 
+#include "Config.hpp"
+
 namespace Config {
 
 constexpr std::size_t coordinator_camera_switcher_idx = 0;
@@ -36,6 +38,16 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
         { 0.0f, 0.0f },
         Visconfig::Components::LegendGUI{},
     });
+
+    auto& background_color = ConfigContainer::get_instance().background_color();
+    auto& composition_gui
+        = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
+    composition_gui.background_color = {
+        background_color[0] / 255.0f,
+        background_color[1] / 255.0f,
+        background_color[2] / 255.0f,
+        background_color[3] / 255.0f,
+    };
 
     return entity;
 }
@@ -149,10 +161,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto accum_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto revealage_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
-    auto out_of_bounds_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto oob_active_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
+    auto oob_inactive_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
 
     auto max_access_count_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
     auto heatmap_color_count_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
@@ -180,12 +193,6 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         command_list.active_fill_color[2] / 255.0f,
         command_list.active_fill_color[3] / 255.0f,
     };
-    out_of_bounds_fill_color_attribute->value = {
-        command_list.out_of_bounds_fill_color[0] / 255.0f,
-        command_list.out_of_bounds_fill_color[1] / 255.0f,
-        command_list.out_of_bounds_fill_color[2] / 255.0f,
-        command_list.out_of_bounds_fill_color[3] / 255.0f,
-    };
     inactive_fill_color_attribute->value = {
         command_list.inactive_fill_color[0] / 255.0f,
         command_list.inactive_fill_color[1] / 255.0f,
@@ -203,6 +210,18 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         command_list.inactive_border_color[1] / 255.0f,
         command_list.inactive_border_color[2] / 255.0f,
         command_list.inactive_border_color[3] / 255.0f,
+    };
+    oob_active_color_attribute->value = {
+        command_list.oob_active_color[0] / 255.0f,
+        command_list.oob_active_color[1] / 255.0f,
+        command_list.oob_active_color[2] / 255.0f,
+        command_list.oob_active_color[3] / 255.0f,
+    };
+    oob_inactive_color_attribute->value = {
+        command_list.oob_inactive_color[0] / 255.0f,
+        command_list.oob_inactive_color[1] / 255.0f,
+        command_list.oob_inactive_color[2] / 255.0f,
+        command_list.oob_inactive_color[3] / 255.0f,
     };
 
     max_access_count_attribute->value = heatmap_max;
@@ -301,14 +320,19 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
                     Visconfig::Components::MaterialAttributeType::Vec4, active_fill_color_attribute, false },
             },
             {
-                "out_of_bounds_fill_color",
-                Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Vec4, out_of_bounds_fill_color_attribute, false },
-            },
-            {
                 "inactive_fill_color",
                 Visconfig::Components::MaterialAttribute{
                     Visconfig::Components::MaterialAttributeType::Vec4, inactive_fill_color_attribute, false },
+            },
+            {
+                "oob_active_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, oob_active_color_attribute, false },
+            },
+            {
+                "oob_inactive_color",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Vec4, oob_inactive_color_attribute, false },
             },
         } });
 
@@ -440,15 +464,24 @@ void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t c
     camera_switcher->cameras.push_back(camera_entity_id);
 }
 
-void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& description,
-    const std::string& attribute, std::size_t entity, std::size_t pass)
+void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& caption,
+    const std::array<std::size_t, 4>& color)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
     auto& legend_gui = std::get<Visconfig::Components::LegendGUI>(canvas->entries[canvas_legend_gui_idx].gui_data);
     legend_gui.entries.push_back({
         Visconfig::Components::LegendGUIEntryType::ColorEntry,
-        Visconfig::Components::LegendGUIColorEntry{ entity, pass, label, description, attribute },
+        Visconfig::Components::LegendGUIColorEntry{
+            label,
+            caption,
+            {
+                color[0] / 255.0f,
+                color[1] / 255.0f,
+                color[2] / 255.0f,
+                color[3] / 255.0f,
+            },
+        },
     });
 }
 
@@ -464,7 +497,8 @@ void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& 
     });
 }
 
-void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& name,
+void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group,
+    const std::string& group_caption, const std::array<float, 2>& group_position, const std::string& name,
     const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
@@ -474,17 +508,16 @@ void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std:
 
     Visconfig::Components::CompositionGUIWindow gui_window{ name, false, texture, scaling, position };
 
-    std::string group_name = "conf2_resources";
-    if (composition_gui.groups.contains(group_name)) {
-        composition_gui.groups[group_name].windows.push_back(std::move(gui_window));
+    if (composition_gui.groups.contains(group)) {
+        composition_gui.groups[group].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert({ group_name, { true, { std::move(gui_window) } } });
+        composition_gui.groups.insert({ group, { false, group_caption, group_position, { std::move(gui_window) } } });
     }
 }
 
 void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
-    const std::array<float, 2>& position)
+    const std::string& group_caption, const std::array<float, 2>& group_position, const std::string& window,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
@@ -496,7 +529,7 @@ void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std
     if (composition_gui.groups.contains(group)) {
         composition_gui.groups[group].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert({ group, { false, { std::move(gui_window) } } });
+        composition_gui.groups.insert({ group, { false, group_caption, group_position, { std::move(gui_window) } } });
     }
 }
 

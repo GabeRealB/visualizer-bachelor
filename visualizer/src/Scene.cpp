@@ -1709,21 +1709,17 @@ void initialize_component(
     database_context.write_component(entity, Copy{ std::move(operations) });
 }
 
-void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_t, Entity>& entity_id_map,
-    const Visconfig::Components::LegendGUIColorEntry& color_entry)
+void initialize_legend_entry(LegendGUI& gui, const Visconfig::Components::LegendGUIColorEntry& color_entry)
 {
     LegendGUIColor color{};
-    color.entity = entity_id_map.at(color_entry.entity);
-    color.pass = color_entry.pass;
+    color.color = glm::make_vec4(color_entry.color.data());
     color.label = color_entry.label;
-    color.description = color_entry.description;
-    color.attribute = color_entry.attribute;
+    color.caption = color_entry.caption;
 
     gui.entries.push_back(std::move(color));
 }
 
-void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_t, Entity>&,
-    const Visconfig::Components::LegendGUIImageEntry& image_entry)
+void initialize_legend_entry(LegendGUI& gui, const Visconfig::Components::LegendGUIImageEntry& image_entry)
 {
     LegendGUIImage image{};
     image.absolute = image_entry.absolute;
@@ -1734,9 +1730,8 @@ void initialize_legend_entry(LegendGUI& gui, const std::unordered_map<std::size_
     gui.entries.push_back(std::move(image));
 }
 
-void initialize_component(EntityDatabaseContext& database_context, Entity entity,
-    const Visconfig::Components::CanvasComponent& component,
-    const std::unordered_map<std::size_t, Entity>& entity_id_map)
+void initialize_component(
+    EntityDatabaseContext& database_context, Entity entity, const Visconfig::Components::CanvasComponent& component)
 {
     Canvas canvas{};
 
@@ -1752,8 +1747,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
 
             auto& component_gui = std::get<Visconfig::Components::LegendGUI>(entry.gui_data);
             for (auto& legend_entry : component_gui.entries) {
-                std::visit(
-                    [&](auto&& entry) { initialize_legend_entry(gui, entity_id_map, entry); }, legend_entry.entry);
+                std::visit([&](auto&& entry) { initialize_legend_entry(gui, entry); }, legend_entry.entry);
             }
 
             canvas.guis.push_back(std::move(gui));
@@ -1770,16 +1764,13 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             std::unordered_map<std::string, std::size_t> group_index_map{};
             group_index_map.reserve(component_gui.groups.size());
 
+            gui.background_color = glm::make_vec4(component_gui.background_color.data());
+
             for (auto& component_group : component_gui.groups) {
                 CompositionGUIGroup group{};
-                group.position = { 0.0f, 0.0f };
-                group.group_name = component_group.first;
+                group.group_name = component_group.second.caption;
                 group.transparent = component_group.second.transparent;
-
-                for (auto& component_window : component_group.second.windows) {
-                    group.position += glm::make_vec2(component_window.position.data());
-                }
-                group.position /= component_group.second.windows.size();
+                group.position = glm::make_vec2(component_group.second.position.data());
 
                 for (auto& component_window : component_group.second.windows) {
                     CompositionGUIWindow window{};
@@ -1793,7 +1784,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                     group.windows.push_back(std::move(window));
                 }
 
-                group_index_map.insert({ group.group_name, gui.groups.size() });
+                group_index_map.insert({ component_group.first, gui.groups.size() });
                 gui.groups.push_back(std::move(group));
             }
 
@@ -1898,7 +1889,7 @@ void initialize_entity(EntityDatabaseContext& database_context,
             break;
         case Visconfig::Components::ComponentType::Canvas:
             initialize_component(database_context, ecs_entity,
-                *std::static_pointer_cast<const Visconfig::Components::CanvasComponent>(component.data), entityIdMap);
+                *std::static_pointer_cast<const Visconfig::Components::CanvasComponent>(component.data));
             break;
         }
     }

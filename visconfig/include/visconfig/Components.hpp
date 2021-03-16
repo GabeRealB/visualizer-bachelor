@@ -337,11 +337,9 @@ struct LegendGUIImageEntry {
 };
 
 struct LegendGUIColorEntry {
-    std::size_t entity;
-    std::size_t pass;
     std::string label;
-    std::string description;
-    std::string attribute;
+    std::string caption;
+    std::array<float, 4> color;
 };
 
 struct LegendGUIEntry {
@@ -366,10 +364,13 @@ struct CompositionGUIWindow {
 
 struct CompositionGUIGroup {
     bool transparent;
+    std::string caption;
+    std::array<float, 2> position;
     std::vector<CompositionGUIWindow> windows;
 };
 
 struct CompositionGUI {
+    std::array<float, 4> background_color;
     std::map<std::string, CompositionGUIGroup> groups;
     std::vector<std::array<std::string, 2>> group_connections;
 };
@@ -578,13 +579,13 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CopyOperation, source, destination, flags, fi
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, description, scaling)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, entity, pass, label, description, attribute)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, label, caption, color)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, name, flip_vertical, texture_name, scaling, position)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, windows)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, caption, position, windows)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, groups, group_connections)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, background_color, groups, group_connections)
 
 void to_json(nlohmann::json& j, const LegendGUIEntry& v);
 void from_json(const nlohmann::json& j, LegendGUIEntry& v);
