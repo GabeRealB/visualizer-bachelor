@@ -64,7 +64,7 @@ void main() {
         float camera_distance = (gl_FragCoord.z / gl_FragCoord.w) / far_plane;
         border_thickness = mix(0.0f, 0.1f, camera_distance);
     } else if (projection_mode == ORTHOGRAPHIC_PROJECTION) {
-        border_thickness = mix(0.0f, 0.025f, far_plane);
+        border_thickness = mix(0.0f, 0.005f, far_plane);
     }
 
     vec2 tex_coords = texture_coordinates;
