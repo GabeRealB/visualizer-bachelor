@@ -68,7 +68,8 @@ public:
     Texture2D(Texture2D&& other) noexcept;
     ~Texture2D();
 
-    static std::shared_ptr<Texture2D> fromFile(const std::filesystem::path& filePath);
+    static std::shared_ptr<Texture2D> fromFile(
+        const std::filesystem::path& filePath, TextureInternalFormat internal_format = TextureInternalFormat::Byte);
 
     Texture2D& operator=(const Texture2D& other) = delete;
     Texture2D& operator=(Texture2D&& other) noexcept;
@@ -123,7 +124,9 @@ private:
     std::size_t m_height;
 };
 
-template <typename T> requires std::derived_from<T, Texture> class TextureSampler {
+template <typename T>
+requires std::derived_from<T, Texture>
+class TextureSampler {
 public:
     TextureSampler(const std::shared_ptr<T>& texture, TextureSlot slot)
         : m_slot{ slot }

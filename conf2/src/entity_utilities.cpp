@@ -115,10 +115,9 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
 }
 
 Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
-    const CuboidCommandList& command_list, const std::string& front_texture, const std::string& side_texture,
-    const std::string& top_texture, const std::string& accum_texture, const std::string& revealage_texture,
+    const CuboidCommandList& command_list, const std::string& accum_texture, const std::string& revealage_texture,
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
-    std::array<int, 3> global_size)
+    const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -162,9 +161,6 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     mesh.asset = mesh_name;
 
-    auto texture_front_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
-    auto texture_side_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
-    auto texture_top_attribute{ std::make_shared<Visconfig::Components::Sampler2DMaterialAttribute>() };
     auto accum_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto revealage_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
     auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
@@ -179,14 +175,16 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     auto heatmap_color_start_attribute{ std::make_shared<Visconfig::Components::FloatArrayMaterialAttribute>() };
     auto heatmap_fill_colors_attribute{ std::make_shared<Visconfig::Components::Vec4ArrayMaterialAttribute>() };
 
-    texture_front_attribute->asset = front_texture;
-    texture_front_attribute->slot = 0;
+    auto line_width_attribute{ std::make_shared<Visconfig::Components::FloatMaterialAttribute>() };
+    auto cuboid_size_attribute{ std::make_shared<Visconfig::Components::Vec3MaterialAttribute>() };
 
-    texture_side_attribute->asset = side_texture;
-    texture_side_attribute->slot = 1;
+    line_width_attribute->value = line_width;
 
-    texture_top_attribute->asset = top_texture;
-    texture_top_attribute->slot = 2;
+    cuboid_size_attribute->value = {
+        static_cast<float>(size[0]),
+        static_cast<float>(size[1]),
+        static_cast<float>(size[2]),
+    };
 
     accum_texture_attribute->asset = accum_texture;
     accum_texture_attribute->slot = 0;
@@ -257,19 +255,14 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[0],
         {
             {
-                "grid_texture_front",
+                "line_width",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_front_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::Float, line_width_attribute, false },
             },
             {
-                "grid_texture_side",
+                "cuboid_size",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_side_attribute, false },
-            },
-            {
-                "grid_texture_top",
-                Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::Vec3, cuboid_size_attribute, false },
             },
             {
                 "active_border_color",
@@ -307,19 +300,14 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
                     Visconfig::Components::MaterialAttributeType::UInt, heatmap_color_count_attribute, false },
             },
             {
-                "grid_texture_front",
+                "line_width",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_front_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::Float, line_width_attribute, false },
             },
             {
-                "grid_texture_side",
+                "cuboid_size",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_side_attribute, false },
-            },
-            {
-                "grid_texture_top",
-                Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2D, texture_top_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::Vec3, cuboid_size_attribute, false },
             },
             {
                 "active_fill_color",

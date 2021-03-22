@@ -17,7 +17,7 @@ struct GenerationOptions {
 
     std::size_t render_resolution_multiplier;
 
-    float cuboid_texture_border_relative_width;
+    float cuboid_border_width;
 
     float camera_fov;
     float camera_aspect;

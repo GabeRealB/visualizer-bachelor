@@ -182,7 +182,21 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::MeshAsse
 
 void initialize_asset(const std::string& name, const Visconfig::Assets::TextureFileAsset& asset)
 {
-    auto texture{ Texture2D::fromFile(asset.path) };
+    auto internal_format = [&]() -> auto
+    {
+        switch (asset.data_type) {
+        case Visconfig::Assets::TextureDataType::Byte:
+            return TextureInternalFormat::Byte;
+        case Visconfig::Assets::TextureDataType::Float:
+            return TextureInternalFormat::Float32;
+        case Visconfig::Assets::TextureDataType::UInt:
+            return TextureInternalFormat::UInt32;
+        case Visconfig::Assets::TextureDataType::UInt8:
+            return TextureInternalFormat::UInt8;
+        }
+    }
+    ();
+    auto texture{ Texture2D::fromFile(asset.path, internal_format) };
     for (auto attribute : asset.attributes) {
         switch (attribute) {
         case Visconfig::Assets::TextureAttributes::MagnificationLinear:

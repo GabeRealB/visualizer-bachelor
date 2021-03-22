@@ -96,7 +96,8 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
                 std::filesystem::copy(texture_path, asset_texture_path);
             }
 
-            assets.push_back(create_texture_asset(image.image_name(), asset_texture_relative_path, texture_attributes));
+            assets.push_back(create_texture_asset(image.image_name(), asset_texture_relative_path,
+                Visconfig::Assets::TextureDataType::Byte, texture_attributes));
             add_image_legend(
                 world.entities.front(), image.image_name(), image.description(), image.scaling(), image.absolute());
         }
@@ -128,7 +129,8 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
         auto& group_caption = ConfigContainer::get_instance().get_group_caption(resource.group());
         auto& group_id = ConfigContainer::get_instance().get_group_id(resource.group());
         auto& group_position = ConfigContainer::get_instance().get_group_position(resource.group());
-        assets.push_back(create_texture_asset(resource.name(), asset_texture_relative_path, texture_attributes));
+        assets.push_back(create_texture_asset(resource.name(), asset_texture_relative_path,
+            Visconfig::Assets::TextureDataType::Byte, texture_attributes));
         add_composition_gui_image(world.entities.front(), resource.group(), group_caption, group_id, group_position,
             resource.id(), resource.caption(), resource.name(), { resource.size(), resource.size() },
             resource.position());
@@ -199,30 +201,11 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
                 depth_buffer_multisample_name } }));
 
     auto max_cuboid_size = view_commands.cuboids.front().positions.front().size;
-    auto texture_border_width = static_cast<std::size_t>(generation_options.cuboid_texture_border_relative_width
-        * std::pow(max_cuboid_size[0] * max_cuboid_size[1] * max_cuboid_size[2], 1.0f / 3.0f));
-    texture_border_width = texture_border_width == 0 ? 1 : texture_border_width;
 
     std::vector<std::size_t> generated_entities{};
     auto focus_entity_id = world.entities.size();
     for (auto cuboid = view_commands.cuboids.begin(); cuboid != view_commands.cuboids.end(); ++cuboid) {
         auto index = std::distance(view_commands.cuboids.begin(), cuboid);
-
-        auto front_texture_name = "entity_" + std::to_string(focus_entity_id + index) + "_texture_front";
-        auto side_texture_name = "entity_" + std::to_string(focus_entity_id + index) + "_texture_side";
-        auto top_texture_name = "entity_" + std::to_string(focus_entity_id + index) + "_texture_top";
-
-        auto front_texture_relative_path = generation_options.assets_texture_directory_path / front_texture_name;
-        auto side_texture_relative_path = generation_options.assets_texture_directory_path / side_texture_name;
-        auto top_texture_relative_path = generation_options.assets_texture_directory_path / top_texture_name;
-
-        front_texture_relative_path.replace_extension(".png");
-        side_texture_relative_path.replace_extension(".png");
-        top_texture_relative_path.replace_extension(".png");
-
-        auto front_texture_path = generation_options.working_directory / front_texture_relative_path;
-        auto side_texture_path = generation_options.working_directory / side_texture_relative_path;
-        auto top_texture_path = generation_options.working_directory / top_texture_relative_path;
 
         auto cuboid_size = [&]() -> auto
         {
@@ -242,30 +225,16 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
             }
         }
         ();
-        generate_texture_file(front_texture_path, cuboid_size[0], cuboid_size[1], 1, 1, texture_border_width);
-        generate_texture_file(side_texture_path, cuboid_size[2], cuboid_size[1], 1, 1, texture_border_width);
-        generate_texture_file(top_texture_path, cuboid_size[0], cuboid_size[2], 1, 1, texture_border_width);
 
-        std::vector<Visconfig::Assets::TextureAttributes> texture_attributes = {
-            Visconfig::Assets::TextureAttributes::MagnificationLinear,
-            Visconfig::Assets::TextureAttributes::MinificationLinear,
-            Visconfig::Assets::TextureAttributes::GenerateMipMaps,
-        };
-
-        assets.push_back(create_texture_asset(front_texture_name, front_texture_relative_path, texture_attributes));
-        assets.push_back(create_texture_asset(side_texture_name, side_texture_relative_path, texture_attributes));
-        assets.push_back(create_texture_asset(top_texture_name, top_texture_relative_path, texture_attributes));
-
-        auto entity = generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid, front_texture_name,
-            side_texture_name, top_texture_name, accumulation_multisample_texture_name,
-            revealage_multisample_texture_name, generation_options.cuboid_mesh_asset_name,
-            generation_options.cuboid_pipeline_name,
+        auto entity = generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid,
+            accumulation_multisample_texture_name, revealage_multisample_texture_name,
+            generation_options.cuboid_mesh_asset_name, generation_options.cuboid_pipeline_name,
             {
                 generation_options.cuboid_diffuse_shader_asset_name,
                 generation_options.cuboid_oit_shader_asset_name,
                 generation_options.cuboid_oit_blend_shader_asset_name,
             },
-            max_cuboid_size);
+            max_cuboid_size, cuboid_size, generation_options.cuboid_border_width);
 
         generated_entities.push_back(entity.id);
         world.entities.push_back(std::move(entity));

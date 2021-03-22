@@ -35,7 +35,8 @@ Texture2D::~Texture2D()
     }
 }
 
-std::shared_ptr<Texture2D> Texture2D::fromFile(const std::filesystem::path& filePath)
+std::shared_ptr<Texture2D> Texture2D::fromFile(
+    const std::filesystem::path& filePath, TextureInternalFormat internal_format)
 {
     if (!std::filesystem::exists(filePath)) {
         return nullptr;
@@ -65,16 +66,16 @@ std::shared_ptr<Texture2D> Texture2D::fromFile(const std::filesystem::path& file
 
         switch (channels) {
         case 1:
-            texture->copyData(TextureFormat::R, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            texture->copyData(TextureFormat::R, internal_format, 0, width, height, 0, data.get());
             break;
         case 2:
-            texture->copyData(TextureFormat::RG, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            texture->copyData(TextureFormat::RG, internal_format, 0, width, height, 0, data.get());
             break;
         case 3:
-            texture->copyData(TextureFormat::RGB, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            texture->copyData(TextureFormat::RGB, internal_format, 0, width, height, 0, data.get());
             break;
         case 4:
-            texture->copyData(TextureFormat::RGBA, TextureInternalFormat::Byte, 0, width, height, 0, data.get());
+            texture->copyData(TextureFormat::RGBA, internal_format, 0, width, height, 0, data.get());
             break;
         default:
             return nullptr;
@@ -412,21 +413,27 @@ void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFor
             internalFormatGl = GL_RGBA16;
             break;
         case TextureInternalFormat::Int8:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA8I;
             break;
         case TextureInternalFormat::Int16:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA16I;
             break;
         case TextureInternalFormat::Int32:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA32I;
             break;
         case TextureInternalFormat::UInt8:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA8UI;
             break;
         case TextureInternalFormat::UInt16:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA16UI;
             break;
         case TextureInternalFormat::UInt32:
+            formatGl = GL_RGBA_INTEGER;
             internalFormatGl = GL_RGBA32UI;
             break;
         case TextureInternalFormat::Float16:

@@ -86,14 +86,13 @@ struct MeshAsset : public AssetData {
 };
 
 enum class TextureFormat { R, RG, RGB, RGBA, R8, RGBA16F };
+enum class TextureDataType { Byte, Float, UInt, UInt8 };
 enum class TextureAttributes { MagnificationLinear, MinificationLinear, GenerateMipMaps };
 
 struct TextureFileAsset : public AssetData {
+    TextureDataType data_type;
     std::filesystem::path path;
     std::vector<TextureAttributes> attributes;
-
-    static constexpr const char* pathJson{ "path" };
-    static constexpr const char* attributesJson{ "attributes" };
 };
 
 struct TextureRawAsset : public AssetData {
@@ -101,11 +100,6 @@ struct TextureRawAsset : public AssetData {
     std::size_t height;
     TextureFormat format;
     std::vector<TextureAttributes> attributes;
-
-    static constexpr const char* widthJson{ "width" };
-    static constexpr const char* heightJson{ "height" };
-    static constexpr const char* formatJson{ "format" };
-    static constexpr const char* attributesJson{ "attributes" };
 };
 
 struct TextureMultisampleRawAsset : public AssetData {
@@ -114,12 +108,6 @@ struct TextureMultisampleRawAsset : public AssetData {
     std::size_t samples;
     TextureFormat format;
     std::vector<TextureAttributes> attributes;
-
-    static constexpr const char* widthJson{ "width" };
-    static constexpr const char* heightJson{ "height" };
-    static constexpr const char* samplesJson{ "samples" };
-    static constexpr const char* formatJson{ "format" };
-    static constexpr const char* attributesJson{ "attributes" };
 };
 
 enum class RenderbufferFormat { Depth24 };
@@ -129,19 +117,11 @@ struct RenderbufferAsset : public AssetData {
     std::size_t height;
     std::size_t samples;
     RenderbufferFormat format;
-
-    static constexpr const char* widthJson{ "width" };
-    static constexpr const char* heightJson{ "height" };
-    static constexpr const char* samplesJson{ "samples" };
-    static constexpr const char* formatJson{ "format" };
 };
 
 struct ShaderAsset : public AssetData {
     std::filesystem::path vertex;
     std::filesystem::path fragment;
-
-    static constexpr const char* vertexJson{ "vertex" };
-    static constexpr const char* fragmentJson{ "fragment" };
 };
 
 enum class FramebufferType { Texture, TextureMultisample, Renderbuffer };
@@ -151,10 +131,6 @@ struct FramebufferAttachment {
     FramebufferType type;
     FramebufferDestination destination;
     std::string asset;
-
-    static constexpr const char* typeJson{ "type" };
-    static constexpr const char* destinationJson{ "destination" };
-    static constexpr const char* assetJson{ "asset" };
 };
 
 struct FramebufferAsset : public AssetData {
@@ -163,12 +139,6 @@ struct FramebufferAsset : public AssetData {
     std::size_t viewportHeight;
     std::size_t viewportStartX;
     std::size_t viewportStartY;
-
-    static constexpr const char* attachmentsJson{ "attachments" };
-    static constexpr const char* viewportWidthJson{ "viewport_width" };
-    static constexpr const char* viewportHeightJson{ "viewport_height" };
-    static constexpr const char* viewportStartXJson{ "viewport_start_x" };
-    static constexpr const char* viewportStartYJson{ "viewport_start_y" };
 };
 
 struct DefaultFramebufferAsset : public AssetData {
@@ -246,6 +216,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(TextureFormat,
         { TextureFormat::RGBA16F, "rgba16" },
     })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(TextureDataType,
+    {
+        { TextureDataType::Byte, "byte" },
+        { TextureDataType::Float, "float" },
+        { TextureDataType::UInt, "uint" },
+        { TextureDataType::UInt8, "uint_8" },
+    })
+
 NLOHMANN_JSON_SERIALIZE_ENUM(TextureAttributes,
     {
         { TextureAttributes::MagnificationLinear, "magnification_linear" },
@@ -287,7 +265,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(FramebufferAttachment, type, destination, ass
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshAsset, vertices, indices, texture_coords0, simple_attributes)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureFileAsset, path, attributes)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureFileAsset, data_type, path, attributes)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureRawAsset, width, height, format, attributes)
 

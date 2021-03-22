@@ -43,7 +43,7 @@ constexpr std::array<std::string_view, 2> sParameterQualifierNames{ "@program"sv
 constexpr std::array<ParameterQualifier, 2> sParameterQualifierMap{ ParameterQualifier::Program,
     ParameterQualifier::Material };
 
-constexpr std::array<std::string_view, 27> sParameterTypeNames{
+constexpr std::array<std::string_view, 29> sParameterTypeNames{
     "bool"sv,
     "int"sv,
     "uint"sv,
@@ -71,6 +71,8 @@ constexpr std::array<std::string_view, 27> sParameterTypeNames{
     "mat4x4"sv,
     "sampler2D"sv,
     "sampler2DMS"sv,
+    "usampler2D"sv,
+    "usampler2DMS"sv,
 };
 
 Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
@@ -194,7 +196,7 @@ std::optional<Shader> Shader::create(const std::filesystem::path& shaderPath, Sh
  *************************************** ShaderEnvironment ***************************************
  **************************************************************************************************/
 
-constexpr std::array<std::tuple<std::size_t, std::size_t>, 27> sTypeSizeAlignmentPairs{
+constexpr std::array<std::tuple<std::size_t, std::size_t>, 29> sTypeSizeAlignmentPairs{
     std::tuple<std::size_t, std::size_t>{ sizeof(GLboolean), alignof(GLboolean) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLint), alignof(GLint) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLuint), alignof(GLuint) },
@@ -220,6 +222,9 @@ constexpr std::array<std::tuple<std::size_t, std::size_t>, 27> sTypeSizeAlignmen
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x2), alignof(glm::mat4x2) },
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x3), alignof(glm::mat4x3) },
     std::tuple<std::size_t, std::size_t>{ sizeof(glm::mat4x4), alignof(glm::mat4x4) },
+    std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
+    std::tuple<std::size_t, std::size_t>{
+        sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
     std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
     std::tuple<std::size_t, std::size_t>{
         sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
@@ -344,7 +349,7 @@ ShaderEnvironment::~ShaderEnvironment()
  ***************************************** ShaderProgram *****************************************
  **************************************************************************************************/
 
-constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 27> sTypeApplyFuncs{
+constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 29> sTypeApplyFuncs{
     /**************************************** Scalars ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
@@ -554,6 +559,18 @@ constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view
         }
     },
     /**************************************** SamplerN ****************************************/
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureSampler<Texture2D>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureSampler<Texture2DMultisample>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
     [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<TextureSampler<Texture2D>>(name, size) };
         if (val != nullptr) {

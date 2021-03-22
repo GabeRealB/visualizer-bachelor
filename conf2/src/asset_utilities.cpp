@@ -356,10 +356,11 @@ Visconfig::Asset create_shader_asset(const std::string& asset_name, const std::f
 }
 
 Visconfig::Asset create_texture_asset(const std::string& texture_name, const std::filesystem::path& texture_path,
-    const std::vector<Visconfig::Assets::TextureAttributes>& attributes)
+    Visconfig::Assets::TextureDataType data_type, const std::vector<Visconfig::Assets::TextureAttributes>& attributes)
 {
     auto texture_data{ std::make_shared<Visconfig::Assets::TextureFileAsset>() };
     Visconfig::Asset asset{ texture_name, Visconfig::Assets::AssetType::TextureFile, texture_data };
+    texture_data->data_type = data_type;
     texture_data->path = texture_path;
     texture_data->attributes = attributes;
 
@@ -422,81 +423,6 @@ Visconfig::Asset create_framebuffer_asset(const std::string& renderbuffer_name, 
     buffer_data->viewportStartY = start_y;
 
     return asset;
-}
-
-void generate_texture_file(const std::filesystem::path& destination, std::size_t width, std::size_t height,
-    std::size_t subdivisions_x, std::size_t subdivisions_y, std::size_t line_width)
-{
-    std::vector<std::byte> texture_data{};
-    constexpr std::size_t texture_scaling{ 8 };
-    constexpr std::size_t min_texture_quality_multiplier{ 1 };
-    constexpr std::size_t max_texture_quality_multiplier{ 4 };
-
-    auto dimension_mean{ static_cast<float>(std::pow(width * height, 0.5f)) };
-    auto line_ratio = static_cast<float>(line_width) / dimension_mean * texture_scaling;
-    auto texture_quality_multiplier = [&]() -> auto
-    {
-        if (line_ratio <= min_texture_quality_multiplier) {
-            return min_texture_quality_multiplier;
-        } else if (line_ratio >= max_texture_quality_multiplier) {
-            return max_texture_quality_multiplier;
-        } else {
-            return static_cast<std::size_t>(std::lerp(0.0f, 1.0f, line_ratio));
-        }
-    }
-    ();
-
-    std::size_t scaled_width{ width * texture_scaling * texture_quality_multiplier };
-    std::size_t scaled_height{ height * texture_scaling * texture_quality_multiplier };
-    std::size_t scaled_line_width{ line_width * texture_quality_multiplier };
-
-    std::size_t section_width{ scaled_width / subdivisions_x };
-    std::size_t section_height{ scaled_height / subdivisions_y };
-    std::size_t row_stride{ scaled_width * 3 };
-
-    std::byte section_color{ std::numeric_limits<unsigned char>::max() };
-    std::byte border_color{ std::numeric_limits<std::byte>::min() };
-
-    texture_data.reserve(scaled_width * scaled_height);
-
-    for (std::size_t i{ 0 }; i < subdivisions_y; i++) {
-        for (std::size_t j{ 0 }; j < section_height; j++) {
-            if (j >= scaled_line_width && j < section_height - scaled_line_width) {
-                for (std::size_t k{ 0 }; k < subdivisions_x; k++) {
-                    for (std::size_t l{ 0 }; l < section_width; l++) {
-                        if (l >= scaled_line_width && l < section_width - scaled_line_width) {
-                            texture_data.push_back(section_color);
-                            texture_data.push_back(section_color);
-                            texture_data.push_back(section_color);
-                        } else {
-                            texture_data.push_back(border_color);
-                            texture_data.push_back(border_color);
-                            texture_data.push_back(border_color);
-                        }
-                    }
-                }
-            } else {
-                for (std::size_t k{ 0 }; k < scaled_width; k++) {
-                    texture_data.push_back(border_color);
-                    texture_data.push_back(border_color);
-                    texture_data.push_back(border_color);
-                }
-            }
-        }
-    }
-
-    auto texture_width{ static_cast<int>(scaled_width) };
-    auto texture_height{ static_cast<int>(scaled_height) };
-    auto texture_row_stride{ static_cast<int>(row_stride) };
-
-    if (texture_width == 0 || static_cast<std::size_t>(texture_width) < scaled_width || texture_height == 0
-        || static_cast<std::size_t>(texture_height) < scaled_height || texture_row_stride == 0
-        || static_cast<std::size_t>(texture_row_stride) < row_stride) {
-        return;
-    }
-
-    stbi_write_png(
-        destination.string().c_str(), texture_width, texture_height, 3, texture_data.data(), texture_row_stride);
 }
 
 }

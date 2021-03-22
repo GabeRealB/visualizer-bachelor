@@ -2,11 +2,10 @@
 
 @program float 1 far_plane
 @program uint 1 projection_mode
+@material float 1 line_width
+@material vec3 1 cuboid_size
 @material vec4 1 active_border_color
 @material vec4 1 inactive_border_color
-@material sampler2D 1 grid_texture_front
-@material sampler2D 1 grid_texture_side
-@material sampler2D 1 grid_texture_top
 
 uniform float far_plane;
 uniform uint projection_mode;
@@ -14,9 +13,8 @@ uniform uint projection_mode;
 uniform vec4 active_border_color;
 uniform vec4 inactive_border_color;
 
-uniform sampler2D grid_texture_front;
-uniform sampler2D grid_texture_side;
-uniform sampler2D grid_texture_top;
+uniform float line_width;
+uniform vec3 cuboid_size;
 
 flat in int side;
 flat in uint status_flags;
@@ -55,61 +53,58 @@ vec4 compute_blinn_phong(vec3 vs_normal, vec3 vs_view, vec4 diffuse_color) {
     return vec4(color, diffuse_color.a);
 }
 
-void main() {
-    vec4 texture_color = vec4(0.0f);
+bool is_border() {
+    vec2 proj_size;
+    if (side == 0) {
+        proj_size = vec2(cuboid_size[0], cuboid_size[1]);
+    } else if (side == 1) {
+        proj_size = vec2(cuboid_size[0], cuboid_size[2]);
+    } else if (side == 2) {
+        proj_size = vec2(cuboid_size[2], cuboid_size[1]);
+    }
 
-    float border_thickness = 0.0f;
+    vec2 pos = texture_coordinates * proj_size;
 
+    float border_magnification = 1.0f;
     if (projection_mode == PERSPECTIVE_PROJECTION) {
         float camera_distance = (gl_FragCoord.z / gl_FragCoord.w) / far_plane;
-        border_thickness = mix(0.0f, 0.1f, camera_distance);
+        border_magnification = mix(1.0f, 2.0f, camera_distance);
     } else if (projection_mode == ORTHOGRAPHIC_PROJECTION) {
-        border_thickness = mix(0.0f, 0.005f, far_plane);
+        border_magnification = mix(1.0f, 2.0f, far_plane);
     }
 
-    vec2 tex_coords = texture_coordinates;
+    float border_width = line_width * border_magnification;
 
-    if (tex_coords.x < border_thickness) {
-        tex_coords.x = 0.0f;
+    if (pos.x <= border_width ||
+        proj_size[0] - border_width <= pos.x ||
+        pos.y <= border_width ||
+        proj_size[1] - border_width <= pos.y) {
+        return true;
+    } else {
+        return false;
     }
-    if (tex_coords.x > 1 - border_thickness) {
-        tex_coords.x = 1.0f;
-    }
-    if (tex_coords.y < border_thickness) {
-        tex_coords.y = 0.0f;
-    }
-    if (tex_coords.y > 1 - border_thickness) {
-        tex_coords.y = 1.0f;
-    }
+}
 
-    if (side == 0) {
-        texture_color = vec4(texture(grid_texture_front, tex_coords).xyz, 1.0f);
-    } else if (side == 1) {
-        texture_color = vec4(texture(grid_texture_top, tex_coords).xyz, 1.0f);
-    } else if (side == 2) {
-        texture_color = vec4(texture(grid_texture_side, tex_coords).xyz, 1.0f);
-    }
-
-    vec4 diffuse_color;
-
-    if (texture_color == vec4(0.0f, 0.0f, 0.0f, 1.0f)) {
+void main() {
+    if (is_border()) {
+        vec4 diffuse_color;
         if ((status_flags & ACTIVE_FLAG) != 0) {
             diffuse_color = active_border_color;
         } else {
             diffuse_color = inactive_border_color;
         }
+
+        vec3 n = normalize(vs_normal);
+        vec3 p = normalize(-vs_position).xyz;
+        vec4 color = compute_blinn_phong(n, p, diffuse_color);
+        color.a = 1.0f;
+
+        if (color.a == 0.0f) {
+            discard;
+        }
+
+        out_color = color;
     } else {
         discard;
     }
-
-    vec3 n = normalize(vs_normal);
-    vec3 p = normalize(-vs_position).xyz;
-    vec4 color = compute_blinn_phong(n, p, diffuse_color);
-    color.a = 1.0f;
-
-    if (color.a == 0.0f) {
-        discard;
-    }
-
-    out_color = color;
 }

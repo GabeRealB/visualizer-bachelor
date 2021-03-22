@@ -101,7 +101,7 @@ void generate_handler(const Generate& operation, const Config::ConfigCommandList
 
     generation_options.render_resolution_multiplier = 2;
 
-    generation_options.cuboid_texture_border_relative_width = 0.04f;
+    generation_options.cuboid_border_width = 0.08f;
 
     generation_options.camera_fov = 70.0f;
     generation_options.camera_aspect
