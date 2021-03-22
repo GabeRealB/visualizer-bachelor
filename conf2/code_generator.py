@@ -35,6 +35,7 @@ def generate(config, template, output):
     }}"""
 
     cuboid_constr_template = """CuboidContainer {{
+        .line_width = {},
         .fill_active = {{ {} }},
         .fill_inactive = {{ {} }},
         .border_active = {{ {} }},
@@ -80,6 +81,7 @@ def generate(config, template, output):
             if "cube" in element:
                 call = []
                 requirements = []
+                line_widths = element["line width"]
                 mapping_infos = cubes[element["cube"]]
 
                 for mapping_info in mapping_infos:
@@ -99,8 +101,8 @@ def generate(config, template, output):
                     requirements.append(mapping_info[0])
 
                 element["infos"] = []
-                for col_idx, (color, func, req, temp_col) in enumerate(
-                        zip(element["colors"], call, requirements, template_element["colors"])):
+                for col_idx, (color, func, req, line_width, temp_col) in enumerate(
+                        zip(element["colors"], call, requirements, line_widths, template_element["colors"])):
                     temp_col["fill_active"] = "{}_colors_fill_active_{}".format(element["internal_id"], col_idx)
                     temp_col["fill_inactive"] = "{}_colors_fill_inactive_{}".format(element["internal_id"], col_idx)
                     temp_col["border_active"] = "{}_colors_border_active_{}".format(element["internal_id"], col_idx)
@@ -108,7 +110,8 @@ def generate(config, template, output):
                     temp_col["oob_active"] = "{}_colors_oob_active_{}".format(element["internal_id"], col_idx)
                     temp_col["oob_inactive"] = "{}_colors_oob_inactive_{}".format(element["internal_id"], col_idx)
 
-                    element["infos"].append({"color": color, "callable": func, "requirements": req})
+                    element["infos"].append(
+                        {"line width": line_width, "color": color, "callable": func, "requirements": req})
 
                 if "heatmap" in element:
                     template_element["heatmap"]["cuboid"] = "{}_heatmap_cuboid".format(element["internal_id"])
@@ -153,6 +156,7 @@ def generate(config, template, output):
 
                 for cuboid in element["infos"]:
                     cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")
+                    line_width = "{}f".format(str(cuboid["line width"]))
                     fill_active = ", ".join([str(c) for c in cuboid["color"]["fill_active"]])
                     fill_inactive = ", ".join([str(c) for c in cuboid["color"]["fill_inactive"]])
                     border_active = ", ".join([str(c) for c in cuboid["color"]["border_active"]])
@@ -162,7 +166,7 @@ def generate(config, template, output):
                     callable_func = cuboid["callable"]
                     code_str = code_str + """\tauto {} = {};\n""" \
                         .format(cuboid_name,
-                                cuboid_constr_template.format(fill_active, fill_inactive, border_active,
+                                cuboid_constr_template.format(line_width, fill_active, fill_inactive, border_active,
                                                               border_inactive, oob_active,
                                                               oob_inactive, callable_func)) \
                         .expandtabs(4)

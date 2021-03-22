@@ -63,6 +63,7 @@ struct HeatmapData {
 };
 
 struct CuboidCommandList {
+    float line_width;
     std::size_t max_accesses;
     CuboidColor active_fill_color;
     CuboidColor inactive_fill_color;

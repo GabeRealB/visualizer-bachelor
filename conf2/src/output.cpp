@@ -206,6 +206,7 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     auto focus_entity_id = world.entities.size();
     for (auto cuboid = view_commands.cuboids.begin(); cuboid != view_commands.cuboids.end(); ++cuboid) {
         auto index = std::distance(view_commands.cuboids.begin(), cuboid);
+        auto border_width = generation_options.cuboid_border_width * view_commands.cuboids[index].line_width;
 
         auto cuboid_size = [&]() -> auto
         {
@@ -234,7 +235,7 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
                 generation_options.cuboid_oit_shader_asset_name,
                 generation_options.cuboid_oit_blend_shader_asset_name,
             },
-            max_cuboid_size, cuboid_size, generation_options.cuboid_border_width);
+            max_cuboid_size, cuboid_size, border_width);
 
         generated_entities.push_back(entity.id);
         world.entities.push_back(std::move(entity));

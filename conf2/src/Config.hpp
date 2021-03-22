@@ -231,6 +231,7 @@ private:
 using ViewCuboidCallable = std::array<std::tuple<int, int>, 3> (*)(const VariableMap& variable_map);
 
 struct CuboidContainer {
+    float line_width;
     std::array<std::size_t, 4> fill_active;
     std::array<std::size_t, 4> fill_inactive;
     std::array<std::size_t, 4> border_active;
