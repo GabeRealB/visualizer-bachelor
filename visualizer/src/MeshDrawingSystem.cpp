@@ -213,7 +213,8 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
             constexpr unsigned int PERSPECTIVE_PROJECTION = 0;
             constexpr unsigned int ORTHOGRAPHIC_PROJECTION = 1;
 
-            auto orthographic_factor = std::min(camera.orthographicWidth / (40.0f * camera.aspect), 1.0f);
+            // auto orthographic_factor = std::min(camera.orthographicWidth / (42.0f * camera.aspect), 1.0f);
+            auto orthographic_factor = 0.0f;
 
             last_program = material->m_passes[diffuse_pass_idx].m_shader;
             camera_variables
