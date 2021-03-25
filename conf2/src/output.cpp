@@ -216,8 +216,8 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
             }
             if (cuboid->commands[0].type == CuboidCommandType::DRAW_MULTIPLE) {
                 auto& command = std::get<DrawMultipleCommand>(cuboid->commands[0].command);
-                if (!command.cuboid_accesses.empty()) {
-                    return cuboid->positions[command.cuboid_accesses.begin()->second].size;
+                if (!command.cuboid_indices.empty()) {
+                    return cuboid->positions[*command.cuboid_indices.begin()].size;
                 } else {
                     return cuboid->positions[command.out_of_bounds.front()].size;
                 }
