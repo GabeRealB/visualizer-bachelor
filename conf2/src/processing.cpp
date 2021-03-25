@@ -492,12 +492,17 @@ void generate_heatmap(const CuboidCommandList& access_layer, CuboidCommandList& 
                             CuboidSize cuboid_size = { 1, 1, 1 };
 
                             auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
-                            draw_command.cuboid_accesses.insert({ idx, 1 });
 
-                            if (access_draw_command.out_of_bounds) {
-                                draw_command.out_of_bounds.push_back(idx);
+                            if (!draw_command.cuboid_accesses.contains(idx)) {
+                                draw_command.cuboid_accesses.insert({ idx, 1 });
+
+                                if (access_draw_command.out_of_bounds) {
+                                    draw_command.out_of_bounds.push_back(idx);
+                                } else {
+                                    draw_command.cuboid_indices.insert(idx);
+                                }
                             } else {
-                                draw_command.cuboid_indices.insert(idx);
+                                draw_command.cuboid_accesses[idx]++;
                             }
                         }
                     }
@@ -537,8 +542,12 @@ void generate_heatmap(const CuboidCommandList& access_layer, CuboidCommandList& 
                             CuboidSize cuboid_size = { 1, 1, 1 };
 
                             auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
-                            draw_command.cuboid_accesses.insert({ idx, accesses });
-                            draw_command.cuboid_indices.insert(idx);
+                            if (!draw_command.cuboid_accesses.contains(idx)) {
+                                draw_command.cuboid_accesses.insert({ idx, accesses });
+                                draw_command.cuboid_indices.insert(idx);
+                            } else {
+                                draw_command.cuboid_accesses[idx] += accesses;
+                            }
                         }
                     }
                 }
@@ -557,8 +566,12 @@ void generate_heatmap(const CuboidCommandList& access_layer, CuboidCommandList& 
                             CuboidSize cuboid_size = { 1, 1, 1 };
 
                             auto idx = grid_layer.position_index_map.at(std::make_tuple(cuboid_position, cuboid_size));
-                            draw_command.cuboid_accesses.insert({ idx, accesses });
-                            draw_command.out_of_bounds.push_back(idx);
+                            if (!draw_command.cuboid_accesses.contains(idx)) {
+                                draw_command.cuboid_accesses.insert({ idx, accesses });
+                                draw_command.out_of_bounds.push_back(idx);
+                            } else {
+                                draw_command.cuboid_accesses[idx] += accesses;
+                            }
                         }
                     }
                 }
