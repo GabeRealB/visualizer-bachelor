@@ -9,6 +9,366 @@
 
 namespace Visualizer {
 
+TextureBuffer::TextureBuffer()
+    : m_id{ 0 }
+    , m_size{ 0 }
+    , m_buffer{}
+{
+    assert(glGetError() == GL_NO_ERROR);
+    glGenTextures(1, &m_id);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+TextureBuffer::TextureBuffer(TextureBuffer&& other) noexcept
+    : m_id{ std::exchange(other.m_id, 0) }
+    , m_size{ std::exchange(other.m_size, 0) }
+    , m_buffer{ std::exchange(other.m_buffer, {}) }
+{
+}
+
+TextureBuffer::~TextureBuffer()
+{
+    if (m_id != 0) {
+        assert(glGetError() == GL_NO_ERROR);
+        glDeleteTextures(1, &m_id);
+        assert(glGetError() == GL_NO_ERROR);
+    }
+}
+
+TextureBuffer& TextureBuffer::operator=(TextureBuffer&& other) noexcept
+{
+    if (this != &other) {
+        if (m_id != 0) {
+            assert(glGetError() == GL_NO_ERROR);
+            glDeleteTextures(1, &m_id);
+            assert(glGetError() == GL_NO_ERROR);
+        }
+
+        m_id = std::exchange(other.m_id, 0);
+        m_size = std::exchange(other.m_size, 0);
+        m_buffer = std::exchange(other.m_buffer, {});
+    }
+    return *this;
+}
+
+GLuint TextureBuffer::id() const { return m_id; }
+
+std::size_t TextureBuffer::size() const { return m_size; }
+
+TextureType TextureBuffer::type() const { return TextureType::TextureBuffer; }
+
+std::shared_ptr<GenericBuffer> TextureBuffer::buffer() { return m_buffer; }
+
+std::shared_ptr<const GenericBuffer> TextureBuffer::buffer() const { return m_buffer; }
+
+void TextureBuffer::bind(TextureSlot slot)
+{
+    if (m_id == 0) {
+        return;
+    }
+
+    assert(glGetError() == GL_NO_ERROR);
+    switch (slot) {
+    case TextureSlot::Slot0:
+        glActiveTexture(GL_TEXTURE0);
+        break;
+    case TextureSlot::Slot1:
+        glActiveTexture(GL_TEXTURE1);
+        break;
+    case TextureSlot::Slot2:
+        glActiveTexture(GL_TEXTURE2);
+        break;
+    case TextureSlot::Slot3:
+        glActiveTexture(GL_TEXTURE3);
+        break;
+    case TextureSlot::Slot4:
+        glActiveTexture(GL_TEXTURE4);
+        break;
+    case TextureSlot::Slot5:
+        glActiveTexture(GL_TEXTURE5);
+        break;
+    case TextureSlot::Slot6:
+        glActiveTexture(GL_TEXTURE6);
+        break;
+    case TextureSlot::Slot7:
+        glActiveTexture(GL_TEXTURE7);
+        break;
+    case TextureSlot::Slot8:
+        glActiveTexture(GL_TEXTURE8);
+        break;
+    case TextureSlot::Slot9:
+        glActiveTexture(GL_TEXTURE9);
+        break;
+    case TextureSlot::Slot10:
+        glActiveTexture(GL_TEXTURE10);
+        break;
+    case TextureSlot::Slot11:
+        glActiveTexture(GL_TEXTURE11);
+        break;
+    case TextureSlot::Slot12:
+        glActiveTexture(GL_TEXTURE12);
+        break;
+    case TextureSlot::Slot13:
+        glActiveTexture(GL_TEXTURE13);
+        break;
+    case TextureSlot::Slot14:
+        glActiveTexture(GL_TEXTURE14);
+        break;
+    case TextureSlot::Slot15:
+        glActiveTexture(GL_TEXTURE15);
+        break;
+    default:
+        return;
+    }
+
+    glBindTexture(GL_TEXTURE_BUFFER, m_id);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void TextureBuffer::unbind(TextureSlot slot)
+{
+    if (m_id == 0) {
+        return;
+    }
+
+    assert(glGetError() == GL_NO_ERROR);
+    switch (slot) {
+    case TextureSlot::Slot0:
+        glActiveTexture(GL_TEXTURE0);
+        break;
+    case TextureSlot::Slot1:
+        glActiveTexture(GL_TEXTURE1);
+        break;
+    case TextureSlot::Slot2:
+        glActiveTexture(GL_TEXTURE2);
+        break;
+    case TextureSlot::Slot3:
+        glActiveTexture(GL_TEXTURE3);
+        break;
+    case TextureSlot::Slot4:
+        glActiveTexture(GL_TEXTURE4);
+        break;
+    case TextureSlot::Slot5:
+        glActiveTexture(GL_TEXTURE5);
+        break;
+    case TextureSlot::Slot6:
+        glActiveTexture(GL_TEXTURE6);
+        break;
+    case TextureSlot::Slot7:
+        glActiveTexture(GL_TEXTURE7);
+        break;
+    case TextureSlot::Slot8:
+        glActiveTexture(GL_TEXTURE8);
+        break;
+    case TextureSlot::Slot9:
+        glActiveTexture(GL_TEXTURE9);
+        break;
+    case TextureSlot::Slot10:
+        glActiveTexture(GL_TEXTURE10);
+        break;
+    case TextureSlot::Slot11:
+        glActiveTexture(GL_TEXTURE11);
+        break;
+    case TextureSlot::Slot12:
+        glActiveTexture(GL_TEXTURE12);
+        break;
+    case TextureSlot::Slot13:
+        glActiveTexture(GL_TEXTURE13);
+        break;
+    case TextureSlot::Slot14:
+        glActiveTexture(GL_TEXTURE14);
+        break;
+    case TextureSlot::Slot15:
+        glActiveTexture(GL_TEXTURE15);
+        break;
+    default:
+        return;
+    }
+
+    glBindTexture(GL_TEXTURE_BUFFER, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void TextureBuffer::addAttribute(TextureMinificationFilter) {}
+
+void TextureBuffer::addAttribute(TextureMagnificationFilter) {}
+
+void TextureBuffer::bind_buffer(
+    std::shared_ptr<GenericBuffer> buffer, TextureFormat format, TextureInternalFormat internal_format)
+{
+    bind(TextureSlot::TmpSlot);
+
+    GLint internal_format_gl;
+
+    switch (format) {
+    case TextureFormat::R:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            internal_format_gl = GL_R8;
+            break;
+        case TextureInternalFormat::Short:
+            internal_format_gl = GL_R16;
+            break;
+        case TextureInternalFormat::Int8:
+            internal_format_gl = GL_R8I;
+            break;
+        case TextureInternalFormat::Int16:
+            internal_format_gl = GL_R16I;
+            break;
+        case TextureInternalFormat::Int32:
+            internal_format_gl = GL_R32I;
+            break;
+        case TextureInternalFormat::UInt8:
+            internal_format_gl = GL_R8UI;
+            break;
+        case TextureInternalFormat::UInt16:
+            internal_format_gl = GL_R16UI;
+            break;
+        case TextureInternalFormat::UInt32:
+            internal_format_gl = GL_R32UI;
+            break;
+        case TextureInternalFormat::Float16:
+            internal_format_gl = GL_R16F;
+            break;
+        case TextureInternalFormat::Float32:
+            internal_format_gl = GL_R32F;
+            break;
+        default:
+            return;
+        }
+        break;
+    case TextureFormat::RG:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            internal_format_gl = GL_RG8;
+            break;
+        case TextureInternalFormat::Short:
+            internal_format_gl = GL_RG16;
+            break;
+        case TextureInternalFormat::Int8:
+            internal_format_gl = GL_RG8I;
+            break;
+        case TextureInternalFormat::Int16:
+            internal_format_gl = GL_RG16I;
+            break;
+        case TextureInternalFormat::Int32:
+            internal_format_gl = GL_RG32I;
+            break;
+        case TextureInternalFormat::UInt8:
+            internal_format_gl = GL_RG8UI;
+            break;
+        case TextureInternalFormat::UInt16:
+            internal_format_gl = GL_RG16UI;
+            break;
+        case TextureInternalFormat::UInt32:
+            internal_format_gl = GL_RG32UI;
+            break;
+        case TextureInternalFormat::Float16:
+            internal_format_gl = GL_RG16F;
+            break;
+        case TextureInternalFormat::Float32:
+            internal_format_gl = GL_RG32F;
+            break;
+        default:
+            return;
+        }
+        break;
+    case TextureFormat::RGB:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            internal_format_gl = GL_RGB8;
+            break;
+        case TextureInternalFormat::Short:
+            internal_format_gl = GL_RGB16;
+            break;
+        case TextureInternalFormat::Int8:
+            internal_format_gl = GL_RGB8I;
+            break;
+        case TextureInternalFormat::Int16:
+            internal_format_gl = GL_RGB16I;
+            break;
+        case TextureInternalFormat::Int32:
+            internal_format_gl = GL_RGB32I;
+            break;
+        case TextureInternalFormat::UInt8:
+            internal_format_gl = GL_RGB8UI;
+            break;
+        case TextureInternalFormat::UInt16:
+            internal_format_gl = GL_RGB16UI;
+            break;
+        case TextureInternalFormat::UInt32:
+            internal_format_gl = GL_RGB32UI;
+            break;
+        case TextureInternalFormat::Float16:
+            internal_format_gl = GL_RGB16F;
+            break;
+        case TextureInternalFormat::Float32:
+            internal_format_gl = GL_RGB32F;
+            break;
+        default:
+            return;
+        }
+        break;
+    case TextureFormat::RGBA:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            internal_format_gl = GL_RGBA8;
+            break;
+        case TextureInternalFormat::Short:
+            internal_format_gl = GL_RGBA16;
+            break;
+        case TextureInternalFormat::Int8:
+            internal_format_gl = GL_RGBA8I;
+            break;
+        case TextureInternalFormat::Int16:
+            internal_format_gl = GL_RGBA16I;
+            break;
+        case TextureInternalFormat::Int32:
+            internal_format_gl = GL_RGBA32I;
+            break;
+        case TextureInternalFormat::UInt8:
+            internal_format_gl = GL_RGBA8UI;
+            break;
+        case TextureInternalFormat::UInt16:
+            internal_format_gl = GL_RGBA16UI;
+            break;
+        case TextureInternalFormat::UInt32:
+            internal_format_gl = GL_RGBA32UI;
+            break;
+        case TextureInternalFormat::Float16:
+            internal_format_gl = GL_RGBA16F;
+            break;
+        case TextureInternalFormat::Float32:
+            internal_format_gl = GL_RGBA32F;
+            break;
+        default:
+            return;
+        }
+        break;
+    case TextureFormat::Depth:
+    case TextureFormat::DepthStencil:
+        internal_format_gl = GL_R8;
+    }
+
+    if (buffer) {
+        m_size = buffer->size();
+        buffer->bind();
+        assert(glGetError() == GL_NO_ERROR);
+        glTexBuffer(GL_TEXTURE_BUFFER, internal_format_gl, buffer->id());
+        assert(glGetError() == GL_NO_ERROR);
+        buffer->unbind();
+    } else {
+        m_size = 0;
+        assert(glGetError() == GL_NO_ERROR);
+        glTexBuffer(GL_TEXTURE_BUFFER, internal_format_gl, 0);
+        assert(glGetError() == GL_NO_ERROR);
+    }
+
+    unbind(TextureSlot::TmpSlot);
+
+    m_buffer = std::move(buffer);
+}
+
 Texture2D::Texture2D()
     : m_id{ 0 }
     , m_width{ 0 }

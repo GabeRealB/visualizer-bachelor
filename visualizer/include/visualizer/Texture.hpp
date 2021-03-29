@@ -6,6 +6,8 @@
 #include <glad/glad.h>
 #include <memory>
 
+#include <visualizer/GenericBuffer.hpp>
+
 namespace Visualizer {
 
 enum class TextureSlot : std::size_t {
@@ -28,7 +30,7 @@ enum class TextureSlot : std::size_t {
     TmpSlot = 15
 };
 
-enum class TextureType { Texture2D, Texture2DMultisample };
+enum class TextureType { TextureBuffer, Texture2D, Texture2DMultisample };
 enum class TextureFormat { R, RG, RGB, RGBA, Depth, DepthStencil };
 enum class TextureInternalFormat { Byte, Short, Int8, Int16, Int32, UInt8, UInt16, UInt32, Float16, Float32 };
 enum class TextureMinificationFilter {
@@ -59,6 +61,37 @@ public:
 
 protected:
     Texture() = default;
+};
+
+class TextureBuffer : public Texture {
+public:
+    TextureBuffer();
+    TextureBuffer(const TextureBuffer& other) = delete;
+    TextureBuffer(TextureBuffer&& other) noexcept;
+    ~TextureBuffer();
+
+    TextureBuffer& operator=(const TextureBuffer& other) = delete;
+    TextureBuffer& operator=(TextureBuffer&& other) noexcept;
+
+    GLuint id() const final;
+    std::size_t size() const;
+    TextureType type() const final;
+
+    std::shared_ptr<GenericBuffer> buffer();
+    std::shared_ptr<const GenericBuffer> buffer() const;
+
+    void bind(TextureSlot slot) final;
+    void unbind(TextureSlot slot) final;
+
+    void addAttribute(TextureMinificationFilter filter) final;
+    void addAttribute(TextureMagnificationFilter filter) final;
+    void bind_buffer(
+        std::shared_ptr<GenericBuffer> buffer, TextureFormat format, TextureInternalFormat internal_format);
+
+private:
+    GLuint m_id;
+    std::size_t m_size;
+    std::shared_ptr<GenericBuffer> m_buffer;
 };
 
 class Texture2D : public Texture {

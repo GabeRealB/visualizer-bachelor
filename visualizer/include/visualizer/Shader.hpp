@@ -56,7 +56,8 @@ enum class ParameterType : std::size_t {
     Mat4x4 = 24,
     Sampler2D = 25,
     Sampler2DMultisample = 26,
-    MaxIndex = Sampler2DMultisample
+    SamplerBuffer = 27,
+    MaxIndex = SamplerBuffer
 };
 
 template <typename T> struct ShaderTypeMapping {
@@ -196,6 +197,11 @@ template <> struct ShaderTypeMapping<TextureSampler<Texture2D>> {
 template <> struct ShaderTypeMapping<TextureSampler<Texture2DMultisample>> {
     static constexpr bool hasMapping{ true };
     static constexpr ParameterType mappedType{ ParameterType::Sampler2DMultisample };
+};
+
+template <> struct ShaderTypeMapping<TextureSampler<TextureBuffer>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::SamplerBuffer };
 };
 
 using ParameterDeclaration = std::tuple<ParameterQualifier, ParameterType, std::size_t, std::string>;
@@ -435,7 +441,8 @@ public:
                 program->m_parameterLocations.insert_or_assign(std::get<3>(parameter), location);
 
                 if (std::get<1>(parameter) == ParameterType::Sampler2D
-                    || std::get<1>(parameter) == ParameterType::Sampler2DMultisample) {
+                    || std::get<1>(parameter) == ParameterType::Sampler2DMultisample
+                    || std::get<1>(parameter) == ParameterType::SamplerBuffer) {
                     glUniform1i(location, textures++);
                 }
             }

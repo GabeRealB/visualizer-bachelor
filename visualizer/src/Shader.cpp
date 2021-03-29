@@ -43,36 +43,38 @@ constexpr std::array<std::string_view, 2> sParameterQualifierNames{ "@program"sv
 constexpr std::array<ParameterQualifier, 2> sParameterQualifierMap{ ParameterQualifier::Program,
     ParameterQualifier::Material };
 
-constexpr std::array<std::string_view, 29> sParameterTypeNames{
-    "bool"sv,
-    "int"sv,
-    "uint"sv,
-    "float"sv,
-    "bvec2"sv,
-    "bvec3"sv,
-    "bvec4"sv,
-    "ivec2"sv,
-    "ivec3"sv,
-    "ivec4"sv,
-    "uvec2"sv,
-    "uvec3"sv,
-    "uvec4"sv,
-    "vec2"sv,
-    "vec3"sv,
-    "vec4"sv,
-    "mat2x2"sv,
-    "mat2x3"sv,
-    "mat2x4"sv,
-    "mat3x2"sv,
-    "mat3x3"sv,
-    "mat3x4"sv,
-    "mat4x2"sv,
-    "mat4x3"sv,
-    "mat4x4"sv,
-    "sampler2D"sv,
-    "sampler2DMS"sv,
-    "usampler2D"sv,
-    "usampler2DMS"sv,
+std::map<std::string_view , ParameterType> s_parameter_type_map{
+    { "bool"sv, ParameterType::Bool },
+    { "int"sv, ParameterType::Int },
+    { "uint"sv, ParameterType::UInt },
+    { "float"sv, ParameterType::Float },
+    { "bvec2"sv, ParameterType::BVec2 },
+    { "bvec3"sv, ParameterType::BVec3 },
+    { "bvec4"sv, ParameterType::BVec4 },
+    { "ivec2"sv, ParameterType::IVec2 },
+    { "ivec3"sv, ParameterType::IVec3 },
+    { "ivec4"sv, ParameterType::IVec4 },
+    { "uvec2"sv, ParameterType::UVec2 },
+    { "uvec3"sv, ParameterType::UVec3 },
+    { "uvec4"sv, ParameterType::UVec4 },
+    { "vec2"sv, ParameterType::Vec2 },
+    { "vec3"sv, ParameterType::Vec3 },
+    { "vec4"sv, ParameterType::Vec4 },
+    { "mat2x2"sv, ParameterType::Mat2x2 },
+    { "mat2x3"sv, ParameterType::Mat2x3 },
+    { "mat2x4"sv, ParameterType::Mat2x4 },
+    { "mat3x2"sv, ParameterType::Mat3x2 },
+    { "mat3x3"sv, ParameterType::Mat3x3 },
+    { "mat3x4"sv, ParameterType::Mat3x4 },
+    { "mat4x2"sv, ParameterType::Mat4x2 },
+    { "mat4x3"sv, ParameterType::Mat4x3 },
+    { "mat4x4"sv, ParameterType::Mat4x4 },
+    { "sampler2D"sv, ParameterType::Sampler2D },
+    { "sampler2DMS"sv, ParameterType::Sampler2DMultisample },
+    { "samplerBuffer"sv, ParameterType::SamplerBuffer },
+    { "usampler2D"sv, ParameterType::Sampler2D },
+    { "usampler2DMS"sv, ParameterType::Sampler2DMultisample },
+    { "usamplerBuffer"sv, ParameterType::SamplerBuffer },
 };
 
 Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
@@ -100,9 +102,8 @@ Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
                 qualPos != sParameterQualifierNames.end()) {
                 auto qualifier{ sParameterQualifierMap[qualPos - sParameterQualifierNames.begin()] };
 
-                if (auto typePos{ std::find(sParameterTypeNames.begin(), sParameterTypeNames.end(), lineTokens[1]) };
-                    typePos != sParameterTypeNames.end()) {
-                    auto type{ static_cast<ParameterType>(typePos - sParameterTypeNames.begin()) };
+                if (auto type_pos{s_parameter_type_map.find(lineTokens[1])}; type_pos != s_parameter_type_map.end()) {
+                    auto type{ type_pos->second };
                     auto arraySize{ fromStringView<std::size_t>(lineTokens[2]) };
                     auto parameterName{ lineTokens[3] };
 
@@ -196,7 +197,7 @@ std::optional<Shader> Shader::create(const std::filesystem::path& shaderPath, Sh
  *************************************** ShaderEnvironment ***************************************
  **************************************************************************************************/
 
-constexpr std::array<std::tuple<std::size_t, std::size_t>, 29> sTypeSizeAlignmentPairs{
+constexpr std::array<std::tuple<std::size_t, std::size_t>, 28> sTypeSizeAlignmentPairs{
     std::tuple<std::size_t, std::size_t>{ sizeof(GLboolean), alignof(GLboolean) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLint), alignof(GLint) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLuint), alignof(GLuint) },
@@ -225,9 +226,8 @@ constexpr std::array<std::tuple<std::size_t, std::size_t>, 29> sTypeSizeAlignmen
     std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
     std::tuple<std::size_t, std::size_t>{
         sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
-    std::tuple<std::size_t, std::size_t>{ sizeof(TextureSampler<Texture2D>), alignof(TextureSampler<Texture2D>) },
     std::tuple<std::size_t, std::size_t>{
-        sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
+        sizeof(TextureSampler<TextureBuffer>), alignof(TextureSampler<TextureBuffer>) },
 };
 
 ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier filter)
@@ -349,7 +349,7 @@ ShaderEnvironment::~ShaderEnvironment()
  ***************************************** ShaderProgram *****************************************
  **************************************************************************************************/
 
-constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 29> sTypeApplyFuncs{
+constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 28> sTypeApplyFuncs{
     /**************************************** Scalars ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
@@ -572,13 +572,7 @@ constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view
         }
     },
     [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
-        auto val{ environment.getPtr<TextureSampler<Texture2D>>(name, size) };
-        if (val != nullptr) {
-            val->bind();
-        }
-    },
-    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
-        auto val{ environment.getPtr<TextureSampler<Texture2DMultisample>>(name, size) };
+        auto val{ environment.getPtr<TextureSampler<TextureBuffer>>(name, size) };
         if (val != nullptr) {
             val->bind();
         }

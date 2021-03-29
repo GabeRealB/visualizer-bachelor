@@ -272,6 +272,9 @@ void Framebuffer::attachBuffer(FramebufferAttachment attachment, std::shared_ptr
 
     assert(glGetError() == GL_NO_ERROR);
     switch (texture->type()) {
+    case TextureType::TextureBuffer:
+        unbind(FramebufferBinding::ReadWrite);
+        return;
     case TextureType::Texture2D:
         glFramebufferTexture2D(GL_FRAMEBUFFER, attachmentGl, GL_TEXTURE_2D, texture->id(), 0);
         break;
