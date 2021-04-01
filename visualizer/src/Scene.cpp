@@ -1809,9 +1809,60 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             }
 
             for (auto& component_connection : component_gui.group_connections) {
+                GroupConnectionPoint src_point = [&]() -> auto
+                {
+                    switch (component_connection.source_point) {
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Left:
+                        return GroupConnectionPoint::Left;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Right:
+                        return GroupConnectionPoint::Right;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Top:
+                        return GroupConnectionPoint::Top;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Bottom:
+                        return GroupConnectionPoint::Bottom;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::TopLeft:
+                        return GroupConnectionPoint::TopLeft;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::TopRight:
+                        return GroupConnectionPoint::TopRight;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomLeft:
+                        return GroupConnectionPoint::BottomLeft;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomRight:
+                        return GroupConnectionPoint::BottomRight;
+                    }
+                }
+                ();
+
+                GroupConnectionPoint dst_point = [&]() -> auto
+                {
+                    switch (component_connection.destination_point) {
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Left:
+                        return GroupConnectionPoint::Left;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Right:
+                        return GroupConnectionPoint::Right;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Top:
+                        return GroupConnectionPoint::Top;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::Bottom:
+                        return GroupConnectionPoint::Bottom;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::TopLeft:
+                        return GroupConnectionPoint::TopLeft;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::TopRight:
+                        return GroupConnectionPoint::TopRight;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomLeft:
+                        return GroupConnectionPoint::BottomLeft;
+                    case Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomRight:
+                        return GroupConnectionPoint::BottomRight;
+                    }
+                }
+                ();
+
                 gui.group_connections.push_back({
-                    group_index_map.at(component_connection[0]),
-                    group_index_map.at(component_connection[1]),
+                    glm::make_vec4(component_connection.color.data()),
+                    component_connection.head_size,
+                    component_connection.line_width,
+                    group_index_map.at(component_connection.source),
+                    src_point,
+                    group_index_map.at(component_connection.destination),
+                    dst_point,
                 });
             }
 

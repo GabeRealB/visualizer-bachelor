@@ -315,10 +315,42 @@
         }
       },
       "arrows": [
-        ["input buffer", "inp_mda"      ],
-        ["inp_mda"     , "computation"  ],
-        ["computation" , "out_mda"      ],
-        ["out_mda"     , "output buffer"]
+        {
+          "start group": "input buffer",
+          "start group connection point": "bottom",
+          "end group": "inp_mda",
+          "end group connection point": "top",
+          "color": [ 200, 100, 0  , 255 ],
+          "head size": 15.0,
+          "line width": 3.0
+        },
+        {
+          "start group": "inp_mda",
+          "start group connection point": "right",
+          "end group": "computation",
+          "end group connection point": "left",
+          "color": [ 200, 100, 0  , 255 ],
+          "head size": 15.0,
+          "line width": 3.0
+        },
+        {
+          "start group": "computation",
+          "start group connection point": "right",
+          "end group": "out_mda",
+          "end group connection point": "left",
+          "color": [ 200, 100, 0  , 255 ],
+          "head size": 15.0,
+          "line width": 3.0
+        },
+        {
+          "start group": "out_mda",
+          "start group connection point": "top",
+          "end group": "output buffer",
+          "end group connection point": "bottom",
+          "color": [ 200, 100, 0  , 255 ],
+          "head size": 15.0,
+          "line width": 3.0
+        }
       ]
     },
     "legend": {

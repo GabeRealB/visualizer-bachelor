@@ -105,7 +105,7 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
 
     auto group_connections = ConfigContainer::get_instance().get_group_connections();
     for (auto& connection : group_connections) {
-        add_composition_gui_connection(world.entities.front(), connection[0], connection[1]);
+        add_composition_gui_connection(world.entities.front(), connection);
     }
 
     auto resources = ConfigContainer::get_instance().get_resources();

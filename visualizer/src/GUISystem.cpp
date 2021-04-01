@@ -330,8 +330,8 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
     // Display links
     draw_list->ChannelsSetCurrent(0);
     for (auto& link : gui.group_connections) {
-        auto& src_rect = group_rects[link[0]];
-        auto& dst_rect = group_rects[link[1]];
+        auto& src_rect = group_rects[link.start_idx];
+        auto& dst_rect = group_rects[link.end_idx];
 
         ImVec2 src_mid = { (src_rect[0].x + src_rect[1].x) / 2.0f, (src_rect[0].y + src_rect[1].y) / 2.0f };
         ImVec2 dst_mid = { (dst_rect[0].x + dst_rect[1].x) / 2.0f, (dst_rect[0].y + dst_rect[1].y) / 2.0f };
@@ -344,42 +344,99 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
         ImVec2 arrow_p1;
         ImVec2 arrow_p2;
 
-        if (dst_mid.x >= src_rect[0].x && dst_mid.x <= src_rect[1].x) {
-            if (dst_rect[1].y <= src_rect[0].y) {
-                link_start = { src_mid.x, src_rect[0].y };
-                link_end = { dst_mid.x, dst_rect[1].y };
-                p1 = { link_start.x, link_start.y - 50.0f };
-                p2 = { link_end.x, link_end.y + 50.0f };
-                arrow_p1 = { link_end.x - 7.5f, link_end.y + 15.0f };
-                arrow_p2 = { link_end.x + 7.5f, link_end.y + 15.0f };
-            } else {
-                link_start = { src_mid.x, src_rect[1].y };
-                link_end = { dst_mid.x, dst_rect[0].y };
-                p1 = { link_start.x, link_start.y + 50.0f };
-                p2 = { link_end.x, link_end.y - 50.0f };
-                arrow_p1 = { link_end.x - 7.5f, link_end.y - 15.0f };
-                arrow_p2 = { link_end.x + 7.5f, link_end.y - 15.0f };
-            }
-        } else if (dst_mid.x <= src_rect[0].x) {
+        auto half_arrow_length = link.head_size / 2.0f;
+
+        switch (link.start_point) {
+        case GroupConnectionPoint::Left:
             link_start = { src_rect[0].x, src_mid.y };
-            link_end = { dst_rect[1].x, dst_mid.y };
             p1 = { link_start.x - 50.0f, link_start.y };
-            p2 = { link_end.x + 50.0f, link_end.y };
-            arrow_p1 = { link_end.x + 15.0f, link_end.y - 7.5f };
-            arrow_p2 = { link_end.x + 15.0f, link_end.y + 7.5f };
-        } else {
+            break;
+        case GroupConnectionPoint::Right:
             link_start = { src_rect[1].x, src_mid.y };
-            link_end = { dst_rect[0].x, dst_mid.y };
             p1 = { link_start.x + 50.0f, link_start.y };
-            p2 = { link_end.x - 50.0f, link_end.y };
-            arrow_p1 = { link_end.x - 15.0f, link_end.y - 7.5f };
-            arrow_p2 = { link_end.x - 15.0f, link_end.y + 7.5f };
+            break;
+        case GroupConnectionPoint::Top:
+            link_start = { src_mid.x, src_rect[0].y };
+            p1 = { link_start.x, link_start.y - 50.0f };
+            break;
+        case GroupConnectionPoint::Bottom:
+            link_start = { src_mid.x, src_rect[1].y };
+            p1 = { link_start.x, link_start.y + 50.0f };
+            break;
+        case GroupConnectionPoint::TopLeft:
+            link_start = { src_rect[0].x, src_rect[0].y };
+            p1 = { link_start.x - 25.0f, link_start.y - 25.0f };
+            break;
+        case GroupConnectionPoint::TopRight:
+            link_start = { src_rect[1].x, src_rect[0].y };
+            p1 = { link_start.x + 25.0f, link_start.y - 25.0f };
+            break;
+        case GroupConnectionPoint::BottomLeft:
+            link_start = { src_rect[0].x, src_rect[1].y };
+            p1 = { link_start.x - 25.0f, link_start.y + 25.0f };
+            break;
+        case GroupConnectionPoint::BottomRight:
+            link_start = { src_rect[1].x, src_rect[1].y };
+            p1 = { link_start.x + 25.0f, link_start.y + 25.0f };
+            break;
         }
 
-        constexpr auto line_color = IM_COL32(200, 100, 0, 255);
-        draw_list->AddLine(arrow_p1, link_end, line_color, 3.0f);
-        draw_list->AddLine(arrow_p2, link_end, line_color, 3.0f);
-        draw_list->AddBezierCurve(link_start, p1, p2, link_end, line_color, 3.0f);
+        switch (link.end_point) {
+        case GroupConnectionPoint::Left:
+            link_end = { dst_rect[0].x, dst_mid.y };
+            p2 = { link_end.x - 50.0f, link_end.y };
+            arrow_p1 = { link_end.x - link.head_size, link_end.y - half_arrow_length };
+            arrow_p2 = { link_end.x - link.head_size, link_end.y + half_arrow_length };
+            break;
+        case GroupConnectionPoint::Right:
+            link_end = { dst_rect[1].x, dst_mid.y };
+            p2 = { link_end.x + 50.0f, link_end.y };
+            arrow_p1 = { link_end.x + link.head_size, link_end.y - half_arrow_length };
+            arrow_p2 = { link_end.x + link.head_size, link_end.y + half_arrow_length };
+            break;
+        case GroupConnectionPoint::Top:
+            link_end = { dst_mid.x, dst_rect[0].y };
+            p2 = { link_end.x, link_end.y - 50.0f };
+            arrow_p1 = { link_end.x - half_arrow_length, link_end.y - link.head_size };
+            arrow_p2 = { link_end.x + half_arrow_length, link_end.y - link.head_size };
+            break;
+        case GroupConnectionPoint::Bottom:
+            link_end = { dst_mid.x, dst_rect[1].y };
+            p2 = { link_end.x, link_end.y + 50.0f };
+            arrow_p1 = { link_end.x - half_arrow_length, link_end.y + link.head_size };
+            arrow_p2 = { link_end.x + half_arrow_length, link_end.y + link.head_size };
+            break;
+        case GroupConnectionPoint::TopLeft:
+            link_end = { dst_rect[0].x, dst_rect[0].y };
+            p2 = { link_end.x - 25.0f, link_end.y - 25.0f };
+            arrow_p1 = { link_end.x, link_end.y - link.head_size };
+            arrow_p2 = { link_end.x - link.head_size, link_end.y };
+            break;
+        case GroupConnectionPoint::TopRight:
+            link_end = { dst_rect[1].x, dst_rect[0].y };
+            p2 = { link_end.x + 25.0f, link_end.y - 25.0f };
+            arrow_p1 = { link_end.x, link_end.y - link.head_size };
+            arrow_p2 = { link_end.x + link.head_size, link_end.y };
+            break;
+        case GroupConnectionPoint::BottomLeft:
+            link_end = { dst_rect[0].x, dst_rect[1].y };
+            p2 = { link_end.x - 25.0f, link_end.y + 25.0f };
+            arrow_p1 = { link_end.x, link_end.y + link.head_size };
+            arrow_p2 = { link_end.x - link.head_size, link_end.y };
+            break;
+        case GroupConnectionPoint::BottomRight:
+            link_end = { dst_rect[1].x, dst_rect[1].y };
+            p2 = { link_end.x + 25.0f, link_end.y + 25.0f };
+            arrow_p1 = { link_end.x, link_end.y + link.head_size };
+            arrow_p2 = { link_end.x + link.head_size, link_end.y };
+            break;
+        }
+
+        auto line_color
+            = IM_COL32(link.color[0] * 255.0f, link.color[1] * 255.0f, link.color[2] * 255.0f, link.color[3] * 255.0f);
+        draw_list->AddLine(arrow_p1, link_end, line_color, link.line_width);
+        draw_list->AddLine(arrow_p2, link_end, line_color, link.line_width);
+        draw_list->AddBezierCurve(link_start, p1, p2, link_end, line_color, link.line_width);
     }
 
     gui.selected_group = group_selected;
@@ -622,5 +679,4 @@ void render_gui(EntityDatabaseContext& database_context, const Canvas& canvas, C
         }
     }
 }
-
 }

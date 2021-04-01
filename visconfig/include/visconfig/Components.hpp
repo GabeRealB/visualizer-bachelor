@@ -374,10 +374,31 @@ struct CompositionGUIGroup {
     std::vector<CompositionGUIWindow> windows;
 };
 
+enum class CompositionGUIGroupConnectionPoint {
+    Left,
+    Right,
+    Top,
+    Bottom,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+};
+
+struct CompositionGUIGroupConnection {
+    float head_size;
+    float line_width;
+    std::string source;
+    std::string destination;
+    std::array<float, 4> color;
+    CompositionGUIGroupConnectionPoint source_point;
+    CompositionGUIGroupConnectionPoint destination_point;
+};
+
 struct CompositionGUI {
     std::array<float, 4> background_color;
     std::map<std::string, CompositionGUIGroup> groups;
-    std::vector<std::array<std::string, 2>> group_connections;
+    std::vector<CompositionGUIGroupConnection> group_connections;
 };
 
 struct ConfigDumpGUIWindow {
@@ -542,6 +563,18 @@ NLOHMANN_JSON_SERIALIZE_ENUM(LegendGUIEntryType,
         { LegendGUIEntryType::ImageEntry, "image_entry" },
     })
 
+NLOHMANN_JSON_SERIALIZE_ENUM(CompositionGUIGroupConnectionPoint,
+    {
+        { CompositionGUIGroupConnectionPoint::Left, "left" },
+        { CompositionGUIGroupConnectionPoint::Right, "right" },
+        { CompositionGUIGroupConnectionPoint::Top, "top" },
+        { CompositionGUIGroupConnectionPoint::Bottom, "bottom" },
+        { CompositionGUIGroupConnectionPoint::TopLeft, "top-left" },
+        { CompositionGUIGroupConnectionPoint::TopRight, "top-right" },
+        { CompositionGUIGroupConnectionPoint::BottomLeft, "bottom-left" },
+        { CompositionGUIGroupConnectionPoint::BottomRight, "bottom-right" },
+    })
+
 /*Internal Structs*/
 
 template <typename T> void to_json(nlohmann::json& j, const TMaterialAttribute<T>& v)
@@ -600,9 +633,13 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIImageEntry, absolute, image, descrip
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LegendGUIColorEntry, label, caption, color, caption_color)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIWindow, id, name, flip_vertical, texture_name, scaling, position, caption_color)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    CompositionGUIWindow, id, name, flip_vertical, texture_name, scaling, position, caption_color)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUIGroup, transparent, id, caption, position, caption_color, windows)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    CompositionGUIGroupConnection, head_size, line_width, source, destination, color, source_point, destination_point)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, background_color, groups, group_connections)
 

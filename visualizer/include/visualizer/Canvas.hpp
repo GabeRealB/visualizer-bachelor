@@ -51,6 +51,27 @@ struct CompositionGUIGroup {
     std::vector<CompositionGUIWindow> windows;
 };
 
+enum class GroupConnectionPoint {
+    Left,
+    Right,
+    Top,
+    Bottom,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+};
+
+struct GroupConnection {
+    glm::vec4 color;
+    float head_size;
+    float line_width;
+    std::size_t start_idx;
+    GroupConnectionPoint start_point;
+    std::size_t end_idx;
+    GroupConnectionPoint end_point;
+};
+
 struct CompositionGUI {
     glm::vec2 size;
     glm::vec2 position;
@@ -58,7 +79,7 @@ struct CompositionGUI {
     std::size_t selected_group;
     std::size_t selected_window;
     std::vector<CompositionGUIGroup> groups;
-    std::vector<std::array<std::size_t, 2>> group_connections;
+    std::vector<GroupConnection> group_connections;
 };
 
 struct ConfigDumpGUITextureWindow {

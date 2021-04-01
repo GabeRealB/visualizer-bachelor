@@ -1,7 +1,5 @@
 #include "entity_utilities.hpp"
 
-#include "Config.hpp"
-
 namespace Config {
 
 constexpr std::size_t coordinator_camera_switcher_idx = 0;
@@ -590,15 +588,73 @@ void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std
     }
 }
 
-void add_composition_gui_connection(
-    Visconfig::Entity& coordinator_entity, const std::string& group_source, const std::string& group_destination)
+void add_composition_gui_connection(Visconfig::Entity& coordinator_entity, const GroupConnection& group_connection)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
     auto& composition_gui
         = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
 
-    composition_gui.group_connections.push_back({ group_source, group_destination });
+    Visconfig::Components::CompositionGUIGroupConnectionPoint src_point = [&]() -> auto
+    {
+        switch (group_connection.source_point) {
+        case GroupConnectionPoint::Left:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Left;
+        case GroupConnectionPoint::Right:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Right;
+        case GroupConnectionPoint::Top:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Top;
+        case GroupConnectionPoint::Bottom:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Bottom;
+        case GroupConnectionPoint::TopLeft:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::TopLeft;
+        case GroupConnectionPoint::TopRight:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::TopRight;
+        case GroupConnectionPoint::BottomLeft:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomLeft;
+        case GroupConnectionPoint::BottomRight:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomRight;
+        }
+    }
+    ();
+
+    Visconfig::Components::CompositionGUIGroupConnectionPoint dst_point = [&]() -> auto
+    {
+        switch (group_connection.destination_point) {
+        case GroupConnectionPoint::Left:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Left;
+        case GroupConnectionPoint::Right:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Right;
+        case GroupConnectionPoint::Top:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Top;
+        case GroupConnectionPoint::Bottom:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::Bottom;
+        case GroupConnectionPoint::TopLeft:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::TopLeft;
+        case GroupConnectionPoint::TopRight:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::TopRight;
+        case GroupConnectionPoint::BottomLeft:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomLeft;
+        case GroupConnectionPoint::BottomRight:
+            return Visconfig::Components::CompositionGUIGroupConnectionPoint::BottomRight;
+        }
+    }
+    ();
+
+    composition_gui.group_connections.push_back({
+        group_connection.head_size,
+        group_connection.line_width,
+        group_connection.source,
+        group_connection.destination,
+        {
+            group_connection.color[0] / 255.0f,
+            group_connection.color[1] / 255.0f,
+            group_connection.color[2] / 255.0f,
+            group_connection.color[3] / 255.0f,
+        },
+        src_point,
+        dst_point,
+    });
 }
 
 void add_config_dump_gui_template(Visconfig::Entity& coordinator_entity, const std::string& config_template)

@@ -233,8 +233,17 @@ def generate(config, template, output):
     code_str = code_str + "\n"
 
     for connection in grouping["arrows"]:
-        code_str = code_str + """\tconfig_instance.add_group_connection("{}", "{}");\n""" \
-            .format(connection[0], connection[1]) \
+        connection_source = connection["start group"]
+        connection_source_point = connection["start group connection point"]
+        connection_destination = connection["end group"]
+        connection_destination_point = connection["end group connection point"]
+        connection_color = ", ".join([str(c) for c in connection["color"]])
+        connection_head_size = connection["head size"]
+        connection_line_width = connection["line width"]
+
+        code_str = code_str + """\tconfig_instance.add_group_connection("{}", "{}", "{}", "{}", {{ {} }}, {}, {});\n""" \
+            .format(connection_source, connection_source_point, connection_destination, connection_destination_point,
+                    connection_color, connection_head_size, connection_line_width) \
             .expandtabs(4)
 
     code_str = code_str + "\n"

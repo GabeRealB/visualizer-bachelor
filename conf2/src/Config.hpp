@@ -478,6 +478,27 @@ struct ConfigGroup {
     std::array<std::size_t, 4> caption_color;
 };
 
+enum class GroupConnectionPoint {
+    Left,
+    Right,
+    Top,
+    Bottom,
+    TopLeft,
+    TopRight,
+    BottomLeft,
+    BottomRight,
+};
+
+struct GroupConnection {
+    float head_size;
+    float line_width;
+    std::string source;
+    std::string destination;
+    std::array<std::size_t, 4> color;
+    GroupConnectionPoint source_point;
+    GroupConnectionPoint destination_point;
+};
+
 class ConfigContainer {
 public:
     using LegendVariant = std::variant<ColorLegend, ImageLegend>;
@@ -612,18 +633,49 @@ public:
         }
     }
 
-    std::span<const std::array<std::string, 2>> get_group_connections() const
+    std::span<const GroupConnection> get_group_connections() const
     {
         return { m_group_connections.data(), m_group_connections.size() };
     }
 
-    void add_group_connection(const std::string& source, const std::string& destination)
+    void add_group_connection(const std::string& source, const std::string& source_point,
+        const std::string& destination, const std::string& destination_point, const std::array<std::size_t, 4> color,
+        float head_size, float line_width)
     {
         if (!m_groups.contains(source) || !m_groups.contains(destination)) {
             std::cerr << "The group does not exist." << std::endl;
             std::abort();
         } else {
-            m_group_connections.push_back({ source, destination });
+            auto to_enum = [](const std::string& point) -> auto
+            {
+                if (point == "left") {
+                    return GroupConnectionPoint::Left;
+                } else if (point == "right") {
+                    return GroupConnectionPoint::Right;
+                } else if (point == "top") {
+                    return GroupConnectionPoint::Top;
+                } else if (point == "bottom") {
+                    return GroupConnectionPoint::Bottom;
+                } else if (point == "top-left") {
+                    return GroupConnectionPoint::TopLeft;
+                } else if (point == "top-right") {
+                    return GroupConnectionPoint::TopRight;
+                } else if (point == "bottom-left") {
+                    return GroupConnectionPoint::BottomLeft;
+                } else {
+                    return GroupConnectionPoint::BottomRight;
+                }
+            };
+
+            m_group_connections.push_back({
+                head_size,
+                line_width,
+                source,
+                destination,
+                color,
+                to_enum(source_point),
+                to_enum(destination_point),
+            });
         }
     }
 
@@ -655,7 +707,7 @@ private:
     std::array<std::size_t, 4> m_background_color;
     std::map<std::string, std::string> m_group_associations;
     std::map<std::string, ConfigGroup> m_groups;
-    std::vector<std::array<std::string, 2>> m_group_connections;
+    std::vector<GroupConnection> m_group_connections;
     std::vector<std::tuple<VariableType, std::string, std::size_t, std::size_t>> m_variables;
 };
 
