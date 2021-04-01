@@ -259,6 +259,8 @@ public:
 
     float size() const { return m_size; }
 
+    float border_width() const { return m_border_width; }
+
     std::array<float, 2> position() const { return m_position; }
 
     const std::string& id() const { return m_id; }
@@ -267,9 +269,13 @@ public:
 
     const std::optional<HeatmapInfo>& heatmap() const { return m_heatmap; }
 
+    const std::array<std::size_t, 4>& border_color() const { return m_border_color; }
+
     const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
 
     void set_size(float size) { m_size = size; }
+
+    void set_border_width(float border_width) { m_border_width = border_width; }
 
     void set_position(float x, float y)
     {
@@ -280,6 +286,8 @@ public:
     void set_id(const std::string& id) { m_id = id; }
 
     void set_name(const std::string& name) { m_name = name; }
+
+    void set_border_color(const std::array<std::size_t, 4>& color) { m_border_color = color; }
 
     void set_caption_color(const std::array<std::size_t, 4>& color) { m_caption_color = color; }
 
@@ -321,11 +329,13 @@ public:
 
 private:
     float m_size;
+    float m_border_width;
     std::string m_id;
     std::string m_name;
     std::array<float, 2> m_position;
     std::optional<HeatmapInfo> m_heatmap;
     std::vector<CuboidContainer> m_cuboids;
+    std::array<std::size_t, 4> m_border_color;
     std::array<std::size_t, 4> m_caption_color;
     std::vector<std::set<std::string>> m_variable_requirements;
 };
@@ -424,16 +434,19 @@ private:
 
 class ImageResource {
 public:
-    ImageResource(float size, const std::string& group, const std::string& name, const std::string& caption,
+    ImageResource(float size, float border_width, const std::string& group, const std::string& name,
+        const std::string& caption, const std::array<std::size_t, 4>& border_color,
         const std::array<std::size_t, 4>& caption_color, const std::string& id, const std::array<float, 2>& position,
         const std::filesystem::path& path)
         : m_size{ size }
+        , m_border_width{ border_width }
         , m_name{ name }
         , m_group{ group }
         , m_caption{ caption }
         , m_id{ id }
         , m_path{ path }
         , m_position{ position }
+        , m_border_color{ border_color }
         , m_caption_color{ caption_color }
     {
     }
@@ -446,11 +459,15 @@ public:
 
     float size() const { return m_size; }
 
+    float border_width() const { return m_border_width; }
+
     const std::string& name() const { return m_name; }
 
     const std::string& group() const { return m_group; }
 
     const std::string& caption() const { return m_caption; }
+
+    const std::array<std::size_t, 4>& border_color() const { return m_border_color; }
 
     const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
 
@@ -462,19 +479,23 @@ public:
 
 private:
     float m_size;
+    float m_border_width;
     std::string m_name;
     std::string m_group;
     std::string m_caption;
     std::string m_id;
     std::filesystem::path m_path;
     std::array<float, 2> m_position;
+    std::array<std::size_t, 4> m_border_color;
     std::array<std::size_t, 4> m_caption_color;
 };
 
 struct ConfigGroup {
+    float line_width;
     std::string caption;
     std::string id;
     std::array<float, 2> position;
+    std::array<std::size_t, 4> border_color;
     std::array<std::size_t, 4> caption_color;
 };
 
@@ -535,11 +556,23 @@ public:
         m_legend.push_back(ImageLegend{ label, image_name, image_path, scaling, absolute });
     }
 
-    void add_image_resource(float size, const std::string& group, const std::string& name, const std::string& caption,
+    void add_image_resource(float size, float border_width, const std::string& group, const std::string& name,
+        const std::string& caption, const std::array<std::size_t, 4>& border_color,
         const std::array<std::size_t, 4>& caption_color, const std::string& id, const std::array<float, 2>& position,
         const std::filesystem::path& path)
     {
-        m_resources.push_back(ImageResource{ size, group, name, caption, caption_color, id, position, path });
+        m_resources.push_back(ImageResource{
+            size,
+            border_width,
+            group,
+            name,
+            caption,
+            border_color,
+            caption_color,
+            id,
+            position,
+            path,
+        });
     }
 
     std::span<const ImageResource> get_resources() const { return { m_resources.data(), m_resources.size() }; }
@@ -578,20 +611,6 @@ public:
         }
     }
 
-    const std::string& get_group_caption(const std::string& group_name) const { return get_group(group_name).caption; }
-
-    const std::string& get_group_id(const std::string& group_name) const { return get_group(group_name).id; }
-
-    const std::array<float, 2>& get_group_position(const std::string& group_name) const
-    {
-        return get_group(group_name).position;
-    }
-
-    const std::array<std::size_t, 4>& get_group_caption_color(const std::string& group_name) const
-    {
-        return get_group(group_name).caption_color;
-    }
-
     const ConfigGroup& get_group(const std::string& group_name) const
     {
         if (!m_groups.contains(group_name)) {
@@ -602,15 +621,25 @@ public:
         }
     }
 
-    void add_group(const std::string& group_name, const std::string& group_caption,
-        const std::array<std::size_t, 4>& group_caption_color, const std::string& group_id,
-        const std::array<float, 2>& position)
+    void add_group(const std::string& group_name, const std::string& caption, float border_width,
+        const std::array<std::size_t, 4>& border_color, const std::array<std::size_t, 4>& caption_color,
+        const std::string& group_id, const std::array<float, 2>& position)
     {
         if (m_groups.contains(group_name)) {
             std::cerr << "The view already exists." << std::endl;
             std::abort();
         } else {
-            m_groups.insert({ group_name, { group_caption, group_id, position, group_caption_color } });
+            m_groups.insert({
+                group_name,
+                {
+                    border_width,
+                    caption,
+                    group_id,
+                    position,
+                    border_color,
+                    caption_color,
+                },
+            });
         }
     }
 

@@ -80,12 +80,14 @@ struct CuboidCommandList {
 
 struct ViewCommandList {
     float size;
+    float border_width;
     bool heatmap;
     std::string id;
     std::string view_name;
     std::size_t heatmap_idx;
     std::array<float, 2> position;
     std::vector<CuboidCommandList> cuboids;
+    std::array<std::size_t, 4> border_color;
     std::array<std::size_t, 4> caption_color;
 };
 

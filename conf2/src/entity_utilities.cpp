@@ -496,11 +496,11 @@ void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& 
     });
 }
 
-void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
-    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
-    const std::string& name, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
-    const std::array<float, 2>& scaling, const std::array<float, 2>& position)
+void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group_name,
+    const ConfigGroup& group, const std::string& id, const std::string& name,
+    const std::array<std::size_t, 4>& border_color, const std::array<std::size_t, 4>& caption_color,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position,
+    float border_width)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
@@ -511,9 +511,16 @@ void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std:
         id,
         name,
         false,
+        border_width,
         texture,
         scaling,
         position,
+        {
+            border_color[0] / 255.0f,
+            border_color[1] / 255.0f,
+            border_color[2] / 255.0f,
+            border_color[3] / 255.0f,
+        },
         {
             caption_color[0] / 255.0f,
             caption_color[1] / 255.0f,
@@ -522,31 +529,38 @@ void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std:
         },
     };
 
-    if (composition_gui.groups.contains(group)) {
-        composition_gui.groups[group].windows.push_back(std::move(gui_window));
+    if (composition_gui.groups.contains(group_name)) {
+        composition_gui.groups[group_name].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert({ group,
+        composition_gui.groups.insert({ group_name,
             {
                 false,
-                group_id,
-                group_caption,
-                group_position,
+                group.id,
+                group.line_width,
+                group.caption,
+                group.position,
                 {
-                    group_caption_color[0] / 255.0f,
-                    group_caption_color[1] / 255.0f,
-                    group_caption_color[2] / 255.0f,
-                    group_caption_color[3] / 255.0f,
+                    group.border_color[0] / 255.0f,
+                    group.border_color[1] / 255.0f,
+                    group.border_color[2] / 255.0f,
+                    group.border_color[3] / 255.0f,
+                },
+                {
+                    group.caption_color[0] / 255.0f,
+                    group.caption_color[1] / 255.0f,
+                    group.caption_color[2] / 255.0f,
+                    group.caption_color[3] / 255.0f,
                 },
                 { std::move(gui_window) },
             } });
     }
 }
 
-void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
-    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
-    const std::string& window, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
-    const std::array<float, 2>& scaling, const std::array<float, 2>& position)
+void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group_name,
+    const ConfigGroup& group, const std::string& id, const std::string& window,
+    const std::array<std::size_t, 4>& border_color, const std::array<std::size_t, 4>& caption_color,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position,
+    float border_width)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
@@ -557,9 +571,16 @@ void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std
         id,
         window,
         true,
+        border_width,
         texture,
         scaling,
         position,
+        {
+            border_color[0] / 255.0f,
+            border_color[1] / 255.0f,
+            border_color[2] / 255.0f,
+            border_color[3] / 255.0f,
+        },
         {
             caption_color[0] / 255.0f,
             caption_color[1] / 255.0f,
@@ -568,20 +589,27 @@ void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std
         },
     };
 
-    if (composition_gui.groups.contains(group)) {
-        composition_gui.groups[group].windows.push_back(std::move(gui_window));
+    if (composition_gui.groups.contains(group_name)) {
+        composition_gui.groups[group_name].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert({ group,
+        composition_gui.groups.insert({ group_name,
             {
                 false,
-                group_id,
-                group_caption,
-                group_position,
+                group.id,
+                group.line_width,
+                group.caption,
+                group.position,
                 {
-                    group_caption_color[0] / 255.0f,
-                    group_caption_color[1] / 255.0f,
-                    group_caption_color[2] / 255.0f,
-                    group_caption_color[3] / 255.0f,
+                    group.border_color[0] / 255.0f,
+                    group.border_color[1] / 255.0f,
+                    group.border_color[2] / 255.0f,
+                    group.border_color[3] / 255.0f,
+                },
+                {
+                    group.caption_color[0] / 255.0f,
+                    group.caption_color[1] / 255.0f,
+                    group.caption_color[2] / 255.0f,
+                    group.caption_color[3] / 255.0f,
                 },
                 { std::move(gui_window) },
             } });

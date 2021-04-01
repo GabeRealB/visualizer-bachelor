@@ -226,6 +226,8 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
             auto start_uv = window.flip_vertically ? ImVec2{ 0.0f, 1.0f } : ImVec2{ 0.0f, 0.0f };
             auto end_uv = window.flip_vertically ? ImVec2{ 1.0f, 0.0f } : ImVec2{ 1.0f, 1.0f };
 
+            auto window_border_color = IM_COL32(window.border_color.r * 255.0f, window.border_color.g * 255.0f,
+                window.border_color.b * 255.0f, window.border_color.a * 255.0f);
             ImVec4 window_caption_color = {
                 window.caption_color.r,
                 window.caption_color.g,
@@ -239,6 +241,8 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
                 reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size, start_uv, end_uv);
             ImGui::Text("%s", window.window_name.c_str());
             ImGui::PopStyleColor();
+            draw_list->AddRect(
+                screen_pos, max_screen_pos, window_border_color, 0.0f, ImDrawCornerFlags_All, window.border_width);
             ImGui::EndGroup();
 
             draw_list->ChannelsSetCurrent(0);
@@ -271,6 +275,8 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
         rect_max.y += rect_padding;
 
         if (!group.transparent) {
+            auto group_border_color = IM_COL32(group.border_color.r * 255.0f, group.border_color.g * 255.0f,
+                group.border_color.b * 255.0f, group.border_color.a * 255.0f);
             ImVec4 group_caption_color = {
                 group.caption_color.r,
                 group.caption_color.g,
@@ -282,7 +288,7 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
             ImGui::PushStyleColor(ImGuiCol_Text, group_caption_color);
             ImGui::Text("%s", group.group_name.c_str());
             ImGui::PopStyleColor();
-            draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
+            draw_list->AddRect(rect_min, rect_max, group_border_color, 0.0f, ImDrawCornerFlags_All, group.border_width);
             if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0 && gui.selected_group == 0
                 && gui.selected_window == 0) {
                 group_selected = i + 1;

@@ -126,15 +126,12 @@ Visconfig::World generate_world(const ConfigCommandList& config_command_list,
             std::filesystem::copy(texture_path, asset_texture_path);
         }
 
-        auto& group_caption = ConfigContainer::get_instance().get_group_caption(resource.group());
-        auto& group_id = ConfigContainer::get_instance().get_group_id(resource.group());
-        auto& group_position = ConfigContainer::get_instance().get_group_position(resource.group());
-        auto& group_caption_color = ConfigContainer::get_instance().get_group_caption_color(resource.group());
+        auto& group = ConfigContainer::get_instance().get_group(resource.group());
         assets.push_back(create_texture_asset(resource.name(), asset_texture_relative_path,
             Visconfig::Assets::TextureDataType::Byte, texture_attributes));
-        add_composition_gui_image(world.entities.front(), resource.group(), group_caption, group_caption_color,
-            group_id, group_position, resource.id(), resource.caption(), resource.caption_color(), resource.name(),
-            { resource.size(), resource.size() }, resource.position());
+        add_composition_gui_image(world.entities.front(), resource.group(), group, resource.id(), resource.caption(),
+            resource.border_color(), resource.caption_color(), resource.name(), { resource.size(), resource.size() },
+            resource.position(), resource.border_width());
         add_config_dump_gui_texture(world.entities.front(), resource.id());
     }
 
@@ -274,13 +271,10 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
     auto size = view_commands.size;
     extend_camera_switcher(coordinator_entity, camera_entity_id);
     auto& group_name = ConfigContainer::get_instance().get_group_association(view_commands.id);
-    auto& group_caption = ConfigContainer::get_instance().get_group_caption(group_name);
-    auto& group_id = ConfigContainer::get_instance().get_group_id(group_name);
-    auto& group_position = ConfigContainer::get_instance().get_group_position(group_name);
-    auto& group_caption_color = ConfigContainer::get_instance().get_group_caption_color(group_name);
-    add_composition_gui_window(coordinator_entity, group_name, group_caption, group_caption_color, group_id,
-        group_position, view_commands.id, view_commands.view_name, view_commands.caption_color, render_texture_name,
-        { size, size }, view_commands.position);
+    auto& group = ConfigContainer::get_instance().get_group(group_name);
+    add_composition_gui_window(coordinator_entity, group_name, group, view_commands.id, view_commands.view_name,
+        view_commands.border_color, view_commands.caption_color, render_texture_name, { size, size },
+        view_commands.position, view_commands.border_width);
 
     add_config_dump_gui_window(
         coordinator_entity, view_commands.heatmap, view_commands.heatmap_idx, view_commands.id, generated_entities);

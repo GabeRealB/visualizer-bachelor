@@ -602,8 +602,10 @@ ViewCommandList generate_view_command_list(
 
     command_list.id = view_container.id();
     command_list.size = view_container.size();
+    command_list.border_width = view_container.border_width();
     command_list.view_name = view_container.name();
     command_list.position = view_container.position();
+    command_list.border_color = view_container.border_color();
     command_list.caption_color = view_container.caption_color();
     command_list.cuboids.reserve(view_container.get_num_cuboids());
 

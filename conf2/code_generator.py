@@ -135,14 +135,18 @@ def generate(config, template, output):
     for name, group in grouping["groups"].items():
         group_position = ", ".join([str(c) for c in group["position"]])
         group_caption_color = ", ".join([str(c) for c in group["text color"]])
-        code_str = code_str + """\tconfig_instance.add_group("{}", "{}", {{ {} }} ,"{}", {{ {} }});\n""" \
-            .format(name, group["text"], group_caption_color, group["internal_id"], group_position) \
+        group_border_width = group["border"]["line width"]
+        group_border_color = ", ".join([str(c) for c in group["border"]["color"]])
+        code_str = code_str + """\tconfig_instance.add_group("{}", "{}", {}, {{ {} }}, {{ {} }}, "{}", {{ {} }});\n""" \
+            .format(name, group["text"], group_border_width, group_border_color, group_caption_color,
+                    group["internal_id"], group_position) \
             .expandtabs(4)
 
         for element in group["elements"]:
             if "cube" in element:
                 container_name = "v_" + str(uuid.uuid4()).replace("-", "_")
                 caption_color = ", ".join([str(c) for c in element["text color"]])
+                border_color = ", ".join([str(c) for c in element["border"]["color"]])
                 code_str = code_str + """\tauto {} = ViewContainer{{}};\n""" \
                     .format(container_name) \
                     .expandtabs(4)
@@ -158,6 +162,12 @@ def generate(config, template, output):
 
                 code_str = code_str + """\t{}.set_name("{}");\n""" \
                     .format(container_name, element["text"])
+
+                code_str = code_str + """\t{}.set_border_width({});\n""" \
+                    .format(container_name, element["border"]["line width"])
+
+                code_str = code_str + """\t{}.set_border_color({{ {} }});\n""" \
+                    .format(container_name, border_color)
 
                 code_str = code_str + """\t{}.set_caption_color({{ {} }});\n""" \
                     .format(container_name, caption_color)
@@ -220,14 +230,17 @@ def generate(config, template, output):
                 internal_id = element["internal_id"]
                 scale = element["scale"]
                 position = element["position"]
+                border_width = element["border"]["line width"]
                 caption_color = ", ".join([str(c) for c in element["text color"]])
+                border_color = ", ".join([str(c) for c in element["border"]["color"]])
 
                 image_name = "img_" + str(uuid.uuid4()).replace("-", "_")
                 position_str = ", ".join([str(c) for c in position])
 
-                code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", "{}", "{}", {{ {} }}, "{}", 
-                {{ {} }}, "{}");\n\n""" \
-                    .format(scale, name, image_name, caption, caption_color, internal_id, position_str, image) \
+                code_str = code_str + """\tconfig_instance.add_image_resource({}, {}, "{}", "{}", "{}", {{ {} }}, 
+                    {{ {} }}, "{}", {{ {} }}, "{}");\n\n""" \
+                    .format(scale, border_width, name, image_name, caption, border_color, caption_color, internal_id,
+                            position_str, image) \
                     .expandtabs(4)
 
     code_str = code_str + "\n"

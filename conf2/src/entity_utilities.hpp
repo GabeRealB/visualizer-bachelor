@@ -26,16 +26,16 @@ void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& 
 void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
     const std::array<float, 2>& scaling, bool absolute);
 
-void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
-    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
-    const std::string& name, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
-    const std::array<float, 2>& scaling, const std::array<float, 2>& position);
-void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
-    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
-    const std::string& window, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
-    const std::array<float, 2>& scaling, const std::array<float, 2>& position);
+void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group_name,
+    const ConfigGroup& group, const std::string& id, const std::string& name,
+    const std::array<std::size_t, 4>& border_color, const std::array<std::size_t, 4>& caption_color,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position,
+    float border_width);
+void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group_name,
+    const ConfigGroup& group, const std::string& id, const std::string& window,
+    const std::array<std::size_t, 4>& border_color, const std::array<std::size_t, 4>& caption_color,
+    const std::string& texture, const std::array<float, 2>& scaling, const std::array<float, 2>& position,
+    float border_width);
 void add_composition_gui_connection(Visconfig::Entity& coordinator_entity, const GroupConnection& group_connection);
 
 void add_config_dump_gui_template(Visconfig::Entity& coordinator_entity, const std::string& config_template);

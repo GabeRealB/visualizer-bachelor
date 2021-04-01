@@ -1785,9 +1785,11 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
             for (auto& component_group : component_gui.groups) {
                 CompositionGUIGroup group{};
                 group.group_id = component_group.second.id;
+                group.border_width = component_group.second.border_width;
                 group.group_name = component_group.second.caption;
                 group.transparent = component_group.second.transparent;
                 group.position = glm::make_vec2(component_group.second.position.data());
+                group.border_color = glm::make_vec4(component_group.second.border_color.data());
                 group.caption_color = glm::make_vec4(component_group.second.caption_color.data());
 
                 for (auto& component_window : component_group.second.windows) {
@@ -1796,7 +1798,9 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                     window.window_name = component_window.name;
                     window.scaling = glm::make_vec2(component_window.scaling.data());
                     window.position = glm::make_vec2(component_window.position.data()) - group.position;
+                    window.border_width = component_window.border_width;
                     window.flip_vertically = component_window.flip_vertical;
+                    window.border_color = glm::make_vec4(component_window.border_color.data());
                     window.caption_color = glm::make_vec4(component_window.caption_color.data());
                     window.texture = std::static_pointer_cast<const Texture2D>(
                         AssetDatabase::getAsset(component_window.texture_name).data);
