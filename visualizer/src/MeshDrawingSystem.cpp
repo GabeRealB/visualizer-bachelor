@@ -9,6 +9,7 @@
 #include <visualizer/Parent.hpp>
 #include <visualizer/Shader.hpp>
 #include <visualizer/Transform.hpp>
+#include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
 
@@ -181,7 +182,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     glClearBufferfv(GL_COLOR, 0, accum_clear_color.data());
     glClearBufferfv(GL_COLOR, 1, revealage_clear_color.data());
 
-    if (camera.m_active) {
+    if (camera.m_active && !isDetached()) {
         glClearBufferfv(GL_COLOR, 2, active_border_color.data());
     } else {
         glClearBufferfv(GL_COLOR, 2, inactive_border_color.data());
