@@ -108,11 +108,24 @@ void render_legend_entry(EntityDatabaseContext&, const LegendGUIImage& image_ent
 
 void render_legend_entry(EntityDatabaseContext&, const LegendGUIColor& color_entry)
 {
-    ImVec4 im_color = { color_entry.color.r, color_entry.color.g, color_entry.color.b, color_entry.color.a };
+    ImVec4 im_color = {
+        color_entry.color.r,
+        color_entry.color.g,
+        color_entry.color.b,
+        color_entry.color.a,
+    };
+    ImVec4 im_caption_color = {
+        color_entry.caption_color.r,
+        color_entry.caption_color.g,
+        color_entry.caption_color.b,
+        color_entry.caption_color.a,
+    };
 
     ImGui::ColorButton(color_entry.label.c_str(), im_color);
     ImGui::SameLine(40.0f);
+    ImGui::PushStyleColor(ImGuiCol_Text, im_caption_color);
     ImGui::Text("%s", color_entry.caption.c_str());
+    ImGui::PopStyleColor();
 }
 
 void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
@@ -213,10 +226,19 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
             auto start_uv = window.flip_vertically ? ImVec2{ 0.0f, 1.0f } : ImVec2{ 0.0f, 0.0f };
             auto end_uv = window.flip_vertically ? ImVec2{ 1.0f, 0.0f } : ImVec2{ 1.0f, 1.0f };
 
+            ImVec4 window_caption_color = {
+                window.caption_color.r,
+                window.caption_color.g,
+                window.caption_color.b,
+                window.caption_color.a,
+            };
+
             ImGui::BeginGroup();
+            ImGui::PushStyleColor(ImGuiCol_Text, window_caption_color);
             ImGui::Image(
                 reinterpret_cast<void*>(static_cast<std::intptr_t>(texture_2d->id())), texture_size, start_uv, end_uv);
             ImGui::Text("%s", window.window_name.c_str());
+            ImGui::PopStyleColor();
             ImGui::EndGroup();
 
             draw_list->ChannelsSetCurrent(0);
@@ -249,8 +271,17 @@ void render_gui(EntityDatabaseContext&, const Canvas&, CompositionGUI& gui)
         rect_max.y += rect_padding;
 
         if (!group.transparent) {
+            ImVec4 group_caption_color = {
+                group.caption_color.r,
+                group.caption_color.g,
+                group.caption_color.b,
+                group.caption_color.a,
+            };
+
             ImGui::SetCursorScreenPos({ rect_min.x, rect_min.y - 15.0f });
+            ImGui::PushStyleColor(ImGuiCol_Text, group_caption_color);
             ImGui::Text("%s", group.group_name.c_str());
+            ImGui::PopStyleColor();
             draw_list->AddRect(rect_min, rect_max, IM_COL32(255, 255, 255, 255));
             if (ImGui::IsMouseHoveringRect(rect_min, rect_max) && group_selected == 0 && gui.selected_group == 0
                 && gui.selected_window == 0) {

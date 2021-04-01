@@ -21,18 +21,20 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id);
 
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& caption,
-    const std::array<std::size_t, 4>& color);
+    const std::array<std::size_t, 4>& caption_color, const std::array<std::size_t, 4>& color);
 void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& image, const std::string& description,
     const std::array<float, 2>& scaling, bool absolute);
 
 void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::string& group_id, const std::array<float, 2>& group_position,
-    const std::string& id, const std::string& name, const std::string& texture, const std::array<float, 2>& scaling,
-    const std::array<float, 2>& position);
+    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
+    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
+    const std::string& name, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
+    const std::array<float, 2>& scaling, const std::array<float, 2>& position);
 void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::string& group_id, const std::array<float, 2>& group_position,
-    const std::string& id, const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
-    const std::array<float, 2>& position);
+    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
+    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
+    const std::string& window, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
+    const std::array<float, 2>& scaling, const std::array<float, 2>& position);
 void add_composition_gui_connection(
     Visconfig::Entity& coordinator_entity, const std::string& group_source, const std::string& group_destination);
 

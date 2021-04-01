@@ -23,6 +23,7 @@ struct LegendGUIColor {
     glm::vec4 color;
     std::string label;
     std::string caption;
+    glm::vec4 caption_color;
 };
 
 struct LegendGUI {
@@ -36,6 +37,7 @@ struct CompositionGUIWindow {
     glm::vec2 position;
     bool flip_vertically;
     std::string window_id;
+    glm::vec4 caption_color;
     std::string window_name;
     std::weak_ptr<const Texture2D> texture;
 };
@@ -45,6 +47,7 @@ struct CompositionGUIGroup {
     glm::vec2 position;
     std::string group_id;
     std::string group_name;
+    glm::vec4 caption_color;
     std::vector<CompositionGUIWindow> windows;
 };
 

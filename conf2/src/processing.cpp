@@ -595,15 +595,16 @@ void find_max_accesses(CuboidCommandList& command_list)
 
 using VariablePowerSet = std::vector<std::vector<std::set<std::string>>>;
 
-ViewCommandList generate_view_command_list(const std::string& view_name, const ViewContainer& view_container,
-    const VariablePowerSet& variable_power_set, VariableMap variable_map)
+ViewCommandList generate_view_command_list(
+    const ViewContainer& view_container, const VariablePowerSet& variable_power_set, VariableMap variable_map)
 {
     ViewCommandList command_list{};
 
-    command_list.view_name = view_name;
     command_list.id = view_container.id();
     command_list.size = view_container.size();
+    command_list.view_name = view_container.name();
     command_list.position = view_container.position();
+    command_list.caption_color = view_container.caption_color();
     command_list.cuboids.reserve(view_container.get_num_cuboids());
 
     for (auto& cuboid_container : view_container.get_cuboids()) {
@@ -682,8 +683,8 @@ ConfigCommandList generate_config_command_list()
     std::vector<std::thread> threads{};
     VariablePowerSet variable_power_set{};
 
-    auto view_names = config_instance.get_view_names();
-    for (std::size_t i = 0; i < view_names.size(); ++i) {
+    auto view_ids = config_instance.get_view_ids();
+    for (std::size_t i = 0; i < view_ids.size(); ++i) {
         command_list.view_commands.emplace_back();
     }
 
@@ -712,17 +713,17 @@ ConfigCommandList generate_config_command_list()
     }
     threads.clear();
 
-    for (std::size_t i = 0; i < view_names.size(); ++i) {
+    for (std::size_t i = 0; i < view_ids.size(); ++i) {
         threads.emplace_back(
             [](const ConfigContainer& config_instance, ConfigCommandList& command_list,
-                const VariablePowerSet& variable_power_set, VariableMap variable_map, const std::string& view_name,
+                const VariablePowerSet& variable_power_set, VariableMap variable_map, const std::string& view_id,
                 std::size_t idx) {
-                auto& view_container = config_instance.get_view_container(view_name);
-                command_list.view_commands[idx] = generate_view_command_list(
-                    view_name, view_container, variable_power_set, std::move(variable_map));
+                auto& view_container = config_instance.get_view_container(view_id);
+                command_list.view_commands[idx]
+                    = generate_view_command_list(view_container, variable_power_set, std::move(variable_map));
             },
             std::cref(config_instance), std::ref(command_list), std::cref(variable_power_set), variable_map,
-            std::cref(view_names[i]), i);
+            std::cref(view_ids[i]), i);
     }
 
     for (auto& thread : threads) {

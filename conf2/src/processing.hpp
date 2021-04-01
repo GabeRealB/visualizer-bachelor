@@ -86,6 +86,7 @@ struct ViewCommandList {
     std::size_t heatmap_idx;
     std::array<float, 2> position;
     std::vector<CuboidCommandList> cuboids;
+    std::array<std::size_t, 4> caption_color;
 };
 
 struct ConfigCommandList {

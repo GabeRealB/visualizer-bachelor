@@ -134,13 +134,15 @@ def generate(config, template, output):
 
     for name, group in grouping["groups"].items():
         group_position = ", ".join([str(c) for c in group["position"]])
-        code_str = code_str + """\tconfig_instance.add_group("{}", "{}", "{}", {{ {} }});\n""" \
-            .format(name, group["caption"], group["internal_id"], group_position) \
+        group_caption_color = ", ".join([str(c) for c in group["text color"]])
+        code_str = code_str + """\tconfig_instance.add_group("{}", "{}", {{ {} }} ,"{}", {{ {} }});\n""" \
+            .format(name, group["text"], group_caption_color, group["internal_id"], group_position) \
             .expandtabs(4)
 
         for element in group["elements"]:
             if "cube" in element:
                 container_name = "v_" + str(uuid.uuid4()).replace("-", "_")
+                caption_color = ", ".join([str(c) for c in element["text color"]])
                 code_str = code_str + """\tauto {} = ViewContainer{{}};\n""" \
                     .format(container_name) \
                     .expandtabs(4)
@@ -153,6 +155,12 @@ def generate(config, template, output):
 
                 code_str = code_str + """\t{}.set_id("{}");\n""" \
                     .format(container_name, element["internal_id"])
+
+                code_str = code_str + """\t{}.set_name("{}");\n""" \
+                    .format(container_name, element["text"])
+
+                code_str = code_str + """\t{}.set_caption_color({{ {} }});\n""" \
+                    .format(container_name, caption_color)
 
                 for cuboid in element["infos"]:
                     cuboid_name = "c_" + str(uuid.uuid4()).replace("-", "_")
@@ -200,25 +208,26 @@ def generate(config, template, output):
                 code_str = code_str + "\n"
 
                 code_str = code_str + """\tconfig_instance.add_view_container("{}", {});\n\n""" \
-                    .format(element["caption"], container_name) \
+                    .format(element["internal_id"], container_name) \
                     .expandtabs(4)
                 code_str = code_str + """\tconfig_instance.add_group_view("{}", "{}");\n""" \
-                    .format(name, element["caption"]) \
+                    .format(name, element["internal_id"]) \
                     .expandtabs(4)
 
             if "image" in element:
                 image = element["image"]
-                caption = element["caption"]
+                caption = element["text"]
                 internal_id = element["internal_id"]
                 scale = element["scale"]
                 position = element["position"]
+                caption_color = ", ".join([str(c) for c in element["text color"]])
 
                 image_name = "img_" + str(uuid.uuid4()).replace("-", "_")
                 position_str = ", ".join([str(c) for c in position])
 
-                code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", "{}", "{}", "{}", 
+                code_str = code_str + """\tconfig_instance.add_image_resource({}, "{}", "{}", "{}", {{ {} }}, "{}", 
                 {{ {} }}, "{}");\n\n""" \
-                    .format(scale, name, image_name, caption, internal_id, position_str, image) \
+                    .format(scale, name, image_name, caption, caption_color, internal_id, position_str, image) \
                     .expandtabs(4)
 
     code_str = code_str + "\n"
@@ -239,11 +248,12 @@ def generate(config, template, output):
 
     for name, entry in legend.items():
         color = entry["color"]
-        caption = entry["caption"]
+        caption = entry["text"]
+        caption_color = ", ".join([str(c) for c in entry["text color"]])
         color_str = ", ".join([str(c) for c in color])
 
-        code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}",  {{ {} }});\n""" \
-            .format(name, caption, color_str) \
+        code_str = code_str + """\tconfig_instance.add_color_legend("{}", "{}", {{ {} }}, {{ {} }});\n""" \
+            .format(name, caption, caption_color, color_str) \
             .expandtabs(4)
 
     code_str = code_str + """\tconfig_instance.add_config_template(R"config({})config");\n""" \

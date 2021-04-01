@@ -1729,6 +1729,7 @@ void initialize_legend_entry(LegendGUI& gui, const Visconfig::Components::Legend
     color.color = glm::make_vec4(color_entry.color.data());
     color.label = color_entry.label;
     color.caption = color_entry.caption;
+    color.caption_color = glm::make_vec4(color_entry.caption_color.data());
 
     gui.entries.push_back(std::move(color));
 }
@@ -1787,6 +1788,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                 group.group_name = component_group.second.caption;
                 group.transparent = component_group.second.transparent;
                 group.position = glm::make_vec2(component_group.second.position.data());
+                group.caption_color = glm::make_vec4(component_group.second.caption_color.data());
 
                 for (auto& component_window : component_group.second.windows) {
                     CompositionGUIWindow window{};
@@ -1795,6 +1797,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                     window.scaling = glm::make_vec2(component_window.scaling.data());
                     window.position = glm::make_vec2(component_window.position.data()) - group.position;
                     window.flip_vertically = component_window.flip_vertical;
+                    window.caption_color = glm::make_vec4(component_window.caption_color.data());
                     window.texture = std::static_pointer_cast<const Texture2D>(
                         AssetDatabase::getAsset(component_window.texture_name).data);
 

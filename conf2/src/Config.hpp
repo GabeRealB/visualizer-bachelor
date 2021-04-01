@@ -263,7 +263,11 @@ public:
 
     const std::string& id() const { return m_id; }
 
+    const std::string& name() const { return m_name; }
+
     const std::optional<HeatmapInfo>& heatmap() const { return m_heatmap; }
+
+    const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
 
     void set_size(float size) { m_size = size; }
 
@@ -274,6 +278,10 @@ public:
     }
 
     void set_id(const std::string& id) { m_id = id; }
+
+    void set_name(const std::string& name) { m_name = name; }
+
+    void set_caption_color(const std::array<std::size_t, 4>& color) { m_caption_color = color; }
 
     void add_cuboid(const CuboidContainer& cuboid, const std::set<std::string>& requirements)
     {
@@ -314,9 +322,11 @@ public:
 private:
     float m_size;
     std::string m_id;
+    std::string m_name;
     std::array<float, 2> m_position;
     std::optional<HeatmapInfo> m_heatmap;
     std::vector<CuboidContainer> m_cuboids;
+    std::array<std::size_t, 4> m_caption_color;
     std::vector<std::set<std::string>> m_variable_requirements;
 };
 
@@ -384,10 +394,12 @@ private:
 
 class ColorLegend : public LegendEntity {
 public:
-    ColorLegend(const std::string& label, const std::string& caption, const std::array<std::size_t, 4>& color)
+    ColorLegend(const std::string& label, const std::string& caption, const std::array<std::size_t, 4>& caption_color,
+        const std::array<std::size_t, 4>& color)
         : LegendEntity{ label, LegendEntityType::Color }
         , m_caption{ caption }
         , m_color{ color }
+        , m_caption_color{ caption_color }
     {
     }
 
@@ -402,15 +414,19 @@ public:
 
     const std::array<std::size_t, 4>& color() const { return m_color; }
 
+    const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
+
 private:
     std::string m_caption;
     std::array<std::size_t, 4> m_color;
+    std::array<std::size_t, 4> m_caption_color;
 };
 
 class ImageResource {
 public:
     ImageResource(float size, const std::string& group, const std::string& name, const std::string& caption,
-        const std::string& id, const std::array<float, 2>& position, const std::filesystem::path& path)
+        const std::array<std::size_t, 4>& caption_color, const std::string& id, const std::array<float, 2>& position,
+        const std::filesystem::path& path)
         : m_size{ size }
         , m_name{ name }
         , m_group{ group }
@@ -418,6 +434,7 @@ public:
         , m_id{ id }
         , m_path{ path }
         , m_position{ position }
+        , m_caption_color{ caption_color }
     {
     }
 
@@ -435,6 +452,8 @@ public:
 
     const std::string& caption() const { return m_caption; }
 
+    const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
+
     const std::string& id() const { return m_id; }
 
     const std::filesystem::path& path() const { return m_path; }
@@ -449,13 +468,14 @@ private:
     std::string m_id;
     std::filesystem::path m_path;
     std::array<float, 2> m_position;
+    std::array<std::size_t, 4> m_caption_color;
 };
 
 struct ConfigGroup {
     std::string caption;
     std::string id;
-    std::vector<std::string> views;
     std::array<float, 2> position;
+    std::array<std::size_t, 4> caption_color;
 };
 
 class ConfigContainer {
@@ -482,9 +502,10 @@ public:
 
     std::span<const LegendVariant> legend_entries() const { return { m_legend.begin(), m_legend.size() }; }
 
-    void add_color_legend(const std::string& label, const std::string& caption, const std::array<std::size_t, 4>& color)
+    void add_color_legend(const std::string& label, const std::string& caption,
+        const std::array<std::size_t, 4>& caption_color, const std::array<std::size_t, 4>& color)
     {
-        m_legend.push_back(ColorLegend{ label, caption, color });
+        m_legend.push_back(ColorLegend{ label, caption, caption_color, color });
     }
 
     void add_image_legend(const std::string& label, const std::string& image_name,
@@ -494,17 +515,18 @@ public:
     }
 
     void add_image_resource(float size, const std::string& group, const std::string& name, const std::string& caption,
-        const std::string& id, const std::array<float, 2>& position, const std::filesystem::path& path)
+        const std::array<std::size_t, 4>& caption_color, const std::string& id, const std::array<float, 2>& position,
+        const std::filesystem::path& path)
     {
-        m_resources.push_back(ImageResource{ size, group, name, caption, id, position, path });
+        m_resources.push_back(ImageResource{ size, group, name, caption, caption_color, id, position, path });
     }
 
     std::span<const ImageResource> get_resources() const { return { m_resources.data(), m_resources.size() }; }
 
-    const ViewContainer& get_view_container(const std::string& name) const
+    const ViewContainer& get_view_container(const std::string& id) const
     {
-        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), name); pos != m_view_names.end()) {
-            auto index = std::distance(m_view_names.begin(), pos);
+        if (auto pos = std::find(m_view_ids.begin(), m_view_ids.end(), id); pos != m_view_ids.end()) {
+            auto index = std::distance(m_view_ids.begin(), pos);
             return m_views[index];
         } else {
             std::cerr << "The view does not exist." << std::endl;
@@ -512,26 +534,26 @@ public:
         }
     }
 
-    void add_view_container(const std::string& name, const ViewContainer& view_container)
+    void add_view_container(const std::string& id, const ViewContainer& view_container)
     {
-        if (std::find(m_view_names.begin(), m_view_names.end(), name) == m_view_names.end()) {
+        if (std::find(m_view_ids.begin(), m_view_ids.end(), id) == m_view_ids.end()) {
             m_views.push_back(view_container);
-            m_view_names.push_back(name);
+            m_view_ids.push_back(id);
         } else {
             std::cerr << "The view already exists." << std::endl;
             std::abort();
         }
     }
 
-    std::span<const std::string> get_view_names() const { return { m_view_names.data(), m_view_names.size() }; }
+    std::span<const std::string> get_view_ids() const { return { m_view_ids.data(), m_view_ids.size() }; }
 
-    const std::string& get_group_association(const std::string& view_name) const
+    const std::string& get_group_association(const std::string& view_id) const
     {
-        if (!m_group_associations.contains(view_name)) {
+        if (!m_group_associations.contains(view_id)) {
             std::cerr << "The group does not exist." << std::endl;
             std::abort();
         } else {
-            return m_group_associations.at(view_name);
+            return m_group_associations.at(view_id);
         }
     }
 
@@ -544,6 +566,11 @@ public:
         return get_group(group_name).position;
     }
 
+    const std::array<std::size_t, 4>& get_group_caption_color(const std::string& group_name) const
+    {
+        return get_group(group_name).caption_color;
+    }
+
     const ConfigGroup& get_group(const std::string& group_name) const
     {
         if (!m_groups.contains(group_name)) {
@@ -554,31 +581,30 @@ public:
         }
     }
 
-    void add_group(const std::string& group_name, const std::string& group_caption, const std::string& group_id,
+    void add_group(const std::string& group_name, const std::string& group_caption,
+        const std::array<std::size_t, 4>& group_caption_color, const std::string& group_id,
         const std::array<float, 2>& position)
     {
         if (m_groups.contains(group_name)) {
             std::cerr << "The view already exists." << std::endl;
             std::abort();
         } else {
-            m_groups.insert({ group_name, { group_caption, group_id, {}, position } });
+            m_groups.insert({ group_name, { group_caption, group_id, position, group_caption_color } });
         }
     }
 
-    void add_group_view(const std::string& group_name, const std::string& view_name)
+    void add_group_view(const std::string& group_name, const std::string& view_id)
     {
-        if (auto pos = std::find(m_view_names.begin(), m_view_names.end(), view_name); pos != m_view_names.end()) {
-            if (m_group_associations.contains(view_name)) {
+        if (auto pos = std::find(m_view_ids.begin(), m_view_ids.end(), view_id); pos != m_view_ids.end()) {
+            if (m_group_associations.contains(view_id)) {
                 std::cerr << "The view is already associated to a group." << std::endl;
                 std::abort();
             } else {
-                if (m_groups.contains(group_name)) {
-                    m_groups[group_name].views.push_back(view_name);
-                } else {
+                if (!m_groups.contains(group_name)) {
                     std::cerr << "The group does not exist." << std::endl;
                     std::abort();
                 }
-                m_group_associations.insert({ view_name, group_name });
+                m_group_associations.insert({ view_id, group_name });
             }
         } else {
             std::cerr << "The view does not exist." << std::endl;
@@ -624,7 +650,7 @@ private:
     std::string m_config_template;
     std::vector<ViewContainer> m_views;
     std::vector<LegendVariant> m_legend;
-    std::vector<std::string> m_view_names;
+    std::vector<std::string> m_view_ids;
     std::vector<ImageResource> m_resources;
     std::array<std::size_t, 4> m_background_color;
     std::map<std::string, std::string> m_group_associations;

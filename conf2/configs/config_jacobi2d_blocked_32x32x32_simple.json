@@ -152,12 +152,14 @@
     "grouping": {
       "groups": {
         "input buffer": {
-          "caption": "Input buffer",
+          "text": "Input buffer",
+          "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.53],
           "elements": [
             {
               "cube": "in",
-              "caption": "Buffer in",
+              "text": "Buffer in",
+              "text color": [ 255, 255, 255, 255 ],
               "scale": 0.32,
               "position": [0.01, 0.53],
               "colors": [
@@ -185,12 +187,14 @@
           ]
         },
         "inp_mda": {
-          "caption": "Input MDA",
+          "text": "Input MDA",
+          "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.15],
           "elements": [
             {
               "cube": "inp_mda",
-              "caption": "Input MDA",
+              "text": "Input MDA",
+              "text color": [ 255, 255, 255, 255 ],
               "scale": 0.32,
               "position": [0.01, 0.15],
               "colors": [
@@ -207,12 +211,14 @@
           ]
         },
         "computation": {
-          "caption": "",
+          "text": "",
+          "text color": [ 255, 255, 255, 255 ],
           "position": [0.34, 0.15],
           "elements": [
             {
               "cube": "computation",
-              "caption": "",
+              "text": "",
+              "text color": [ 255, 255, 255, 255 ],
               "scale": 0.32,
               "position": [0.34, 0.15],
               "colors": [
@@ -235,12 +241,14 @@
           ]
         },
         "out_mda": {
-          "caption": "Output MDA",
+          "text": "Output MDA",
+          "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.15],
           "elements": [
             {
               "cube": "out_mda",
-              "caption": "Output MDA",
+              "text": "Output MDA",
+              "text color": [ 255, 255, 255, 255 ],
               "scale": 0.32,
               "position": [0.01, 0.15],
               "colors": [
@@ -261,12 +269,14 @@
           ]
         },
         "output buffer": {
-          "caption": "",
+          "text": "",
+          "text color": [ 255, 255, 255, 255 ],
           "position": [0.67, 0.53],
           "elements": [
             {
               "cube": "out",
-              "caption": "Buffer out",
+              "text": "Buffer out",
+              "text color": [ 255, 255, 255, 255 ],
               "scale": 0.32,
               "position": [0.67, 0.53],
               "colors": [
@@ -293,11 +303,13 @@
     "legend": {
       "sample": {
         "color": [100, 100, 100, 255],
-        "caption": "... layer"
+        "text": "... layer",
+        "text color": [ 255, 255, 255, 255 ]
       },
       "thread": {
         "color": [100, 100, 100, 255],
-        "caption": "Threads"
+        "text": "Threads",
+        "text color": [ 255, 255, 255, 255 ]
       }
     }
   }

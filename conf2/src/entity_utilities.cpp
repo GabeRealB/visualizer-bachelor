@@ -460,7 +460,7 @@ void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t c
 }
 
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& caption,
-    const std::array<std::size_t, 4>& color)
+    const std::array<std::size_t, 4>& caption_color, const std::array<std::size_t, 4>& color)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
@@ -475,6 +475,12 @@ void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& 
                 color[1] / 255.0f,
                 color[2] / 255.0f,
                 color[3] / 255.0f,
+            },
+            {
+                caption_color[0] / 255.0f,
+                caption_color[1] / 255.0f,
+                caption_color[2] / 255.0f,
+                caption_color[3] / 255.0f,
             },
         },
     });
@@ -493,42 +499,94 @@ void add_image_legend(Visconfig::Entity& coordinator_entity, const std::string& 
 }
 
 void add_composition_gui_image(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::string& group_id, const std::array<float, 2>& group_position,
-    const std::string& id, const std::string& name, const std::string& texture, const std::array<float, 2>& scaling,
-    const std::array<float, 2>& position)
+    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
+    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
+    const std::string& name, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
+    const std::array<float, 2>& scaling, const std::array<float, 2>& position)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
     auto& composition_gui
         = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
 
-    Visconfig::Components::CompositionGUIWindow gui_window{ id, name, false, texture, scaling, position };
+    Visconfig::Components::CompositionGUIWindow gui_window{
+        id,
+        name,
+        false,
+        texture,
+        scaling,
+        position,
+        {
+            caption_color[0] / 255.0f,
+            caption_color[1] / 255.0f,
+            caption_color[2] / 255.0f,
+            caption_color[3] / 255.0f,
+        },
+    };
 
     if (composition_gui.groups.contains(group)) {
         composition_gui.groups[group].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert(
-            { group, { false, group_id, group_caption, group_position, { std::move(gui_window) } } });
+        composition_gui.groups.insert({ group,
+            {
+                false,
+                group_id,
+                group_caption,
+                group_position,
+                {
+                    group_caption_color[0] / 255.0f,
+                    group_caption_color[1] / 255.0f,
+                    group_caption_color[2] / 255.0f,
+                    group_caption_color[3] / 255.0f,
+                },
+                { std::move(gui_window) },
+            } });
     }
 }
 
 void add_composition_gui_window(Visconfig::Entity& coordinator_entity, const std::string& group,
-    const std::string& group_caption, const std::string& group_id, const std::array<float, 2>& group_position,
-    const std::string& id, const std::string& window, const std::string& texture, const std::array<float, 2>& scaling,
-    const std::array<float, 2>& position)
+    const std::string& group_caption, const std::array<std::size_t, 4>& group_caption_color,
+    const std::string& group_id, const std::array<float, 2>& group_position, const std::string& id,
+    const std::string& window, const std::array<std::size_t, 4>& caption_color, const std::string& texture,
+    const std::array<float, 2>& scaling, const std::array<float, 2>& position)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
     auto& composition_gui
         = std::get<Visconfig::Components::CompositionGUI>(canvas->entries[canvas_composition_gui_idx].gui_data);
 
-    Visconfig::Components::CompositionGUIWindow gui_window{ id, window, true, texture, scaling, position };
+    Visconfig::Components::CompositionGUIWindow gui_window{
+        id,
+        window,
+        true,
+        texture,
+        scaling,
+        position,
+        {
+            caption_color[0] / 255.0f,
+            caption_color[1] / 255.0f,
+            caption_color[2] / 255.0f,
+            caption_color[3] / 255.0f,
+        },
+    };
 
     if (composition_gui.groups.contains(group)) {
         composition_gui.groups[group].windows.push_back(std::move(gui_window));
     } else {
-        composition_gui.groups.insert(
-            { group, { false, group_id, group_caption, group_position, { std::move(gui_window) } } });
+        composition_gui.groups.insert({ group,
+            {
+                false,
+                group_id,
+                group_caption,
+                group_position,
+                {
+                    group_caption_color[0] / 255.0f,
+                    group_caption_color[1] / 255.0f,
+                    group_caption_color[2] / 255.0f,
+                    group_caption_color[3] / 255.0f,
+                },
+                { std::move(gui_window) },
+            } });
     }
 }
 
