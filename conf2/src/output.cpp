@@ -239,16 +239,8 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
         world.entities.push_back(std::move(entity));
     }
 
-    auto camera_distance = 1.2f
-        * std::max({ max_cuboid_size[0] / 2.0f, max_cuboid_size[1] / 2.0f, max_cuboid_size[2] / 2.0f })
-        / std::tan(generation_options.camera_fov);
-
-    auto camera_width = 1.2f * std::max({ max_cuboid_size[0], max_cuboid_size[1], max_cuboid_size[2] });
-    auto camera_height = camera_width / generation_options.camera_aspect;
-
-    auto camera_fixed = view_idx != 0;
-    auto camera_perspective = max_cuboid_size[2] != 0 && max_cuboid_size[2] != 1;
-    auto camera_active = view_idx == 0;
+    CameraData camera = {};
+    auto camera_entity_id = world.entities.size();
     std::map<std::string, std::vector<std::string>> camera_targets = {
         { generation_options.cuboid_pipeline_name,
             {
@@ -259,25 +251,42 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
             } },
     };
 
-    auto camera_entity_id = world.entities.size();
-    world.entities.push_back(generate_view_camera(camera_entity_id, focus_entity_id, view_idx,
-        generation_options.camera_fov, generation_options.camera_aspect, generation_options.camera_near,
-        generation_options.camera_far, camera_distance, camera_width, camera_height, camera_targets, camera_fixed,
-        camera_perspective, camera_active));
+    if (view_commands.camera.has_value()) {
+        camera = view_commands.camera.value();
+    } else {
+        camera.fixed = view_idx != 0;
+        camera.active = view_idx == 0;
+        camera.perspective = max_cuboid_size[2] != 0 && max_cuboid_size[2] != 1;
+        camera.fov = generation_options.camera_fov;
+        camera.aspect = generation_options.camera_aspect;
+        camera.near = generation_options.camera_near;
+        camera.far = generation_options.camera_far;
+        camera.distance = 1.2f
+            * std::max({ max_cuboid_size[0] / 2.0f, max_cuboid_size[1] / 2.0f, max_cuboid_size[2] / 2.0f })
+            / std::tan(generation_options.camera_fov);
+        camera.orthographic_width = 1.2f * std::max({ max_cuboid_size[0], max_cuboid_size[1], max_cuboid_size[2] });
+        camera.orthographic_height = camera.orthographic_width / camera.aspect;
+        camera.horizontal_angle = 0.0f;
+        camera.vertical_angle = 0.0f;
+        camera.position = { 0.0f, 0.0f, camera.distance };
+        camera.rotation = { 0.0f, 0.0f, 0.0f };
+    }
+
+    world.entities.push_back(generate_view_camera(camera_entity_id, focus_entity_id, view_idx, camera, camera_targets));
 
     auto& coordinator_entity = world.entities.front();
     std::vector<std::string> composition_src = { render_texture_name };
 
     auto size = view_commands.size;
-    extend_camera_switcher(coordinator_entity, camera_entity_id);
+    extend_camera_switcher(coordinator_entity, camera_entity_id, camera);
     auto& group_name = ConfigContainer::get_instance().get_group_association(view_commands.id);
     auto& group = ConfigContainer::get_instance().get_group(group_name);
     add_composition_gui_window(coordinator_entity, group_name, group, view_commands.id, view_commands.view_name,
         view_commands.border_color, view_commands.caption_color, render_texture_name, { size, size },
         view_commands.position, view_commands.border_width);
 
-    add_config_dump_gui_window(
-        coordinator_entity, view_commands.heatmap, view_commands.heatmap_idx, view_commands.id, generated_entities);
+    add_config_dump_gui_window(coordinator_entity, view_commands.heatmap, view_commands.heatmap_idx, camera_entity_id,
+        view_commands.id, generated_entities);
     return generated_entities;
 }
 

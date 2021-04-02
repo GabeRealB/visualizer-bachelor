@@ -247,6 +247,23 @@ struct HeatmapInfo {
     std::vector<std::array<std::size_t, 4>> colors;
 };
 
+struct CameraInfo {
+    bool fixed;
+    bool active;
+    bool perspective;
+    float fov;
+    float aspect;
+    float near;
+    float far;
+    float distance;
+    float orthographic_width;
+    float orthographic_height;
+    float horizontal_angle;
+    float vertical_angle;
+    std::array<float, 3> position;
+    std::array<float, 3> rotation;
+};
+
 class ViewContainer {
 public:
     ViewContainer() = default;
@@ -266,6 +283,8 @@ public:
     const std::string& id() const { return m_id; }
 
     const std::string& name() const { return m_name; }
+
+    const std::optional<CameraInfo>& camera() const { return m_camera; }
 
     const std::optional<HeatmapInfo>& heatmap() const { return m_heatmap; }
 
@@ -295,6 +314,33 @@ public:
     {
         m_cuboids.push_back(cuboid);
         m_variable_requirements.push_back(requirements);
+    }
+
+    void add_camera(bool fixed, bool active, bool perspective, float fov, float aspect, float near, float far,
+        float distance, float orthographic_width, float orthographic_height, float horizontal_angle,
+        float vertical_angle, const std::array<float, 3>& position, const std::array<float, 3>& rotation)
+    {
+        if (m_camera.has_value()) {
+            std::cerr << "Camera is already present." << std::endl;
+            std::abort();
+        } else {
+            m_camera = CameraInfo{
+                fixed,
+                active,
+                perspective,
+                fov,
+                aspect,
+                near,
+                far,
+                distance,
+                orthographic_width,
+                orthographic_height,
+                horizontal_angle,
+                vertical_angle,
+                position,
+                rotation,
+            };
+        }
     }
 
     void add_heatmap(std::size_t idx) { m_heatmap = { idx, {}, {} }; }
@@ -333,6 +379,7 @@ private:
     std::string m_id;
     std::string m_name;
     std::array<float, 2> m_position;
+    std::optional<CameraInfo> m_camera;
     std::optional<HeatmapInfo> m_heatmap;
     std::vector<CuboidContainer> m_cuboids;
     std::array<std::size_t, 4> m_border_color;

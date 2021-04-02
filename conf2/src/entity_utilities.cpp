@@ -58,8 +58,7 @@ Visconfig::Entity generate_coordinator_entity(std::size_t entity_id)
 }
 
 Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_entity_id, std::size_t view_idx,
-    float fov, float aspect, float near, float far, float distance, float orthographic_width, float orthographic_height,
-    const std::map<std::string, std::vector<std::string>>& targets, bool fixed, bool perspective, bool active)
+    const CameraData& camera_data, const std::map<std::string, std::vector<std::string>>& targets)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -74,15 +73,15 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
         std::make_shared<Visconfig::Components::FixedCameraComponent>() });
 
     auto camera{ std::static_pointer_cast<Visconfig::Components::CameraComponent>(entity.components[0].data) };
-    camera->active = active;
-    camera->fixed = fixed;
-    camera->perspective = perspective;
-    camera->fov = fov;
-    camera->aspect = aspect;
-    camera->near = near;
-    camera->far = far;
-    camera->orthographicWidth = orthographic_width;
-    camera->orthographicHeight = orthographic_height;
+    camera->active = camera_data.active;
+    camera->fixed = camera_data.fixed;
+    camera->perspective = camera_data.perspective;
+    camera->fov = camera_data.fov;
+    camera->aspect = camera_data.aspect;
+    camera->near = camera_data.near;
+    camera->far = camera_data.far;
+    camera->orthographicWidth = camera_data.orthographic_width;
+    camera->orthographicHeight = camera_data.orthographic_height;
     camera->layerMask = 1ull << view_idx;
 
     for (auto& target : targets) {
@@ -90,13 +89,13 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
     }
 
     auto transform{ std::static_pointer_cast<Visconfig::Components::TransformComponent>(entity.components[1].data) };
-    transform->rotation[0] = 0.0f;
-    transform->rotation[1] = 0.0f;
-    transform->rotation[2] = 0.0f;
+    transform->rotation[0] = camera_data.rotation[0];
+    transform->rotation[1] = camera_data.rotation[1];
+    transform->rotation[2] = camera_data.rotation[2];
 
-    transform->position[0] = 0.0f;
-    transform->position[1] = 0.0f;
-    transform->position[2] = distance;
+    transform->position[0] = camera_data.position[0];
+    transform->position[1] = camera_data.position[1];
+    transform->position[2] = camera_data.position[2];
 
     transform->scale[0] = 1.0f;
     transform->scale[1] = 1.0f;
@@ -105,9 +104,9 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
     auto fixed_camera{ std::static_pointer_cast<Visconfig::Components::FixedCameraComponent>(
         entity.components[3].data) };
     fixed_camera->focus = focus_entity_id;
-    fixed_camera->distance = distance;
-    fixed_camera->horizontalAngle = 0.0f;
-    fixed_camera->verticalAngle = 0.0f;
+    fixed_camera->distance = camera_data.distance;
+    fixed_camera->horizontalAngle = camera_data.horizontal_angle;
+    fixed_camera->verticalAngle = camera_data.vertical_angle;
 
     return entity;
 }
@@ -447,7 +446,8 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     return entity;
 }
 
-void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id)
+void extend_camera_switcher(
+    Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id, const CameraData& camera_data)
 {
     auto camera_switcher{
         std::static_pointer_cast<Visconfig::Components::CameraSwitcherComponent>(
@@ -455,6 +455,10 @@ void extend_camera_switcher(Visconfig::Entity& coordinator_entity, std::size_t c
     };
 
     camera_switcher->cameras.push_back(camera_entity_id);
+
+    if (camera_data.active) {
+        camera_switcher->active = camera_switcher->cameras.size() - 1;
+    }
 }
 
 void add_color_legend(Visconfig::Entity& coordinator_entity, const std::string& label, const std::string& caption,
@@ -706,14 +710,14 @@ void add_config_dump_gui_texture(Visconfig::Entity& coordinator_entity, const st
 }
 
 void add_config_dump_gui_window(Visconfig::Entity& coordinator_entity, bool heatmap, std::size_t heatmap_idx,
-    const std::string& id, const std::vector<std::size_t>& entities)
+    std::size_t camera_entity, const std::string& id, const std::vector<std::size_t>& entities)
 {
     auto canvas = std::static_pointer_cast<Visconfig::Components::CanvasComponent>(
         coordinator_entity.components[coordinator_canvas_idx].data);
     auto& config_dump_gui
         = std::get<Visconfig::Components::ConfigDumpGUI>(canvas->entries[config_dump_gui_idx].gui_data);
 
-    config_dump_gui.windows.push_back({ heatmap, id, heatmap_idx, entities });
+    config_dump_gui.windows.push_back({ heatmap, id, heatmap_idx, camera_entity, entities });
 }
 
 }

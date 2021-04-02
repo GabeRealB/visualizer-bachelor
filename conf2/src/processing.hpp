@@ -62,6 +62,23 @@ struct HeatmapData {
     std::vector<CuboidColor> colors;
 };
 
+struct CameraData {
+    bool fixed;
+    bool active;
+    bool perspective;
+    float fov;
+    float aspect;
+    float near;
+    float far;
+    float distance;
+    float orthographic_width;
+    float orthographic_height;
+    float horizontal_angle;
+    float vertical_angle;
+    std::array<float, 3> position;
+    std::array<float, 3> rotation;
+};
+
 struct CuboidCommandList {
     float line_width;
     std::size_t max_accesses;
@@ -86,6 +103,7 @@ struct ViewCommandList {
     std::string view_name;
     std::size_t heatmap_idx;
     std::array<float, 2> position;
+    std::optional<CameraData> camera;
     std::vector<CuboidCommandList> cuboids;
     std::array<std::size_t, 4> border_color;
     std::array<std::size_t, 4> caption_color;

@@ -609,6 +609,28 @@ ViewCommandList generate_view_command_list(
     command_list.caption_color = view_container.caption_color();
     command_list.cuboids.reserve(view_container.get_num_cuboids());
 
+    if (view_container.camera().has_value()) {
+        auto camera = view_container.camera().value();
+
+        CameraData data = {};
+        data.fixed = camera.fixed;
+        data.active = camera.active;
+        data.perspective = camera.perspective;
+        data.fov = camera.fov;
+        data.aspect = camera.aspect;
+        data.near = camera.near;
+        data.far = camera.far;
+        data.distance = camera.distance;
+        data.orthographic_width = camera.orthographic_width;
+        data.orthographic_height = camera.orthographic_height;
+        data.horizontal_angle = camera.horizontal_angle;
+        data.vertical_angle = camera.vertical_angle;
+        data.position = camera.position;
+        data.rotation = camera.rotation;
+
+        command_list.camera = data;
+    }
+
     for (auto& cuboid_container : view_container.get_cuboids()) {
         CuboidCommandList cuboid_command_list{};
         cuboid_command_list.line_width = cuboid_container.line_width;

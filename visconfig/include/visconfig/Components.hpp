@@ -409,6 +409,7 @@ struct ConfigDumpGUIWindow {
     bool heatmap;
     std::string id;
     std::size_t heatmap_idx;
+    std::size_t camera_entity;
     std::vector<std::size_t> entities;
 };
 
@@ -648,7 +649,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CompositionGUI, background_color, groups, group_connections)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConfigDumpGUIWindow, heatmap, id, heatmap_idx, entities)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConfigDumpGUIWindow, heatmap, id, heatmap_idx, camera_entity, entities)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(ConfigDumpGUI, config_template, texture_ids, windows)
 

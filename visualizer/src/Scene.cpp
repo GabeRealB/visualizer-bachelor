@@ -1887,6 +1887,7 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
                 ConfigDumpGUICuboidWindow window{};
                 window.heatmap = component_window.heatmap;
                 window.heatmap_idx = component_window.heatmap_idx;
+                window.camera_entity = entity_id_map.at(component_window.camera_entity);
 
                 for (auto component_entity : component_window.entities) {
                     window.entities.push_back(entity_id_map.at(component_entity));

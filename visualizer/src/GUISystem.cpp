@@ -14,8 +14,11 @@
 #include <sstream>
 #include <variant>
 
+#include <visualizer/Camera.hpp>
 #include <visualizer/Canvas.hpp>
+#include <visualizer/FixedCamera.hpp>
 #include <visualizer/Shader.hpp>
+#include <visualizer/Transform.hpp>
 #include <visualizer/Visualizer.hpp>
 
 namespace Visualizer {
@@ -614,6 +617,132 @@ void render_gui(EntityDatabaseContext& database_context, const Canvas& canvas, C
                                         border_inactive_ss.str());
                                     replace(config_dump, window_color_oob_active_key_ss.str(), oob_active_ss.str());
                                     replace(config_dump, window_color_oob_inactive_key_ss.str(), oob_inactive_ss.str());
+                                }
+
+                                {
+                                    auto& camera = database_context.fetch_component_unchecked<Camera>(
+                                        cuboid_window.camera_entity);
+                                    auto& fixed_camera = database_context.fetch_component_unchecked<FixedCamera>(
+                                        cuboid_window.camera_entity);
+                                    auto& transform = database_context.fetch_component_unchecked<Transform>(
+                                        cuboid_window.camera_entity);
+
+                                    std::ostringstream camera_fixed_key_ss{};
+                                    camera_fixed_key_ss << R"(")" << composition_window.window_id << "_camera_fixed"
+                                                        << R"(")";
+
+                                    std::ostringstream camera_active_key_ss{};
+                                    camera_active_key_ss << R"(")" << composition_window.window_id << "_camera_active"
+                                                         << R"(")";
+
+                                    std::ostringstream camera_perspective_key_ss{};
+                                    camera_perspective_key_ss << R"(")" << composition_window.window_id
+                                                              << "_camera_perspective"
+                                                              << R"(")";
+
+                                    std::ostringstream camera_fov_key_ss{};
+                                    camera_fov_key_ss << R"(")" << composition_window.window_id << "_camera_fov"
+                                                      << R"(")";
+
+                                    std::ostringstream camera_aspect_key_ss{};
+                                    camera_aspect_key_ss << R"(")" << composition_window.window_id << "_camera_aspect"
+                                                         << R"(")";
+
+                                    std::ostringstream camera_near_key_ss{};
+                                    camera_near_key_ss << R"(")" << composition_window.window_id << "_camera_near"
+                                                       << R"(")";
+
+                                    std::ostringstream camera_far_key_ss{};
+                                    camera_far_key_ss << R"(")" << composition_window.window_id << "_camera_far"
+                                                      << R"(")";
+
+                                    std::ostringstream camera_distance_key_ss{};
+                                    camera_distance_key_ss << R"(")" << composition_window.window_id
+                                                           << "_camera_distance"
+                                                           << R"(")";
+
+                                    std::ostringstream camera_orthographic_width_key_ss{};
+                                    camera_orthographic_width_key_ss << R"(")" << composition_window.window_id
+                                                                     << "_camera_orthographic_width"
+                                                                     << R"(")";
+
+                                    std::ostringstream camera_orthographic_height_key_ss{};
+                                    camera_orthographic_height_key_ss << R"(")" << composition_window.window_id
+                                                                      << "_camera_orthographic_height"
+                                                                      << R"(")";
+
+                                    std::ostringstream camera_horizontal_angle_key_ss{};
+                                    camera_horizontal_angle_key_ss << R"(")" << composition_window.window_id
+                                                                   << "_camera_horizontal_angle"
+                                                                   << R"(")";
+
+                                    std::ostringstream camera_vertical_angle_key_ss{};
+                                    camera_vertical_angle_key_ss << R"(")" << composition_window.window_id
+                                                                 << "_camera_vertical_angle"
+                                                                 << R"(")";
+
+                                    std::ostringstream camera_position_key_ss{};
+                                    camera_position_key_ss << R"(")" << composition_window.window_id
+                                                           << "_camera_position"
+                                                           << R"(")";
+
+                                    std::ostringstream camera_rotation_key_ss{};
+                                    camera_rotation_key_ss << R"(")" << composition_window.window_id
+                                                           << "_camera_rotation"
+                                                           << R"(")";
+
+                                    std::ostringstream camera_fixed_ss{};
+                                    std::ostringstream camera_active_ss{};
+                                    std::ostringstream camera_perspective_ss{};
+                                    std::ostringstream camera_fov_ss{};
+                                    std::ostringstream camera_aspect_ss{};
+                                    std::ostringstream camera_near_ss{};
+                                    std::ostringstream camera_far_ss{};
+                                    std::ostringstream camera_distance_ss{};
+                                    std::ostringstream camera_orthographic_width_ss{};
+                                    std::ostringstream camera_orthographic_height_ss{};
+                                    std::ostringstream camera_horizontal_angle_ss{};
+                                    std::ostringstream camera_vertical_angle_ss{};
+                                    std::ostringstream camera_position_ss{};
+                                    std::ostringstream camera_rotation_ss{};
+
+                                    auto euler_angles = glm::eulerAngles(transform.rotation);
+
+                                    camera_fixed_ss << (camera.m_fixed ? "true" : "false");
+                                    camera_active_ss << (camera.m_active ? "true" : "false");
+                                    camera_perspective_ss << (camera.perspective ? "true" : "false");
+                                    camera_fov_ss << camera.fov;
+                                    camera_aspect_ss << camera.aspect;
+                                    camera_near_ss << camera.near;
+                                    camera_far_ss << camera.far;
+                                    camera_distance_ss << fixed_camera.distance;
+                                    camera_orthographic_width_ss << camera.orthographicWidth;
+                                    camera_orthographic_height_ss << camera.orthographicHeight;
+                                    camera_horizontal_angle_ss << fixed_camera.horizontalAngle;
+                                    camera_vertical_angle_ss << fixed_camera.verticalAngle;
+                                    camera_position_ss << "[ " << transform.position[0] << ", " << transform.position[1]
+                                                       << ", " << transform.position[2] << " ]";
+                                    camera_rotation_ss << "[ " << euler_angles[0] << ", " << euler_angles[1] << ", "
+                                                       << euler_angles[2] << " ]";
+
+                                    replace(config_dump, camera_fixed_key_ss.str(), camera_fixed_ss.str());
+                                    replace(config_dump, camera_active_key_ss.str(), camera_active_ss.str());
+                                    replace(config_dump, camera_perspective_key_ss.str(), camera_perspective_ss.str());
+                                    replace(config_dump, camera_fov_key_ss.str(), camera_fov_ss.str());
+                                    replace(config_dump, camera_aspect_key_ss.str(), camera_aspect_ss.str());
+                                    replace(config_dump, camera_near_key_ss.str(), camera_near_ss.str());
+                                    replace(config_dump, camera_far_key_ss.str(), camera_far_ss.str());
+                                    replace(config_dump, camera_distance_key_ss.str(), camera_distance_ss.str());
+                                    replace(config_dump, camera_orthographic_width_key_ss.str(),
+                                        camera_orthographic_width_ss.str());
+                                    replace(config_dump, camera_orthographic_height_key_ss.str(),
+                                        camera_orthographic_height_ss.str());
+                                    replace(config_dump, camera_horizontal_angle_key_ss.str(),
+                                        camera_horizontal_angle_ss.str());
+                                    replace(config_dump, camera_vertical_angle_key_ss.str(),
+                                        camera_vertical_angle_ss.str());
+                                    replace(config_dump, camera_position_key_ss.str(), camera_position_ss.str());
+                                    replace(config_dump, camera_rotation_key_ss.str(), camera_rotation_ss.str());
                                 }
 
                                 if (cuboid_window.heatmap) {

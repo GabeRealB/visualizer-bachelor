@@ -119,6 +119,25 @@ def generate(config, template, output):
                     template_element["heatmap"]["colors_start"] = "{}_heatmap_colors_start".format(
                         element["internal_id"])
 
+                if "camera" not in element:
+                    template_element["camera"] = {}
+
+                template_camera = template_element["camera"]
+                template_camera["fixed"] = "{}_camera_fixed".format(element["internal_id"])
+                template_camera["active"] = "{}_camera_active".format(element["internal_id"])
+                template_camera["perspective"] = "{}_camera_perspective".format(element["internal_id"])
+                template_camera["fov"] = "{}_camera_fov".format(element["internal_id"])
+                template_camera["aspect"] = "{}_camera_aspect".format(element["internal_id"])
+                template_camera["near"] = "{}_camera_near".format(element["internal_id"])
+                template_camera["far"] = "{}_camera_far".format(element["internal_id"])
+                template_camera["distance"] = "{}_camera_distance".format(element["internal_id"])
+                template_camera["orthographic_width"] = "{}_camera_orthographic_width".format(element["internal_id"])
+                template_camera["orthographic_height"] = "{}_camera_orthographic_height".format(element["internal_id"])
+                template_camera["horizontal_angle"] = "{}_camera_horizontal_angle".format(element["internal_id"])
+                template_camera["vertical_angle"] = "{}_camera_vertical_angle".format(element["internal_id"])
+                template_camera["position"] = "{}_camera_position".format(element["internal_id"])
+                template_camera["rotation"] = "{}_camera_rotation".format(element["internal_id"])
+
     # Generate the code
     code_str = "\n"
     for name, region in variables["sequential"].items():
@@ -214,6 +233,29 @@ def generate(config, template, output):
                         code_str = code_str + """\t{}.add_heatmap_color({}, {{ {} }});\n""" \
                             .format(container_name, color_start, color_str) \
                             .expandtabs(4)
+
+                if "camera" in element:
+                    camera = element["camera"]
+                    fixed = "true" if camera["fixed"] else "false"
+                    active = "true" if camera["active"] else "false"
+                    perspective = "true" if camera["perspective"] else "false"
+                    fov = camera["fov"]
+                    aspect = camera["aspect"]
+                    near = camera["near"]
+                    far = camera["far"]
+                    distance = camera["distance"]
+                    orthographic_width = camera["orthographic_width"]
+                    orthographic_height = camera["orthographic_height"]
+                    horizontal_angle = camera["horizontal_angle"]
+                    vertical_angle = camera["vertical_angle"]
+                    position = ", ".join([str(c) for c in camera["position"]])
+                    rotation = ", ".join([str(c) for c in camera["rotation"]])
+
+                    code_str = code_str + """\t{}.add_camera({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {{ {} }}, {{ {} }});\n""" \
+                        .format(container_name, fixed, active, perspective, fov, aspect, near, far, distance,
+                                orthographic_width, orthographic_height, horizontal_angle, vertical_angle, position,
+                                rotation) \
+                        .expandtabs(4)
 
                 code_str = code_str + "\n"
 

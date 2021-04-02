@@ -91,6 +91,7 @@ struct ConfigDumpGUITextureWindow {
 
 struct ConfigDumpGUICuboidWindow {
     bool heatmap;
+    Entity camera_entity;
     std::size_t heatmap_idx;
     std::vector<Entity> entities;
 };
