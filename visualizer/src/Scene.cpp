@@ -1455,6 +1455,17 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
     enabled_cuboids.assign(component.positions.size(), 0);
     cuboid_model_matrices.reserve(component.positions.size());
 
+    auto adj_mat = glm::identity<glm::mat3>();
+    if (component.invert_x) {
+        adj_mat[0][0] = -1.0f;
+    }
+    if (component.invert_y) {
+        adj_mat[1][1] = -1.0f;
+    }
+    if (component.invert_z) {
+        adj_mat[2][2] = -1.0f;
+    }
+
     for (auto& cuboid_info : component.positions) {
         auto& [position, size] = cuboid_info;
 
@@ -1494,12 +1505,12 @@ void initialize_component(EntityDatabaseContext& database_context, Entity entity
 
         cuboid_model_matrices.push_back(getModelMatrix({
             glm::identity<glm::quat>(),
-            vec_pos,
+            adj_mat * vec_pos,
             vec_size,
         }));
     }
 
-    mid_point = (max_pos + min_pos) / 2.0f;
+    mid_point = adj_mat * ((max_pos + min_pos) / 2.0f);
 
     if (component.global) {
         cuboid_size = { component.global_size[0], component.global_size[1], component.global_size[2] };

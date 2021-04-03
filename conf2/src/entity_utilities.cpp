@@ -114,7 +114,8 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
 Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
     const CuboidCommandList& command_list, const std::string& accum_texture, const std::string& revealage_texture,
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
-    const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width)
+    const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width, bool invert_x,
+    bool invert_y, bool invert_z)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -361,6 +362,9 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     transform.position[2] = 0;
 
     cuboid_command_list.global = global;
+    cuboid_command_list.invert_x = invert_x;
+    cuboid_command_list.invert_y = invert_y;
+    cuboid_command_list.invert_z = invert_z;
     cuboid_command_list.draw_heatmap = command_list.heatmap.has_value();
     cuboid_command_list.heatmap_stepping = heatmap_stepping;
     cuboid_command_list.global_size = global_size;

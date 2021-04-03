@@ -233,7 +233,8 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
                 generation_options.cuboid_oit_shader_asset_name,
                 generation_options.cuboid_oit_blend_shader_asset_name,
             },
-            max_cuboid_size, cuboid_size, border_width);
+            max_cuboid_size, cuboid_size, border_width, view_commands.invert_x, view_commands.invert_y,
+            view_commands.invert_z);
 
         generated_entities.push_back(entity.id);
         world.entities.push_back(std::move(entity));

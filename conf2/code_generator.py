@@ -234,6 +234,27 @@ def generate(config, template, output):
                             .format(container_name, color_start, color_str) \
                             .expandtabs(4)
 
+                if "invert x axis" in element:
+                    invert_x = "true" if element["invert x axis"] else "false"
+
+                    code_str = code_str + """\t{}.set_invert_x({});\n""" \
+                        .format(container_name, invert_x) \
+                        .expandtabs(4)
+
+                if "invert y axis" in element:
+                    invert_y = "true" if element["invert y axis"] else "false"
+
+                    code_str = code_str + """\t{}.set_invert_y({});\n""" \
+                        .format(container_name, invert_y) \
+                        .expandtabs(4)
+
+                if "invert z axis" in element:
+                    invert_z = "true" if element["invert z axis"] else "false"
+
+                    code_str = code_str + """\t{}.set_invert_z({});\n""" \
+                        .format(container_name, invert_z) \
+                        .expandtabs(4)
+
                 if "camera" in element:
                     camera = element["camera"]
                     fixed = "true" if camera["fixed"] else "false"

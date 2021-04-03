@@ -16,7 +16,8 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
 Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
     const CuboidCommandList& command_list, const std::string& accum_texture, const std::string& revealage_texture,
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
-    const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width);
+    const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width, bool invert_x,
+    bool invert_y, bool invert_z);
 
 void extend_camera_switcher(
     Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id, const CameraData& camera_data);

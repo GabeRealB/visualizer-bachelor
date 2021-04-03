@@ -602,6 +602,9 @@ ViewCommandList generate_view_command_list(
 
     command_list.id = view_container.id();
     command_list.size = view_container.size();
+    command_list.invert_x = view_container.invert_x();
+    command_list.invert_y = view_container.invert_y();
+    command_list.invert_z = view_container.invert_z();
     command_list.border_width = view_container.border_width();
     command_list.view_name = view_container.name();
     command_list.position = view_container.position();

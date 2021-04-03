@@ -192,6 +192,10 @@
           "text": "Input buffer",
           "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.53],
+          "border": {
+            "line width": 1.0,
+            "color": [ 255, 255, 255, 255 ]
+          },
           "elements": [
             {
               "cube": "A",
@@ -215,6 +219,10 @@
                 1.0,
                 1.0
               ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              },
               "heatmap": {
                 "cuboid": 5,
                 "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ] ],
@@ -243,18 +251,15 @@
                 1.0,
                 1.0
               ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              },
               "heatmap": {
                 "cuboid": 5,
                 "colors": [ [ 0  , 0  , 0  , 0   ], [ 255, 0  , 0  , 255 ] ],
                 "colors_start": [ 0.0, 1.0 ]
               }
-            },
-            {
-              "image": "image.png",
-              "text": "...",
-              "text color": [ 255, 255, 255, 255 ],
-              "scale": 0.32,
-              "position": [0.01, 0.6]
             }
           ]
         },
@@ -262,6 +267,10 @@
           "text": "Input MDA",
           "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.15],
+          "border": {
+            "line width": 1.0,
+            "color": [ 255, 255, 255, 255 ]
+          },
           "elements": [
             {
               "cube": "inp_mda",
@@ -278,7 +287,11 @@
                 1.0,
                 1.0,
                 1.0
-              ]
+              ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              }
             }
           ]
         },
@@ -286,6 +299,10 @@
           "text": "",
           "text color": [ 255, 255, 255, 255 ],
           "position": [0.34, 0.15],
+          "border": {
+            "line width": 1.0,
+            "color": [ 255, 255, 255, 255 ]
+          },
           "elements": [
             {
               "cube": "computation",
@@ -308,7 +325,11 @@
                 1.0,
                 1.0,
                 1.0
-              ]
+              ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              }
             }
           ]
         },
@@ -316,6 +337,10 @@
           "text": "Output MDA",
           "text color": [ 255, 255, 255, 255 ],
           "position": [0.01, 0.15],
+          "border": {
+            "line width": 1.0,
+            "color": [ 255, 255, 255, 255 ]
+          },
           "elements": [
             {
               "cube": "out_mda",
@@ -336,7 +361,11 @@
                 1.0,
                 1.0,
                 1.0
-              ]
+              ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              }
             }
           ]
         },
@@ -344,6 +373,10 @@
           "text": "",
           "text color": [ 255, 255, 255, 255 ],
           "position": [0.67, 0.53],
+          "border": {
+            "line width": 1.0,
+            "color": [ 255, 255, 255, 255 ]
+          },
           "elements": [
             {
               "cube": "C",
@@ -360,7 +393,11 @@
                 1.0,
                 1.0,
                 1.0
-              ]
+              ],
+              "border": {
+                "line width": 1.0,
+                "color": [ 255, 255, 255, 0   ]
+              }
             }
           ]
         }

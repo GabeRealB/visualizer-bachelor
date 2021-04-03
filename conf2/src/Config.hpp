@@ -276,6 +276,12 @@ public:
 
     float size() const { return m_size; }
 
+    bool invert_x() const { return m_invert_x; }
+
+    bool invert_y() const { return m_invert_y; }
+
+    bool invert_z() const { return m_invert_z; }
+
     float border_width() const { return m_border_width; }
 
     std::array<float, 2> position() const { return m_position; }
@@ -291,6 +297,12 @@ public:
     const std::array<std::size_t, 4>& border_color() const { return m_border_color; }
 
     const std::array<std::size_t, 4>& caption_color() const { return m_caption_color; }
+
+    void set_invert_x(bool invert) { m_invert_x = invert; }
+
+    void set_invert_y(bool invert) { m_invert_y = invert; }
+
+    void set_invert_z(bool invert) { m_invert_z = invert; }
 
     void set_size(float size) { m_size = size; }
 
@@ -375,6 +387,9 @@ public:
 
 private:
     float m_size;
+    bool m_invert_x;
+    bool m_invert_y;
+    bool m_invert_z;
     float m_border_width;
     std::string m_id;
     std::string m_name;

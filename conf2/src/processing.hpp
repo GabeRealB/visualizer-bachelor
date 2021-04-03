@@ -99,6 +99,9 @@ struct ViewCommandList {
     float size;
     float border_width;
     bool heatmap;
+    bool invert_x;
+    bool invert_y;
+    bool invert_z;
     std::string id;
     std::string view_name;
     std::size_t heatmap_idx;
