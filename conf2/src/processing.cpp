@@ -6,49 +6,6 @@
 
 namespace Config {
 
-std::vector<std::set<std::string>> get_variable_combinations(
-    const VariableMap& variable_map, VariableType variable_type, std::size_t index)
-{
-    if (index == 0) {
-        return std::vector<std::set<std::string>>{ {} };
-    } else {
-        auto& variable_name = [&]() -> auto&
-        {
-            if (variable_type == VariableType::SEQUENTIAL) {
-                return variable_map.get_variable_name(VariableType::SEQUENTIAL, index - 1);
-            } else {
-                auto i = index - variable_map.get_num_variables(VariableType::SEQUENTIAL);
-                return variable_map.get_variable_name(VariableType::PARALLEL, i - 1);
-            }
-        }
-        ();
-
-        auto num_sequential_vars = variable_map.get_num_variables(VariableType::SEQUENTIAL);
-
-        std::set<std::set<std::string>> variable_combinations{};
-        for (std::size_t i = 0; i < index; i++) {
-            auto combinations = get_variable_combinations(
-                variable_map, i <= num_sequential_vars ? VariableType::SEQUENTIAL : VariableType::PARALLEL, i);
-            for (auto& combination : combinations) {
-                variable_combinations.insert(combination);
-            }
-        }
-
-        std::vector<std::set<std::string>> combinations_vec{};
-        combinations_vec.reserve(variable_combinations.size());
-
-        for (auto& combination : variable_combinations) {
-            combinations_vec.push_back(combination);
-        }
-
-        for (auto& combination : combinations_vec) {
-            combination.insert(variable_name);
-        }
-
-        return combinations_vec;
-    }
-}
-
 struct CuboidContainerTupleVec {
     std::vector<std::pair<CuboidContainer, std::size_t>> containers;
 };
@@ -593,10 +550,7 @@ void find_max_accesses(CuboidCommandList& command_list)
         command_list.access_counters.end(), [](auto&& p1, auto&& p2) { return p1 < p2; });
 }
 
-using VariablePowerSet = std::vector<std::vector<std::set<std::string>>>;
-
-ViewCommandList generate_view_command_list(
-    const ViewContainer& view_container, const VariablePowerSet& variable_power_set, VariableMap variable_map)
+ViewCommandList generate_view_command_list(const ViewContainer& view_container, VariableMap variable_map)
 {
     ViewCommandList command_list{};
 
@@ -647,24 +601,20 @@ ViewCommandList generate_view_command_list(
     }
 
     ContainerList container_list{};
-    for (std::size_t i = 0; i < variable_power_set.size(); i++) {
-        std::vector<std::pair<CuboidContainer, std::size_t>> cuboid_containers{};
-        for (const auto& variables : variable_power_set[i]) {
-            auto matching_containers = view_container.find_matching(variables);
-            for (auto& container : matching_containers) {
-                cuboid_containers.push_back(container);
-            }
-        }
+    auto num_variables = variable_map.get_num_variables(VariableType::SEQUENTIAL)
+        + variable_map.get_num_variables(VariableType::PARALLEL);
 
-        if (cuboid_containers.empty()) {
+    for (std::size_t i = 0; i <= num_variables; ++i) {
+        auto matches = view_container.find_matching(i);
+        if (matches.empty()) {
             container_list.push_back(std::monostate{});
         } else {
-            container_list.push_back(CuboidContainerTupleVec{ std::move(cuboid_containers) });
+            container_list.push_back(CuboidContainerTupleVec{ std::move(matches) });
         }
     }
 
     generate_cuboid_command_list(
-        command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, variable_power_set.size() - 1, 0);
+        command_list.cuboids, container_list, variable_map, VariableType::SEQUENTIAL, num_variables, 0);
 
     for (auto layer = command_list.cuboids.begin(); layer != command_list.cuboids.end(); layer++) {
         count_accesses(*layer);
@@ -708,49 +658,20 @@ ConfigCommandList generate_config_command_list()
 
     ConfigCommandList command_list{};
     std::vector<std::thread> threads{};
-    VariablePowerSet variable_power_set{};
 
     auto view_ids = config_instance.get_view_ids();
     for (std::size_t i = 0; i < view_ids.size(); ++i) {
         command_list.view_commands.emplace_back();
     }
 
-    for (std::size_t i = 0; i <= variable_map.get_num_variables(VariableType::SEQUENTIAL)
-             + variable_map.get_num_variables(VariableType::PARALLEL);
-         ++i) {
-        variable_power_set.emplace_back();
-    }
-
-    for (std::size_t i = 0; i <= variable_map.get_num_variables(VariableType::SEQUENTIAL)
-             + variable_map.get_num_variables(VariableType::PARALLEL);
-         ++i) {
-        threads.emplace_back(
-            [](VariablePowerSet& variable_power_set, const VariableMap& variable_map, std::size_t idx) {
-                if (idx <= variable_map.get_num_variables(VariableType::SEQUENTIAL)) {
-                    variable_power_set[idx] = get_variable_combinations(variable_map, VariableType::SEQUENTIAL, idx);
-                } else {
-                    variable_power_set[idx] = get_variable_combinations(variable_map, VariableType::PARALLEL, idx);
-                }
-            },
-            std::ref(variable_power_set), std::cref(variable_map), i);
-    }
-
-    for (auto& thread : threads) {
-        thread.join();
-    }
-    threads.clear();
-
     for (std::size_t i = 0; i < view_ids.size(); ++i) {
         threads.emplace_back(
-            [](const ConfigContainer& config_instance, ConfigCommandList& command_list,
-                const VariablePowerSet& variable_power_set, VariableMap variable_map, const std::string& view_id,
-                std::size_t idx) {
+            [](const ConfigContainer& config_instance, ConfigCommandList& command_list, VariableMap variable_map,
+                const std::string& view_id, std::size_t idx) {
                 auto& view_container = config_instance.get_view_container(view_id);
-                command_list.view_commands[idx]
-                    = generate_view_command_list(view_container, variable_power_set, std::move(variable_map));
+                command_list.view_commands[idx] = generate_view_command_list(view_container, std::move(variable_map));
             },
-            std::cref(config_instance), std::ref(command_list), std::cref(variable_power_set), variable_map,
-            std::cref(view_ids[i]), i);
+            std::cref(config_instance), std::ref(command_list), variable_map, std::cref(view_ids[i]), i);
     }
 
     for (auto& thread : threads) {

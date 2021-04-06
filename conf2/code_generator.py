@@ -19,6 +19,8 @@ def generate(config, template, output):
     appearance = {}
     grouping = {}
     legend = {}
+    variable_counters = {"": 0}
+    counter = 1
 
     mapping_template = """[=]() -> int {{
         return {};
@@ -53,10 +55,14 @@ def generate(config, template, output):
     # Extract sequential variables
     for name, region in config_data["seq_clock"].items():
         variables["sequential"][name] = region
+        variable_counters[name] = counter
+        counter = counter + 1
 
     # Extract parallel variables
     for name, region in config_data["par_clock"].items():
         variables["parallel"][name] = region
+        variable_counters[name] = counter
+        counter = counter + 1
 
     # Extract cubes
     for name, cube in config_data["cubes"].items():
@@ -208,14 +214,12 @@ def generate(config, template, output):
                                                               oob_inactive, callable_func)) \
                         .expandtabs(4)
 
-                    requirements_name = "r_" + str(uuid.uuid4()).replace("-", "_")
-                    requirements = ",".join(map(lambda v: """ "{}" """.format(v), cuboid["requirements"]))
-                    code_str = code_str + """\tauto {} = {};\n""" \
-                        .format(requirements_name, set_constr_template.format(requirements)) \
-                        .expandtabs(4)
+                    loop_chain_idx = 0
+                    if cuboid["requirements"]:
+                        loop_chain_idx = max(map(lambda v: variable_counters[v], cuboid["requirements"]))
 
                     code_str = code_str + """\t{}.add_cuboid({}, {});\n\n""" \
-                        .format(container_name, cuboid_name, requirements_name) \
+                        .format(container_name, cuboid_name, loop_chain_idx) \
                         .expandtabs(4)
 
                 if "heatmap" in element:

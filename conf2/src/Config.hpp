@@ -322,10 +322,16 @@ public:
 
     void set_caption_color(const std::array<std::size_t, 4>& color) { m_caption_color = color; }
 
-    void add_cuboid(const CuboidContainer& cuboid, const std::set<std::string>& requirements)
+    void add_cuboid(const CuboidContainer& cuboid, std::size_t variable_idx)
     {
+        auto insertion_idx = m_cuboids.size();
         m_cuboids.push_back(cuboid);
-        m_variable_requirements.push_back(requirements);
+        if (m_cuboid_requirements.contains(variable_idx)) {
+            m_cuboid_requirements[variable_idx].push_back(insertion_idx);
+        } else {
+            std::vector<std::size_t> indices = { insertion_idx };
+            m_cuboid_requirements.insert({ variable_idx, indices });
+        }
     }
 
     void add_camera(bool fixed, bool active, bool perspective, float fov, float aspect, float near, float far,
@@ -374,15 +380,17 @@ public:
 
     std::span<const CuboidContainer> get_cuboids() const { return { m_cuboids.data(), m_cuboids.size() }; }
 
-    std::vector<std::pair<CuboidContainer, std::size_t>> find_matching(const std::set<std::string>& requirements) const
+    std::vector<std::pair<CuboidContainer, std::size_t>> find_matching(std::size_t variable_idx) const
     {
-        auto matches = std::vector<std::pair<CuboidContainer, std::size_t>>{};
-        for (std::size_t i = 0; i < m_variable_requirements.size(); i++) {
-            if (m_variable_requirements[i] == requirements) {
-                matches.emplace_back(m_cuboids[i], i);
+        if (!m_cuboid_requirements.contains(variable_idx)) {
+            return {};
+        } else {
+            auto matches = std::vector<std::pair<CuboidContainer, std::size_t>>{};
+            for (const auto& item : m_cuboid_requirements.at(variable_idx)) {
+                matches.emplace_back(m_cuboids[item], item);
             }
+            return matches;
         }
-        return matches;
     }
 
 private:
@@ -399,7 +407,7 @@ private:
     std::vector<CuboidContainer> m_cuboids;
     std::array<std::size_t, 4> m_border_color;
     std::array<std::size_t, 4> m_caption_color;
-    std::vector<std::set<std::string>> m_variable_requirements;
+    std::map<std::size_t, std::vector<std::size_t>> m_cuboid_requirements;
 };
 
 enum class LegendEntityType { Color, Image };
