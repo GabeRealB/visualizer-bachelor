@@ -9,6 +9,189 @@
 
 namespace Visualizer {
 
+auto get_texture_slot_number_fn = [](TextureSlot slot) -> auto { return static_cast<std::size_t>(slot); };
+
+auto get_texture_slot_enum_fn = [](TextureSlot slot) -> auto
+{
+    return static_cast<GLenum>(GL_TEXTURE0 + get_texture_slot_number_fn(slot));
+};
+
+auto get_texture_format_fn = [](TextureFormat format, TextureInternalFormat internal_format) {
+    bool is_integer = false;
+    bool depth_valid = false;
+    bool depth_stencil_valid = false;
+
+    switch (internal_format) {
+    case TextureInternalFormat::Int8:
+    case TextureInternalFormat::Int16:
+    case TextureInternalFormat::Int32:
+    case TextureInternalFormat::UInt8:
+    case TextureInternalFormat::UInt16:
+    case TextureInternalFormat::UInt32:
+        is_integer = true;
+    default:
+        break;
+    }
+
+    switch (internal_format) {
+    case TextureInternalFormat::Byte:
+    case TextureInternalFormat::Short:
+    case TextureInternalFormat::Int32:
+    case TextureInternalFormat::UInt32:
+    case TextureInternalFormat::Float32:
+        depth_valid = true;
+    default:
+        break;
+    }
+
+    switch (internal_format) {
+    case TextureInternalFormat::Int32:
+    case TextureInternalFormat::UInt32:
+    case TextureInternalFormat::Float32:
+        depth_stencil_valid = true;
+    default:
+        break;
+    }
+
+    switch (format) {
+    case TextureFormat::R:
+        return is_integer ? GL_RED_INTEGER : GL_RED;
+    case TextureFormat::RG:
+        return is_integer ? GL_RG_INTEGER : GL_RG;
+    case TextureFormat::RGB:
+        return is_integer ? GL_RGB_INTEGER : GL_RGB;
+    case TextureFormat::RGBA:
+        return is_integer ? GL_RGBA_INTEGER : GL_RGBA;
+    case TextureFormat::Depth:
+        return depth_valid ? GL_DEPTH : GL_INVALID_ENUM;
+    case TextureFormat::DepthStencil:
+        return depth_stencil_valid ? GL_DEPTH_STENCIL : GL_INVALID_ENUM;
+    }
+};
+
+auto get_texture_internal_format_fn = [](TextureFormat format, TextureInternalFormat internal_format) {
+    switch (format) {
+    case TextureFormat::R:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            return GL_R8;
+        case TextureInternalFormat::Short:
+            return GL_R16;
+        case TextureInternalFormat::Int8:
+            return GL_R8I;
+        case TextureInternalFormat::Int16:
+            return GL_R16I;
+        case TextureInternalFormat::Int32:
+            return GL_R32I;
+        case TextureInternalFormat::UInt8:
+            return GL_R8UI;
+        case TextureInternalFormat::UInt16:
+            return GL_R16UI;
+        case TextureInternalFormat::UInt32:
+            return GL_R32UI;
+        case TextureInternalFormat::Float16:
+            return GL_R16F;
+        case TextureInternalFormat::Float32:
+            return GL_R32F;
+        }
+    case TextureFormat::RG:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            return GL_RG8;
+        case TextureInternalFormat::Short:
+            return GL_RG16;
+        case TextureInternalFormat::Int8:
+            return GL_RG8I;
+        case TextureInternalFormat::Int16:
+            return GL_RG16I;
+        case TextureInternalFormat::Int32:
+            return GL_RG32I;
+        case TextureInternalFormat::UInt8:
+            return GL_RG8UI;
+        case TextureInternalFormat::UInt16:
+            return GL_RG16UI;
+        case TextureInternalFormat::UInt32:
+            return GL_RG32UI;
+        case TextureInternalFormat::Float16:
+            return GL_RG16F;
+        case TextureInternalFormat::Float32:
+            return GL_RG32F;
+        }
+    case TextureFormat::RGB:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            return GL_RGB8;
+        case TextureInternalFormat::Short:
+            return GL_RGB16;
+        case TextureInternalFormat::Int8:
+            return GL_RGB8I;
+        case TextureInternalFormat::Int16:
+            return GL_RGB16I;
+        case TextureInternalFormat::Int32:
+            return GL_RGB32I;
+        case TextureInternalFormat::UInt8:
+            return GL_RGB8UI;
+        case TextureInternalFormat::UInt16:
+            return GL_RGB16UI;
+        case TextureInternalFormat::UInt32:
+            return GL_RGB32UI;
+        case TextureInternalFormat::Float16:
+            return GL_RGB16F;
+        case TextureInternalFormat::Float32:
+            return GL_RGB32F;
+        }
+    case TextureFormat::RGBA:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            return GL_RGBA8;
+        case TextureInternalFormat::Short:
+            return GL_RGBA16;
+        case TextureInternalFormat::Int8:
+            return GL_RGBA8I;
+        case TextureInternalFormat::Int16:
+            return GL_RGBA16I;
+        case TextureInternalFormat::Int32:
+            return GL_RGBA32I;
+        case TextureInternalFormat::UInt8:
+            return GL_RGBA8UI;
+        case TextureInternalFormat::UInt16:
+            return GL_RGBA16UI;
+        case TextureInternalFormat::UInt32:
+            return GL_RGBA32UI;
+        case TextureInternalFormat::Float16:
+            return GL_RGBA16F;
+        case TextureInternalFormat::Float32:
+            return GL_RGBA32F;
+        }
+    case TextureFormat::Depth:
+        switch (internal_format) {
+        case TextureInternalFormat::Byte:
+            return GL_DEPTH_COMPONENT16;
+        case TextureInternalFormat::Short:
+            return GL_DEPTH_COMPONENT24;
+        case TextureInternalFormat::Int32:
+            return GL_DEPTH_COMPONENT32;
+        case TextureInternalFormat::UInt32:
+            return GL_DEPTH_COMPONENT32;
+        case TextureInternalFormat::Float32:
+            return GL_DEPTH_COMPONENT32F;
+        default:
+            return GL_INVALID_ENUM;
+        }
+    case TextureFormat::DepthStencil:
+        switch (internal_format) {
+        case TextureInternalFormat::Int32:
+            return GL_DEPTH24_STENCIL8;
+        case TextureInternalFormat::UInt32:
+            return GL_DEPTH24_STENCIL8;
+        case TextureInternalFormat::Float32:
+            return GL_DEPTH32F_STENCIL8;
+        default:
+            return GL_INVALID_ENUM;
+        }
+    }
+};
+
 TextureBuffer::TextureBuffer()
     : m_id{ 0 }
     , m_size{ 0 }
@@ -68,58 +251,7 @@ void TextureBuffer::bind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
-        return;
-    }
+    glActiveTexture(get_texture_slot_enum_fn(slot));
 
     glBindTexture(GL_TEXTURE_BUFFER, m_id);
     assert(glGetError() == GL_NO_ERROR);
@@ -132,60 +264,37 @@ void TextureBuffer::unbind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
+    glActiveTexture(get_texture_slot_enum_fn(slot));
+
+    glBindTexture(GL_TEXTURE_BUFFER, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void TextureBuffer::bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access,
+    TextureFormat format, TextureInternalFormat internal_format)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+    auto texture_gl = static_cast<GLuint>(m_id);
+    auto level_gl = static_cast<GLint>(level);
+    auto layered_gl = static_cast<GLboolean>(layered);
+    auto layer_gl = static_cast<GLint>(layer);
+    auto format_gl = get_texture_internal_format_fn(format, internal_format);
+
+    if (format_gl == GL_INVALID_ENUM) {
         return;
     }
 
-    glBindTexture(GL_TEXTURE_BUFFER, 0);
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, texture_gl, level_gl, layered_gl, layer_gl, access, format_gl);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void TextureBuffer::unbind_image(TextureSlot slot)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
     assert(glGetError() == GL_NO_ERROR);
 }
 
@@ -198,156 +307,9 @@ void TextureBuffer::bind_buffer(
 {
     bind(TextureSlot::TmpSlot);
 
-    GLint internal_format_gl;
-
-    switch (format) {
-    case TextureFormat::R:
-        switch (internal_format) {
-        case TextureInternalFormat::Byte:
-            internal_format_gl = GL_R8;
-            break;
-        case TextureInternalFormat::Short:
-            internal_format_gl = GL_R16;
-            break;
-        case TextureInternalFormat::Int8:
-            internal_format_gl = GL_R8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internal_format_gl = GL_R16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internal_format_gl = GL_R32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internal_format_gl = GL_R8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internal_format_gl = GL_R16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internal_format_gl = GL_R32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internal_format_gl = GL_R16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internal_format_gl = GL_R32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RG:
-        switch (internal_format) {
-        case TextureInternalFormat::Byte:
-            internal_format_gl = GL_RG8;
-            break;
-        case TextureInternalFormat::Short:
-            internal_format_gl = GL_RG16;
-            break;
-        case TextureInternalFormat::Int8:
-            internal_format_gl = GL_RG8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internal_format_gl = GL_RG16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internal_format_gl = GL_RG32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internal_format_gl = GL_RG8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internal_format_gl = GL_RG16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internal_format_gl = GL_RG32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internal_format_gl = GL_RG16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internal_format_gl = GL_RG32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGB:
-        switch (internal_format) {
-        case TextureInternalFormat::Byte:
-            internal_format_gl = GL_RGB8;
-            break;
-        case TextureInternalFormat::Short:
-            internal_format_gl = GL_RGB16;
-            break;
-        case TextureInternalFormat::Int8:
-            internal_format_gl = GL_RGB8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internal_format_gl = GL_RGB16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internal_format_gl = GL_RGB32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internal_format_gl = GL_RGB8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internal_format_gl = GL_RGB16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internal_format_gl = GL_RGB32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internal_format_gl = GL_RGB16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internal_format_gl = GL_RGB32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGBA:
-        switch (internal_format) {
-        case TextureInternalFormat::Byte:
-            internal_format_gl = GL_RGBA8;
-            break;
-        case TextureInternalFormat::Short:
-            internal_format_gl = GL_RGBA16;
-            break;
-        case TextureInternalFormat::Int8:
-            internal_format_gl = GL_RGBA8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internal_format_gl = GL_RGBA16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internal_format_gl = GL_RGBA32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internal_format_gl = GL_RGBA8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internal_format_gl = GL_RGBA16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internal_format_gl = GL_RGBA32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internal_format_gl = GL_RGBA16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internal_format_gl = GL_RGBA32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::Depth:
-    case TextureFormat::DepthStencil:
-        internal_format_gl = GL_R8;
+    GLint internal_format_gl = get_texture_internal_format_fn(format, internal_format);
+    if (internal_format_gl == GL_INVALID_ENUM) {
+        return;
     }
 
     if (buffer) {
@@ -476,58 +438,7 @@ void Texture2D::bind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
-        return;
-    }
+    glActiveTexture(get_texture_slot_enum_fn(slot));
 
     glBindTexture(GL_TEXTURE_2D, m_id);
     assert(glGetError() == GL_NO_ERROR);
@@ -540,60 +451,37 @@ void Texture2D::unbind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
+    glActiveTexture(get_texture_slot_enum_fn(slot));
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void Texture2D::bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access,
+    TextureFormat format, TextureInternalFormat internal_format)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+    auto texture_gl = static_cast<GLuint>(m_id);
+    auto level_gl = static_cast<GLint>(level);
+    auto layered_gl = static_cast<GLboolean>(layered);
+    auto layer_gl = static_cast<GLint>(layer);
+    auto format_gl = get_texture_internal_format_fn(format, internal_format);
+
+    if (format_gl == GL_INVALID_ENUM) {
         return;
     }
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, texture_gl, level_gl, layered_gl, layer_gl, access, format_gl);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void Texture2D::unbind_image(TextureSlot slot)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
     assert(glGetError() == GL_NO_ERROR);
 }
 
@@ -648,227 +536,9 @@ void Texture2D::addAttribute(TextureMagnificationFilter filter)
 void Texture2D::copyData(TextureFormat format, TextureInternalFormat internalFormat, GLint mipmapLevel, GLsizei width,
     GLsizei height, GLsizei border, const unsigned char* data)
 {
-    GLenum formatGl;
-    GLint internalFormatGl;
-
-    switch (format) {
-    case TextureFormat::R:
-        formatGl = GL_RED;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_R8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_R16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_R8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_R16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_R32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_R8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_R16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_R32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_R16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_R32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RG:
-        formatGl = GL_RG;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RG8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RG16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_RG8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_RG16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_RG32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_RG8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_RG16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_RG32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RG16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RG32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGB:
-        formatGl = GL_RGB;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RGB8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RGB16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_RGB8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_RGB16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_RGB32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_RGB8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_RGB16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_RGB32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RGB16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RGB32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGBA:
-        formatGl = GL_RGBA;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RGBA8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RGBA16;
-            break;
-        case TextureInternalFormat::Int8:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA8I;
-            break;
-        case TextureInternalFormat::Int16:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA16I;
-            break;
-        case TextureInternalFormat::Int32:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            formatGl = GL_RGBA_INTEGER;
-            internalFormatGl = GL_RGBA32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RGBA16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RGBA32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::Depth:
-        formatGl = GL_DEPTH;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_DEPTH_COMPONENT16;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_DEPTH_COMPONENT24;
-            break;
-        case TextureInternalFormat::Int8:
-            return;
-        case TextureInternalFormat::Int16:
-            return;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_DEPTH_COMPONENT32;
-            break;
-        case TextureInternalFormat::UInt8:
-            return;
-        case TextureInternalFormat::UInt16:
-            return;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_DEPTH_COMPONENT32;
-            break;
-        case TextureInternalFormat::Float16:
-            return;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_DEPTH_COMPONENT32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::DepthStencil:
-        formatGl = GL_DEPTH_STENCIL;
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            return;
-        case TextureInternalFormat::Short:
-            return;
-        case TextureInternalFormat::Int8:
-            return;
-        case TextureInternalFormat::Int16:
-            return;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_DEPTH24_STENCIL8;
-            break;
-        case TextureInternalFormat::UInt8:
-            return;
-        case TextureInternalFormat::UInt16:
-            return;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_DEPTH24_STENCIL8;
-            break;
-        case TextureInternalFormat::Float16:
-            return;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_DEPTH32F_STENCIL8;
-            break;
-        default:
-            return;
-        }
-        break;
-    default:
+    GLenum formatGl = get_texture_format_fn(format, internalFormat);
+    GLint internalFormatGl = get_texture_internal_format_fn(format, internalFormat);
+    if (formatGl == GL_INVALID_ENUM || internalFormatGl == GL_INVALID_ENUM) {
         return;
     }
 
@@ -946,58 +616,7 @@ void Texture2DMultisample::bind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
-        return;
-    }
+    glActiveTexture(get_texture_slot_enum_fn(slot));
 
     glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_id);
     assert(glGetError() == GL_NO_ERROR);
@@ -1010,60 +629,37 @@ void Texture2DMultisample::unbind(TextureSlot slot)
     }
 
     assert(glGetError() == GL_NO_ERROR);
-    switch (slot) {
-    case TextureSlot::Slot0:
-        glActiveTexture(GL_TEXTURE0);
-        break;
-    case TextureSlot::Slot1:
-        glActiveTexture(GL_TEXTURE1);
-        break;
-    case TextureSlot::Slot2:
-        glActiveTexture(GL_TEXTURE2);
-        break;
-    case TextureSlot::Slot3:
-        glActiveTexture(GL_TEXTURE3);
-        break;
-    case TextureSlot::Slot4:
-        glActiveTexture(GL_TEXTURE4);
-        break;
-    case TextureSlot::Slot5:
-        glActiveTexture(GL_TEXTURE5);
-        break;
-    case TextureSlot::Slot6:
-        glActiveTexture(GL_TEXTURE6);
-        break;
-    case TextureSlot::Slot7:
-        glActiveTexture(GL_TEXTURE7);
-        break;
-    case TextureSlot::Slot8:
-        glActiveTexture(GL_TEXTURE8);
-        break;
-    case TextureSlot::Slot9:
-        glActiveTexture(GL_TEXTURE9);
-        break;
-    case TextureSlot::Slot10:
-        glActiveTexture(GL_TEXTURE10);
-        break;
-    case TextureSlot::Slot11:
-        glActiveTexture(GL_TEXTURE11);
-        break;
-    case TextureSlot::Slot12:
-        glActiveTexture(GL_TEXTURE12);
-        break;
-    case TextureSlot::Slot13:
-        glActiveTexture(GL_TEXTURE13);
-        break;
-    case TextureSlot::Slot14:
-        glActiveTexture(GL_TEXTURE14);
-        break;
-    case TextureSlot::Slot15:
-        glActiveTexture(GL_TEXTURE15);
-        break;
-    default:
+    glActiveTexture(get_texture_slot_enum_fn(slot));
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void Texture2DMultisample::bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access,
+    TextureFormat format, TextureInternalFormat internal_format)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+    auto texture_gl = static_cast<GLuint>(m_id);
+    auto level_gl = static_cast<GLint>(level);
+    auto layered_gl = static_cast<GLboolean>(layered);
+    auto layer_gl = static_cast<GLint>(layer);
+    auto format_gl = get_texture_internal_format_fn(format, internal_format);
+
+    if (format_gl == GL_INVALID_ENUM) {
         return;
     }
 
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, texture_gl, level_gl, layered_gl, layer_gl, access, format_gl);
+    assert(glGetError() == GL_NO_ERROR);
+}
+
+void Texture2DMultisample::unbind_image(TextureSlot slot)
+{
+    auto texture_unit_gl = static_cast<GLuint>(get_texture_slot_number_fn(slot));
+
+    assert(glGetError() == GL_NO_ERROR);
+    glBindImageTexture(texture_unit_gl, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R8);
     assert(glGetError() == GL_NO_ERROR);
 }
 
@@ -1118,214 +714,8 @@ void Texture2DMultisample::addAttribute(TextureMagnificationFilter filter)
 void Texture2DMultisample::initialize(
     TextureFormat format, TextureInternalFormat internalFormat, GLsizei samples, GLsizei width, GLsizei height)
 {
-    GLint internalFormatGl;
-
-    switch (format) {
-    case TextureFormat::R:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_R8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_R16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_R8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_R16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_R32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_R8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_R16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_R32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_R16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_R32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RG:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RG8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RG16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_RG8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_RG16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_RG32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_RG8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_RG16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_RG32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RG16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RG32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGB:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RGB8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RGB16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_RGB8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_RGB16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_RGB32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_RGB8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_RGB16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_RGB32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RGB16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RGB32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::RGBA:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_RGBA8;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_RGBA16;
-            break;
-        case TextureInternalFormat::Int8:
-            internalFormatGl = GL_RGBA8I;
-            break;
-        case TextureInternalFormat::Int16:
-            internalFormatGl = GL_RGBA16I;
-            break;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_RGBA32I;
-            break;
-        case TextureInternalFormat::UInt8:
-            internalFormatGl = GL_RGBA8UI;
-            break;
-        case TextureInternalFormat::UInt16:
-            internalFormatGl = GL_RGBA16UI;
-            break;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_RGBA32UI;
-            break;
-        case TextureInternalFormat::Float16:
-            internalFormatGl = GL_RGBA16F;
-            break;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_RGBA32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::Depth:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            internalFormatGl = GL_DEPTH_COMPONENT16;
-            break;
-        case TextureInternalFormat::Short:
-            internalFormatGl = GL_DEPTH_COMPONENT24;
-            break;
-        case TextureInternalFormat::Int8:
-            return;
-        case TextureInternalFormat::Int16:
-            return;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_DEPTH_COMPONENT32;
-            break;
-        case TextureInternalFormat::UInt8:
-            return;
-        case TextureInternalFormat::UInt16:
-            return;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_DEPTH_COMPONENT32;
-            break;
-        case TextureInternalFormat::Float16:
-            return;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_DEPTH_COMPONENT32F;
-            break;
-        default:
-            return;
-        }
-        break;
-    case TextureFormat::DepthStencil:
-        switch (internalFormat) {
-        case TextureInternalFormat::Byte:
-            return;
-        case TextureInternalFormat::Short:
-            return;
-        case TextureInternalFormat::Int8:
-            return;
-        case TextureInternalFormat::Int16:
-            return;
-        case TextureInternalFormat::Int32:
-            internalFormatGl = GL_DEPTH24_STENCIL8;
-            break;
-        case TextureInternalFormat::UInt8:
-            return;
-        case TextureInternalFormat::UInt16:
-            return;
-        case TextureInternalFormat::UInt32:
-            internalFormatGl = GL_DEPTH24_STENCIL8;
-            break;
-        case TextureInternalFormat::Float16:
-            return;
-        case TextureInternalFormat::Float32:
-            internalFormatGl = GL_DEPTH32F_STENCIL8;
-            break;
-        default:
-            return;
-        }
-        break;
-    default:
+    GLint internalFormatGl = get_texture_internal_format_fn(format, internalFormat);
+    if (internalFormatGl == GL_INVALID_ENUM) {
         return;
     }
 

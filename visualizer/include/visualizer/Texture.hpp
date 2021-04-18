@@ -56,6 +56,11 @@ public:
     virtual void bind(TextureSlot slot) = 0;
     virtual void unbind(TextureSlot slot) = 0;
 
+    virtual void bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access, TextureFormat format,
+        TextureInternalFormat internal_format)
+        = 0;
+    virtual void unbind_image(TextureSlot slot) = 0;
+
     virtual void addAttribute(TextureMinificationFilter filter) = 0;
     virtual void addAttribute(TextureMagnificationFilter filter) = 0;
 
@@ -82,6 +87,10 @@ public:
 
     void bind(TextureSlot slot) final;
     void unbind(TextureSlot slot) final;
+
+    void bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access, TextureFormat format,
+        TextureInternalFormat internal_format) final;
+    void unbind_image(TextureSlot slot) final;
 
     void addAttribute(TextureMinificationFilter filter) final;
     void addAttribute(TextureMagnificationFilter filter) final;
@@ -115,6 +124,10 @@ public:
     void bind(TextureSlot slot) final;
     void unbind(TextureSlot slot) final;
 
+    void bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access, TextureFormat format,
+        TextureInternalFormat internal_format) final;
+    void unbind_image(TextureSlot slot) final;
+
     void addAttribute(TextureMinificationFilter filter) final;
     void addAttribute(TextureMagnificationFilter filter) final;
     void copyData(TextureFormat format, TextureInternalFormat internalFormat, GLint mipmapLevel, GLsizei width,
@@ -144,6 +157,10 @@ public:
 
     void bind(TextureSlot slot) final;
     void unbind(TextureSlot slot) final;
+
+    void bind_image(TextureSlot slot, int level, bool layered, int layer, GLenum access, TextureFormat format,
+        TextureInternalFormat internal_format) final;
+    void unbind_image(TextureSlot slot) final;
 
     void addAttribute(TextureMinificationFilter filter) final;
     void addAttribute(TextureMagnificationFilter filter) final;
@@ -193,6 +210,58 @@ public:
 
 private:
     TextureSlot m_slot;
+    std::weak_ptr<T> m_texture;
+};
+
+template <typename T>
+requires std::derived_from<T, Texture>
+class TextureImage {
+public:
+    TextureImage(const std::shared_ptr<T>& texture, TextureSlot slot, int level, bool layered, int layer, GLenum access,
+        TextureFormat format, TextureInternalFormat internal_format)
+        : m_layered{ layered }
+        , m_level{ level }
+        , m_layer{ layer }
+        , m_access{ access }
+        , m_slot{ slot }
+        , m_format{ format }
+        , m_internal_format{ internal_format }
+        , m_texture{ texture }
+    {
+    }
+
+    TextureImage(const TextureImage<T>& other) = default;
+    TextureImage(TextureImage<T>&& other) noexcept = default;
+
+    TextureImage<T>& operator=(const TextureImage<T>& other) = default;
+    TextureImage<T>& operator=(TextureImage<T>&& other) noexcept = default;
+
+    TextureSlot slot() const { return m_slot; }
+    std::weak_ptr<T> texture() { return m_texture; }
+    std::weak_ptr<const T> texture() const { return m_texture; }
+
+    void bind() const
+    {
+        if (auto tex{ m_texture.lock() }) {
+            tex->bind_image(m_slot, m_level, m_layered, m_layer, m_access, m_format, m_internal_format);
+        }
+    }
+
+    void unbind() const
+    {
+        if (auto tex{ m_texture.lock() }) {
+            tex->unbind_image(m_slot);
+        }
+    }
+
+private:
+    bool m_layered;
+    int m_level;
+    int m_layer;
+    GLenum m_access;
+    TextureSlot m_slot;
+    TextureFormat m_format;
+    TextureInternalFormat m_internal_format;
     std::weak_ptr<T> m_texture;
 };
 

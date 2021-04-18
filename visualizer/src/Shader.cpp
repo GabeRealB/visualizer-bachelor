@@ -43,7 +43,7 @@ constexpr std::array<std::string_view, 2> sParameterQualifierNames{ "@program"sv
 constexpr std::array<ParameterQualifier, 2> sParameterQualifierMap{ ParameterQualifier::Program,
     ParameterQualifier::Material };
 
-std::map<std::string_view , ParameterType> s_parameter_type_map{
+std::map<std::string_view, ParameterType> s_parameter_type_map{
     { "bool"sv, ParameterType::Bool },
     { "int"sv, ParameterType::Int },
     { "uint"sv, ParameterType::UInt },
@@ -75,6 +75,12 @@ std::map<std::string_view , ParameterType> s_parameter_type_map{
     { "usampler2D"sv, ParameterType::Sampler2D },
     { "usampler2DMS"sv, ParameterType::Sampler2DMultisample },
     { "usamplerBuffer"sv, ParameterType::SamplerBuffer },
+    { "image2D"sv, ParameterType::Image2D },
+    { "image2DMS"sv, ParameterType::Image2DMultisample },
+    { "imageBuffer"sv, ParameterType::ImageBuffer },
+    { "uimage2D"sv, ParameterType::Image2D },
+    { "uimage2DMS"sv, ParameterType::Image2DMultisample },
+    { "uimageBuffer"sv, ParameterType::ImageBuffer },
 };
 
 Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
@@ -102,7 +108,7 @@ Shader::Shader(const std::filesystem::path& shaderPath, ShaderType shaderType)
                 qualPos != sParameterQualifierNames.end()) {
                 auto qualifier{ sParameterQualifierMap[qualPos - sParameterQualifierNames.begin()] };
 
-                if (auto type_pos{s_parameter_type_map.find(lineTokens[1])}; type_pos != s_parameter_type_map.end()) {
+                if (auto type_pos{ s_parameter_type_map.find(lineTokens[1]) }; type_pos != s_parameter_type_map.end()) {
                     auto type{ type_pos->second };
                     auto arraySize{ fromStringView<std::size_t>(lineTokens[2]) };
                     auto parameterName{ lineTokens[3] };
@@ -197,7 +203,7 @@ std::optional<Shader> Shader::create(const std::filesystem::path& shaderPath, Sh
  *************************************** ShaderEnvironment ***************************************
  **************************************************************************************************/
 
-constexpr std::array<std::tuple<std::size_t, std::size_t>, 28> sTypeSizeAlignmentPairs{
+constexpr std::array<std::tuple<std::size_t, std::size_t>, 31> sTypeSizeAlignmentPairs{
     std::tuple<std::size_t, std::size_t>{ sizeof(GLboolean), alignof(GLboolean) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLint), alignof(GLint) },
     std::tuple<std::size_t, std::size_t>{ sizeof(GLuint), alignof(GLuint) },
@@ -228,6 +234,10 @@ constexpr std::array<std::tuple<std::size_t, std::size_t>, 28> sTypeSizeAlignmen
         sizeof(TextureSampler<Texture2DMultisample>), alignof(TextureSampler<Texture2DMultisample>) },
     std::tuple<std::size_t, std::size_t>{
         sizeof(TextureSampler<TextureBuffer>), alignof(TextureSampler<TextureBuffer>) },
+    std::tuple<std::size_t, std::size_t>{ sizeof(TextureImage<Texture2D>), alignof(TextureImage<Texture2D>) },
+    std::tuple<std::size_t, std::size_t>{
+        sizeof(TextureImage<Texture2DMultisample>), alignof(TextureImage<Texture2DMultisample>) },
+    std::tuple<std::size_t, std::size_t>{ sizeof(TextureImage<TextureBuffer>), alignof(TextureImage<TextureBuffer>) },
 };
 
 ShaderEnvironment::ShaderEnvironment(ShaderProgram& program, ParameterQualifier filter)
@@ -349,7 +359,7 @@ ShaderEnvironment::~ShaderEnvironment()
  ***************************************** ShaderProgram *****************************************
  **************************************************************************************************/
 
-constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 28> sTypeApplyFuncs{
+constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view, std::size_t), 31> sTypeApplyFuncs{
     /**************************************** Scalars ****************************************/
     [](const ShaderEnvironment& environment, GLuint location, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<GLboolean>(name, size) };
@@ -573,6 +583,25 @@ constexpr std::array<void (*)(const ShaderEnvironment&, GLuint, std::string_view
     },
     [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
         auto val{ environment.getPtr<TextureSampler<TextureBuffer>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
+    /**************************************** ImageN ****************************************/
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureImage<Texture2D>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureImage<Texture2DMultisample>>(name, size) };
+        if (val != nullptr) {
+            val->bind();
+        }
+    },
+    [](const ShaderEnvironment& environment, GLuint, std::string_view name, std::size_t size) {
+        auto val{ environment.getPtr<TextureImage<TextureBuffer>>(name, size) };
         if (val != nullptr) {
             val->bind();
         }

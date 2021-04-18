@@ -57,7 +57,10 @@ enum class ParameterType : std::size_t {
     Sampler2D = 25,
     Sampler2DMultisample = 26,
     SamplerBuffer = 27,
-    MaxIndex = SamplerBuffer
+    Image2D = 28,
+    Image2DMultisample = 29,
+    ImageBuffer = 30,
+    MaxIndex = ImageBuffer
 };
 
 template <typename T> struct ShaderTypeMapping {
@@ -202,6 +205,21 @@ template <> struct ShaderTypeMapping<TextureSampler<Texture2DMultisample>> {
 template <> struct ShaderTypeMapping<TextureSampler<TextureBuffer>> {
     static constexpr bool hasMapping{ true };
     static constexpr ParameterType mappedType{ ParameterType::SamplerBuffer };
+};
+
+template <> struct ShaderTypeMapping<TextureImage<Texture2D>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::Image2D };
+};
+
+template <> struct ShaderTypeMapping<TextureImage<Texture2DMultisample>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::Image2DMultisample };
+};
+
+template <> struct ShaderTypeMapping<TextureImage<TextureBuffer>> {
+    static constexpr bool hasMapping{ true };
+    static constexpr ParameterType mappedType{ ParameterType::ImageBuffer };
 };
 
 using ParameterDeclaration = std::tuple<ParameterQualifier, ParameterType, std::size_t, std::string>;

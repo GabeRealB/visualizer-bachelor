@@ -1,7 +1,9 @@
-#version 410 core
+#version 430 core
 
 @program float 1 far_plane
 @program uint 1 projection_mode
+@program uimageBuffer 1 img_a_buffer
+@program uimage2DMS 1 img_list_head
 @material float 10 heatmap_color_start
 @material uint 1 max_access_count
 @material uint 1 heatmap_color_count
@@ -12,6 +14,8 @@
 @material vec4 1 oob_active_color
 @material vec4 1 oob_inactive_color
 @material vec4 10 heatmap_fill_colors
+
+layout (early_fragment_tests) in;
 
 uniform float far_plane;
 uniform uint projection_mode;
@@ -34,6 +38,10 @@ flat in uint status_flags;
 in vec2 texture_coordinates;
 in vec4 vs_position;
 in vec3 vs_normal;
+
+layout(offset=0, binding=0) uniform atomic_uint counter;
+layout(rgba32ui) uniform coherent uimageBuffer img_a_buffer;
+layout(r32ui) uniform coherent uimage2DMS img_list_head;
 
 layout(location = 0) out vec4 accum;
 layout(location = 1) out float revealage;
@@ -203,13 +211,21 @@ void main() {
         vec3 p = normalize(-vs_position).xyz;
         vec4 color = compute_blinn_phong(n, p, diffuse_color);
 
-        color.r *= color.a;
-        color.g *= color.a;
-        color.b *= color.a;
-
         if (color.a == 0.0f) {
             discard;
         }
+
+        uint idx = atomicCounterIncrement(counter) + 1u;
+        if (idx < imageSize(img_a_buffer)) {
+            ivec2 c = ivec2(gl_FragCoord.xy);
+            uvec2 fragment = uvec2(packUnorm4x8(color), floatBitsToUint(gl_FragCoord.z));
+            uint prev = imageAtomicExchange(img_list_head, c, gl_SampleID, idx);
+            imageStore(img_a_buffer, int(idx), uvec4(fragment, 0, prev));
+        }
+
+        color.r *= color.a;
+        color.g *= color.a;
+        color.b *= color.a;
 
         write_pixel(color, vec3(0), 0);
     }

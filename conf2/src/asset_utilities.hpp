@@ -25,5 +25,6 @@ Visconfig::Asset create_framebuffer_asset(const std::string& renderbuffer_name, 
     std::size_t start_y, std::size_t width, std::size_t height,
     const std::vector<std::tuple<Visconfig::Assets::FramebufferType, Visconfig::Assets::FramebufferDestination,
         std::string>>& attachments);
-
+Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name, std::size_t samples,
+    std::size_t transparency_layers, std::size_t width, std::size_t height);
 }

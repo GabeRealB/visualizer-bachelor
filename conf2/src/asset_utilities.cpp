@@ -425,4 +425,17 @@ Visconfig::Asset create_framebuffer_asset(const std::string& renderbuffer_name, 
     return asset;
 }
 
+Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name, std::size_t samples,
+    std::size_t transparency_layers, std::size_t width, std::size_t height)
+{
+    auto asset_data{ std::make_shared<Visconfig::Assets::CuboidRenderPipelineAsset>() };
+    Visconfig::Asset asset{ asset_name, Visconfig::Assets::AssetType::CuboidRenderPipeline, asset_data };
+
+    asset_data->samples = samples;
+    asset_data->render_resolution = { width, height };
+    asset_data->transparency_layers = transparency_layers;
+
+    return asset;
+}
+
 }

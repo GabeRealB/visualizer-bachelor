@@ -20,6 +20,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<AssetData>& v, AssetType t
     case AssetType::TextureMultisampleRaw:
         to_json(j, *std::static_pointer_cast<TextureMultisampleRawAsset>(v));
         break;
+    case AssetType::CuboidRenderPipeline:
+        to_json(j, *std::static_pointer_cast<CuboidRenderPipelineAsset>(v));
+        break;
     case AssetType::Renderbuffer:
         to_json(j, *std::static_pointer_cast<RenderbufferAsset>(v));
         break;
@@ -55,6 +58,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
     } break;
     case AssetType::TextureMultisampleRaw: {
         auto ptr{ std::make_shared<TextureMultisampleRawAsset>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<AssetData>(ptr);
+    } break;
+    case AssetType::CuboidRenderPipeline: {
+        auto ptr{ std::make_shared<CuboidRenderPipelineAsset>() };
         from_json(j, *ptr);
         v = std::static_pointer_cast<AssetData>(ptr);
     } break;

@@ -14,12 +14,14 @@ auto buffer_bind_fn = overloaded{
     [](std::shared_ptr<GenericBuffer>& buffer) { buffer->bind(); },
     [](std::shared_ptr<VertexAttributeBuffer>& buffer) { buffer->bind(); },
     [](std::shared_ptr<ComplexVertexAttributeBuffer>& buffer) { buffer->bind(); },
+    [](std::shared_ptr<AtomicCounterBuffer>& buffer) { buffer->bind(); },
 };
 
 auto buffer_unbind_fn = overloaded{
     [](std::shared_ptr<GenericBuffer>& buffer) { buffer->unbind(); },
     [](std::shared_ptr<VertexAttributeBuffer>& buffer) { buffer->unbind(); },
     [](std::shared_ptr<ComplexVertexAttributeBuffer>& buffer) { buffer->unbind(); },
+    [](std::shared_ptr<AtomicCounterBuffer>& buffer) { buffer->unbind(); },
 };
 
 auto buffer_attach_fn = overloaded{
@@ -61,6 +63,11 @@ auto buffer_attach_fn = overloaded{
             assert(glGetError() == GL_NO_ERROR);
         }
     },
+    [](std::shared_ptr<AtomicCounterBuffer>& buffer) {
+        assert(glGetError() == GL_NO_ERROR);
+        glBindBufferBase(buffer->target(), buffer->index(), buffer->id());
+        assert(glGetError() == GL_NO_ERROR);
+    },
 };
 
 auto buffer_detach_fn = overloaded{
@@ -89,6 +96,11 @@ auto buffer_detach_fn = overloaded{
         }
 
         buffer->unbind();
+    },
+    [](std::shared_ptr<AtomicCounterBuffer>& buffer) {
+        assert(glGetError() == GL_NO_ERROR);
+        glBindBufferBase(buffer->target(), buffer->index(), 0);
+        assert(glGetError() == GL_NO_ERROR);
     },
 };
 

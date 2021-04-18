@@ -52,6 +52,10 @@ Visconfig::Config generate_config(
     config.assets.push_back(create_shader_asset(generation_options.view_composition_shader_asset_name,
         generation_options.view_composition_shader_vertex_path,
         generation_options.view_composition_shader_fragment_path));
+    config.assets.push_back(create_cuboid_render_pipeline_asset(generation_options.cuboid_pipeline_name,
+        generation_options.screen_msaa_samples, 2,
+        generation_options.render_resolution_multiplier * generation_options.screen_width,
+        generation_options.render_resolution_multiplier * generation_options.screen_height));
 
     config.worlds.push_back(generate_world(config_command_list, generation_options, config.assets));
 

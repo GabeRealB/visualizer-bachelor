@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <variant>
 
+#include <visualizer/AtomicCounterBuffer.hpp>
 #include <visualizer/ComplexVertexAttributeBuffer.hpp>
 #include <visualizer/VertexAttributeBuffer.hpp>
 
@@ -25,7 +26,7 @@ enum class MeshAttributes : int {
 };
 
 using VertexBufferVariant = std::variant<std::shared_ptr<GenericBuffer>, std::shared_ptr<VertexAttributeBuffer>,
-    std::shared_ptr<ComplexVertexAttributeBuffer>>;
+    std::shared_ptr<ComplexVertexAttributeBuffer>, std::shared_ptr<AtomicCounterBuffer>>;
 
 /**
  * A wrapper around a VAO.

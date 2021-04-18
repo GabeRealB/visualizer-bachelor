@@ -8,6 +8,7 @@
 
 #include <visualizer/ActiveCameraSwitcher.hpp>
 #include <visualizer/AssetDatabase.hpp>
+#include <visualizer/AtomicCounterBuffer.hpp>
 #include <visualizer/Camera.hpp>
 #include <visualizer/CameraSwitchingSystem.hpp>
 #include <visualizer/CameraTypeSwitchingSystem.hpp>
@@ -317,6 +318,33 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::TextureM
     AssetDatabase::setAsset(name, { getTypeId<Texture2DMultisample>(), texture });
 }
 
+void initialize_asset(const std::string& name, const Visconfig::Assets::CuboidRenderPipelineAsset& asset)
+{
+    constexpr GLuint zero_init[] = { 0 };
+
+    auto buffer_length
+        = asset.render_resolution[0] * asset.render_resolution[1] * asset.samples * asset.transparency_layers;
+
+    auto img_a_buffer_texture{ std::make_shared<TextureBuffer>() };
+    auto img_counter_texture{ std::make_shared<Texture2DMultisample>() };
+    auto atomic_counter_buffer{ std::make_shared<AtomicCounterBuffer>(0, 1, GL_DYNAMIC_DRAW, zero_init) };
+
+    auto img_a_buffer{ std::make_shared<GenericBuffer>(
+        GL_TEXTURE_BUFFER, buffer_length * sizeof(GLuint), GL_DYNAMIC_DRAW) };
+    auto buffer_ptr = img_a_buffer->map(GL_READ_WRITE);
+    std::memset(buffer_ptr, 0, buffer_length * sizeof(GLuint));
+    img_a_buffer->unmap();
+
+    img_a_buffer_texture->bind_buffer(std::move(img_a_buffer), TextureFormat::RGBA, TextureInternalFormat::UInt32);
+
+    img_counter_texture->initialize(TextureFormat::R, TextureInternalFormat::UInt32, asset.samples,
+        asset.render_resolution[0], asset.render_resolution[1]);
+
+    AssetDatabase::setAsset(name + "_a_buffer", { getTypeId<TextureBuffer>(), img_a_buffer_texture });
+    AssetDatabase::setAsset(name + "_counter_buffer", { getTypeId<Texture2DMultisample>(), img_counter_texture });
+    AssetDatabase::setAsset(name + "_counter", { getTypeId<AtomicCounterBuffer>(), atomic_counter_buffer });
+}
+
 void initialize_asset(const std::string& name, const Visconfig::Assets::RenderbufferAsset& asset)
 {
     auto renderbuffer{ std::make_shared<Renderbuffer>() };
@@ -414,6 +442,10 @@ void initialize_asset(const Visconfig::Asset& asset)
     case Visconfig::Assets::AssetType::TextureMultisampleRaw:
         initialize_asset(
             asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureMultisampleRawAsset>(asset.data));
+        break;
+    case Visconfig::Assets::AssetType::CuboidRenderPipeline:
+        initialize_asset(
+            asset.name, *std::static_pointer_cast<const Visconfig::Assets::CuboidRenderPipelineAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::Renderbuffer:
         initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::RenderbufferAsset>(asset.data));

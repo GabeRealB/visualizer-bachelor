@@ -81,8 +81,10 @@ void MeshDrawingSystem::run(void*)
                     [&](Entity, const std::shared_ptr<Mesh>*, const Material*, const Transform*,
                         const RenderLayer* layer) -> bool { return (*layer & camera->m_visibleLayers); });
 
-                cuboid_render_pipeline(
-                    *camera, camera->m_renderTargets["cuboid"], mesh_list, view_matrix, projection_matrix);
+                if (!mesh_list.empty()) {
+                    cuboid_render_pipeline(
+                        *camera, camera->m_renderTargets["cuboid"], mesh_list, view_matrix, projection_matrix);
+                }
             });
     });
 }
@@ -158,6 +160,22 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
 {
     static std::weak_ptr<Mesh> fullscreen_quad_mesh_weak = std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset("fullscreen_quad_mesh").data));
+    static std::weak_ptr<TextureBuffer> img_a_buffer_texture_weak = std::static_pointer_cast<TextureBuffer>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_a_buffer").data));
+    static std::weak_ptr<Texture2DMultisample> img_counter_texture_weak
+        = std::static_pointer_cast<Texture2DMultisample>(
+            std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_counter_buffer").data));
+    static std::weak_ptr<AtomicCounterBuffer> atomic_counter_buffer_weak
+        = std::static_pointer_cast<AtomicCounterBuffer>(
+            std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_counter").data));
+
+    auto img_a_buffer_texture = img_a_buffer_texture_weak.lock();
+    auto img_counter_texture = img_counter_texture_weak.lock();
+    auto atomic_counter_buffer = atomic_counter_buffer_weak.lock();
+
+    auto buffer = static_cast<GLuint*>(atomic_counter_buffer->map(GL_WRITE_ONLY));
+    *buffer = 0;
+    atomic_counter_buffer->unmap();
 
     constexpr std::size_t diffuse_pass_idx = 0;
     constexpr std::size_t transparent_pass_idx = 1;
@@ -190,7 +208,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
 
     targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
 
-    ShaderEnvironment camera_variables{};
+    ShaderEnvironment camera_variables = {};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
 
     glEnable(GL_SCISSOR_TEST);
@@ -251,6 +269,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
 
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDrawBuffers(3, oit_buffers.data());
@@ -261,6 +280,17 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     glBlendFunci(0, GL_ONE, GL_ONE);
     glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
     glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
+
+    camera_variables = ShaderEnvironment{ *std::get<2>(mesh_list[0])->m_passes[transparent_pass_idx].m_shader,
+        ParameterQualifier::Program };
+    camera_variables.set("img_a_buffer",
+        TextureImage<TextureBuffer>{ img_a_buffer_texture, TextureSlot::Slot0, 0, false, 0, GL_READ_WRITE,
+            TextureFormat::RGBA, TextureInternalFormat::UInt32 });
+    camera_variables.set("img_list_head",
+        TextureImage<Texture2DMultisample>{ img_counter_texture, TextureSlot::Slot1, 0, false, 0, GL_READ_WRITE,
+            TextureFormat::R, TextureInternalFormat::UInt32 });
+
+    glBindBufferBase(atomic_counter_buffer->target(), atomic_counter_buffer->index(), atomic_counter_buffer->id());
 
     for (auto& mesh_info : mesh_list) {
         auto& mesh{ std::get<1>(mesh_info) };
@@ -273,8 +303,6 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
             auto orthographic_factor = 0.0f;
 
             last_program = material->m_passes[transparent_pass_idx].m_shader;
-            camera_variables
-                = ShaderEnvironment{ *material->m_passes[transparent_pass_idx].m_shader, ParameterQualifier::Program };
             camera_variables.set("far_plane", camera.perspective ? camera.far : orthographic_factor);
             camera_variables.set(
                 "projection_mode", camera.perspective ? PERSPECTIVE_PROJECTION : ORTHOGRAPHIC_PROJECTION);
@@ -299,9 +327,17 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
         last_program->unbind();
     }
 
+    glBindBufferBase(atomic_counter_buffer->target(), atomic_counter_buffer->index(), 0);
+
+    /// TODO: Remove when destructor is implemented
+    camera_variables.getPtr<TextureImage<TextureBuffer>>("img_a_buffer", 1)->~TextureImage<TextureBuffer>();
+    camera_variables.getPtr<TextureImage<Texture2DMultisample>>("img_list_head", 1)
+        ->~TextureImage<Texture2DMultisample>();
+
     targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
 
     glDepthMask(GL_TRUE);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_POLYGON_OFFSET_FILL);
 

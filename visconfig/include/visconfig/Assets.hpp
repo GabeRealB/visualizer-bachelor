@@ -16,6 +16,7 @@ enum class AssetType {
     TextureFile,
     TextureRaw,
     TextureMultisampleRaw,
+    CuboidRenderPipeline,
     Renderbuffer,
     Shader,
     Framebuffer,
@@ -110,6 +111,12 @@ struct TextureMultisampleRawAsset : public AssetData {
     std::vector<TextureAttributes> attributes;
 };
 
+struct CuboidRenderPipelineAsset : public AssetData {
+    std::size_t samples;
+    std::size_t transparency_layers;
+    std::array<std::size_t, 2> render_resolution;
+};
+
 enum class RenderbufferFormat { Depth24 };
 
 struct RenderbufferAsset : public AssetData {
@@ -164,6 +171,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(AssetType,
         { AssetType::TextureFile, "texture_file" },
         { AssetType::TextureRaw, "texture_raw" },
         { AssetType::TextureMultisampleRaw, "texture_multisample_raw" },
+        { AssetType::CuboidRenderPipeline, "cuboid_render_pipeline" },
         { AssetType::Renderbuffer, "renderbuffer" },
         { AssetType::Shader, "shader" },
         { AssetType::Framebuffer, "framebuffer" },
@@ -270,6 +278,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureFileAsset, data_type, path, attributes
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureRawAsset, width, height, format, attributes)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureMultisampleRawAsset, width, height, samples, format, attributes)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CuboidRenderPipelineAsset, samples, transparency_layers, render_resolution)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RenderbufferAsset, width, height, samples, format)
 
