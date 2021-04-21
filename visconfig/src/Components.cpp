@@ -352,6 +352,15 @@ void to_json(nlohmann::json& j, const std::shared_ptr<MaterialAttributeData>& v,
     case MaterialAttributeType::Sampler2DMS:
         to_json(j, *std::static_pointer_cast<Sampler2DMSMaterialAttribute>(v));
         break;
+    case MaterialAttributeType::Image2D:
+        to_json(j, *std::static_pointer_cast<Image2DMaterialAttribute>(v));
+        break;
+    case MaterialAttributeType::Image2DMS:
+        to_json(j, *std::static_pointer_cast<Image2DMSMaterialAttribute>(v));
+        break;
+    case MaterialAttributeType::ImageBuffer:
+        to_json(j, *std::static_pointer_cast<ImageBufferMaterialAttribute>(v));
+        break;
     }
 }
 
@@ -641,6 +650,21 @@ void from_json(
     } break;
     case MaterialAttributeType::Sampler2DMS: {
         auto ptr{ std::make_shared<Sampler2DMSMaterialAttribute>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<MaterialAttributeData>(ptr);
+    } break;
+    case MaterialAttributeType::Image2D: {
+        auto ptr{ std::make_shared<Image2DMaterialAttribute>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<MaterialAttributeData>(ptr);
+    } break;
+    case MaterialAttributeType::Image2DMS: {
+        auto ptr{ std::make_shared<Image2DMSMaterialAttribute>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<MaterialAttributeData>(ptr);
+    } break;
+    case MaterialAttributeType::ImageBuffer: {
+        auto ptr{ std::make_shared<ImageBufferMaterialAttribute>() };
         from_json(j, *ptr);
         v = std::static_pointer_cast<MaterialAttributeData>(ptr);
     } break;

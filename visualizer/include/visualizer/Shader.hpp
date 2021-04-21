@@ -460,7 +460,10 @@ public:
 
                 if (std::get<1>(parameter) == ParameterType::Sampler2D
                     || std::get<1>(parameter) == ParameterType::Sampler2DMultisample
-                    || std::get<1>(parameter) == ParameterType::SamplerBuffer) {
+                    || std::get<1>(parameter) == ParameterType::SamplerBuffer
+                    || std::get<1>(parameter) == ParameterType::Image2D
+                    || std::get<1>(parameter) == ParameterType::Image2DMultisample
+                    || std::get<1>(parameter) == ParameterType::ImageBuffer) {
                     glUniform1i(location, textures++);
                 }
             }

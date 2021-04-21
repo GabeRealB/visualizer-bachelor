@@ -14,6 +14,7 @@ namespace Visconfig::Assets {
 enum class AssetType {
     Mesh,
     TextureFile,
+    TextureBufferRaw,
     TextureRaw,
     TextureMultisampleRaw,
     CuboidRenderPipeline,
@@ -86,7 +87,7 @@ struct MeshAsset : public AssetData {
     static constexpr const char* simple_attributes_json{ "simple_attributes" };
 };
 
-enum class TextureFormat { R, RG, RGB, RGBA, R8, RGBA16F };
+enum class TextureFormat { R, RG, RGB, RGBA, R8, RUI32, RGBA16F, RGBAUI32 };
 enum class TextureDataType { Byte, Float, UInt, UInt8 };
 enum class TextureAttributes { MagnificationLinear, MinificationLinear, GenerateMipMaps };
 
@@ -94,6 +95,13 @@ struct TextureFileAsset : public AssetData {
     TextureDataType data_type;
     std::filesystem::path path;
     std::vector<TextureAttributes> attributes;
+};
+
+struct TextureBufferRawAsset : public AssetData {
+    std::size_t size;
+    TextureFormat format;
+    MeshAttributeUsage data_usage;
+    std::vector<std::byte> fill_data;
 };
 
 struct TextureRawAsset : public AssetData {
@@ -112,9 +120,6 @@ struct TextureMultisampleRawAsset : public AssetData {
 };
 
 struct CuboidRenderPipelineAsset : public AssetData {
-    std::size_t samples;
-    std::size_t transparency_layers;
-    std::array<std::size_t, 2> render_resolution;
 };
 
 enum class RenderbufferFormat { Depth24 };
@@ -169,6 +174,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(AssetType,
     {
         { AssetType::Mesh, "mesh" },
         { AssetType::TextureFile, "texture_file" },
+        { AssetType::TextureBufferRaw, "texture_buffer_raw" },
         { AssetType::TextureRaw, "texture_raw" },
         { AssetType::TextureMultisampleRaw, "texture_multisample_raw" },
         { AssetType::CuboidRenderPipeline, "cuboid_render_pipeline" },
@@ -221,7 +227,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(TextureFormat,
         { TextureFormat::RGB, "rgb" },
         { TextureFormat::RGBA, "rgba" },
         { TextureFormat::R8, "r8" },
+        { TextureFormat::RUI32, "r_ui32" },
         { TextureFormat::RGBA16F, "rgba16" },
+        { TextureFormat::RGBAUI32, "rgba_ui32" },
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(TextureDataType,
@@ -275,11 +283,14 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MeshAsset, vertices, indices, texture_coords0
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureFileAsset, data_type, path, attributes)
 
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureBufferRawAsset, size, format, data_usage, fill_data)
+
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureRawAsset, width, height, format, attributes)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(TextureMultisampleRawAsset, width, height, samples, format, attributes)
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(CuboidRenderPipelineAsset, samples, transparency_layers, render_resolution)
+inline void to_json(nlohmann::json&, const CuboidRenderPipelineAsset&) {}
+inline void from_json(const nlohmann::json&, CuboidRenderPipelineAsset&) {}
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(RenderbufferAsset, width, height, samples, format)
 

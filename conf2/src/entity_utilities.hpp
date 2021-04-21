@@ -13,11 +13,11 @@ namespace Config {
 Visconfig::Entity generate_coordinator_entity(std::size_t entity_id);
 Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_entity_id, std::size_t view_idx,
     const CameraData& camera_data, const std::map<std::string, std::vector<std::string>>& targets);
-Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
-    const CuboidCommandList& command_list, const std::string& accum_texture, const std::string& revealage_texture,
+Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, std::size_t layer_idx, bool global,
+    const CuboidCommandList& command_list, const std::string& oit_head_texture, const std::string& oit_buffer_texture,
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
     const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width, bool invert_x,
-    bool invert_y, bool invert_z);
+    bool invert_y, bool invert_z, std::size_t max_fragment_node_count);
 
 void extend_camera_switcher(
     Visconfig::Entity& coordinator_entity, std::size_t camera_entity_id, const CameraData& camera_data);

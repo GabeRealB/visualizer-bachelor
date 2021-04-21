@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdio>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include <visconfig/Config.hpp>
 
@@ -15,6 +17,9 @@ Visconfig::Asset create_shader_asset(const std::string& asset_name, const std::f
     const std::filesystem::path& fragment_shader);
 Visconfig::Asset create_texture_asset(const std::string& texture_name, const std::filesystem::path& texture_path,
     Visconfig::Assets::TextureDataType data_type, const std::vector<Visconfig::Assets::TextureAttributes>& attributes);
+Visconfig::Asset create_buffer_texture_asset(const std::string& texture_name, std::size_t size,
+    Visconfig::Assets::TextureFormat format, Visconfig::Assets::MeshAttributeUsage data_usage,
+    std::vector<std::byte> fill_data);
 Visconfig::Asset create_render_texture_asset(
     const std::string& texture_name, std::size_t width, std::size_t height, Visconfig::Assets::TextureFormat format);
 Visconfig::Asset create_multisample_render_texture_asset(const std::string& texture_name, std::size_t width,
@@ -25,6 +30,5 @@ Visconfig::Asset create_framebuffer_asset(const std::string& renderbuffer_name, 
     std::size_t start_y, std::size_t width, std::size_t height,
     const std::vector<std::tuple<Visconfig::Assets::FramebufferType, Visconfig::Assets::FramebufferDestination,
         std::string>>& attachments);
-Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name, std::size_t samples,
-    std::size_t transparency_layers, std::size_t width, std::size_t height);
+Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name);
 }

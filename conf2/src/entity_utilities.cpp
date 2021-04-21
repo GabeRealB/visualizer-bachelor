@@ -111,11 +111,11 @@ Visconfig::Entity generate_view_camera(std::size_t entity_id, std::size_t focus_
     return entity;
 }
 
-Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, bool global,
-    const CuboidCommandList& command_list, const std::string& accum_texture, const std::string& revealage_texture,
+Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, std::size_t layer_idx, bool global,
+    const CuboidCommandList& command_list, const std::string& oit_head_texture, const std::string& oit_buffer_texture,
     const std::string& mesh_name, const std::string& pipeline_name, const std::vector<std::string>& shader_asset_names,
     const std::array<int, 3>& global_size, const std::array<int, 3>& size, float line_width, bool invert_x,
-    bool invert_y, bool invert_z)
+    bool invert_y, bool invert_z, std::size_t max_fragment_node_count)
 {
     Visconfig::Entity entity{};
     entity.id = entity_id;
@@ -159,8 +159,11 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
 
     mesh.asset = mesh_name;
 
-    auto accum_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
-    auto revealage_texture_attribute{ std::make_shared<Visconfig::Components::Sampler2DMSMaterialAttribute>() };
+    auto oit_head_texture_attribute{ std::make_shared<Visconfig::Components::Image2DMSMaterialAttribute>() };
+    auto oit_buffer_texture_attribute{ std::make_shared<Visconfig::Components::ImageBufferMaterialAttribute>() };
+    auto layer_idx_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
+    auto max_fragment_node_count_attribute{ std::make_shared<Visconfig::Components::UIntMaterialAttribute>() };
+
     auto active_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto inactive_fill_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
     auto active_border_color_attribute{ std::make_shared<Visconfig::Components::Vec4MaterialAttribute>() };
@@ -184,11 +187,24 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
         static_cast<float>(size[2]),
     };
 
-    accum_texture_attribute->asset = accum_texture;
-    accum_texture_attribute->slot = 0;
+    oit_head_texture_attribute->asset = oit_head_texture;
+    oit_head_texture_attribute->slot = 0;
+    oit_head_texture_attribute->level = 0;
+    oit_head_texture_attribute->layered = false;
+    oit_head_texture_attribute->layer = 0;
+    oit_head_texture_attribute->usage = Visconfig::Components::BufferUsageType::ReadWrite;
+    oit_head_texture_attribute->format = Visconfig::Assets::TextureFormat::RUI32;
 
-    revealage_texture_attribute->asset = revealage_texture;
-    revealage_texture_attribute->slot = 1;
+    oit_buffer_texture_attribute->asset = oit_buffer_texture;
+    oit_buffer_texture_attribute->slot = 1;
+    oit_buffer_texture_attribute->level = 0;
+    oit_buffer_texture_attribute->layered = false;
+    oit_buffer_texture_attribute->layer = 0;
+    oit_buffer_texture_attribute->usage = Visconfig::Components::BufferUsageType::ReadWrite;
+    oit_buffer_texture_attribute->format = Visconfig::Assets::TextureFormat::RGBAUI32;
+
+    layer_idx_attribute->value = static_cast<std::uint32_t>(layer_idx);
+    max_fragment_node_count_attribute->value = static_cast<std::uint32_t>(max_fragment_node_count);
 
     active_fill_color_attribute->value = {
         command_list.active_fill_color[0] / 255.0f,
@@ -278,6 +294,26 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[1],
         {
             {
+                "img_list_head",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::Image2DMS, oit_head_texture_attribute, false },
+            },
+            {
+                "img_a_buffer",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::ImageBuffer, oit_buffer_texture_attribute, false },
+            },
+            {
+                "max_fragment_node_count",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::UInt, max_fragment_node_count_attribute, false },
+            },
+            {
+                "layer_idx",
+                Visconfig::Components::MaterialAttribute{
+                    Visconfig::Components::MaterialAttributeType::UInt, layer_idx_attribute, false },
+            },
+            {
                 "heatmap_color_start",
                 Visconfig::Components::MaterialAttribute{
                     Visconfig::Components::MaterialAttributeType::Float, heatmap_color_start_attribute, true },
@@ -333,14 +369,14 @@ Visconfig::Entity generate_cuboid(std::size_t entity_id, std::size_t view_idx, b
     material_passes.push_back(Visconfig::Components::MaterialPass{ shader_asset_names[2],
         {
             {
-                "accum_texture",
+                "img_list_head",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2DMS, accum_texture_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::Image2DMS, oit_head_texture_attribute, false },
             },
             {
-                "revealage_texture",
+                "img_a_buffer",
                 Visconfig::Components::MaterialAttribute{
-                    Visconfig::Components::MaterialAttributeType::Sampler2DMS, revealage_texture_attribute, false },
+                    Visconfig::Components::MaterialAttributeType::ImageBuffer, oit_buffer_texture_attribute, false },
             },
         } });
 

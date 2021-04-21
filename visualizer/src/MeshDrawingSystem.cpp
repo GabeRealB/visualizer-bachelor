@@ -160,53 +160,51 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
 {
     static std::weak_ptr<Mesh> fullscreen_quad_mesh_weak = std::static_pointer_cast<Mesh>(
         std::const_pointer_cast<void>(AssetDatabase::getAsset("fullscreen_quad_mesh").data));
-    static std::weak_ptr<TextureBuffer> img_a_buffer_texture_weak = std::static_pointer_cast<TextureBuffer>(
-        std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_a_buffer").data));
-    static std::weak_ptr<Texture2DMultisample> img_counter_texture_weak
-        = std::static_pointer_cast<Texture2DMultisample>(
-            std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_counter_buffer").data));
     static std::weak_ptr<AtomicCounterBuffer> atomic_counter_buffer_weak
         = std::static_pointer_cast<AtomicCounterBuffer>(
             std::const_pointer_cast<void>(AssetDatabase::getAsset("cuboid_counter").data));
 
-    auto img_a_buffer_texture = img_a_buffer_texture_weak.lock();
-    auto img_counter_texture = img_counter_texture_weak.lock();
     auto atomic_counter_buffer = atomic_counter_buffer_weak.lock();
 
     auto buffer = static_cast<GLuint*>(atomic_counter_buffer->map(GL_WRITE_ONLY));
     *buffer = 0;
     atomic_counter_buffer->unmap();
 
+    constexpr std::size_t multisample_framebuffer_idx = 0;
+    constexpr std::size_t oit_cleanup_framebuffer_idx = 2;
+
+    constexpr std::size_t sampling_src_idx = 0;
+    constexpr std::size_t sampling_dst_idx = 1;
+
     constexpr std::size_t diffuse_pass_idx = 0;
     constexpr std::size_t transparent_pass_idx = 1;
     constexpr std::size_t oit_blend_pass_idx = 2;
-    constexpr std::size_t sampling_src_idx = 2;
-    constexpr std::size_t sampling_dst_idx = 3;
 
-    targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
-    auto camera_viewport{ targets[transparent_pass_idx]->viewport() };
+    // Cleanup oit
+    targets[oit_cleanup_framebuffer_idx]->bind(FramebufferBinding::ReadWrite);
+    constexpr std::array<GLenum, 1> clear_buffers = { GL_COLOR_ATTACHMENT0 };
+    constexpr std::array<float, 4> oit_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
+    glDrawBuffers(1, clear_buffers.data());
+    glClearBufferfv(GL_COLOR, 0, oit_clear_color.data());
+    targets[oit_cleanup_framebuffer_idx]->unbind(FramebufferBinding::ReadWrite);
+
+    // Cleanup
+    targets[multisample_framebuffer_idx]->bind(FramebufferBinding::ReadWrite);
+    auto camera_viewport{ targets[multisample_framebuffer_idx]->viewport() };
 
     constexpr std::array<GLenum, 1> diffuse_buffers = { GL_COLOR_ATTACHMENT0 };
-    constexpr std::array<GLenum, 3> oit_buffers = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 
-    constexpr std::array<float, 4> accum_clear_color = { 0.0f, 0.0f, 0.0f, 0.0f };
-    constexpr std::array<float, 4> revealage_clear_color = { 1.0f, 0.0f, 0.0f, 0.0f };
     constexpr std::array<float, 4> active_border_color = { 0.4f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> inactive_border_color = { 0.05f, 0.05f, 0.05f, 1.0f };
     constexpr std::array<float, 4> background_color = { 0.25f, 0.25f, 0.25f, 1.0f };
     constexpr std::array<float, 4> depth_value = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-    glDrawBuffers(3, oit_buffers.data());
-    glClearBufferfv(GL_COLOR, 0, accum_clear_color.data());
-    glClearBufferfv(GL_COLOR, 1, revealage_clear_color.data());
-
+    glDrawBuffers(1, diffuse_buffers.data());
     if (camera.m_active && !isDetached()) {
-        glClearBufferfv(GL_COLOR, 2, active_border_color.data());
+        glClearBufferfv(GL_COLOR, 0, active_border_color.data());
     } else {
-        glClearBufferfv(GL_COLOR, 2, inactive_border_color.data());
+        glClearBufferfv(GL_COLOR, 0, inactive_border_color.data());
     }
-
-    targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
 
     ShaderEnvironment camera_variables = {};
     std::shared_ptr<ShaderProgram> last_program{ nullptr };
@@ -216,8 +214,6 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     glClear(GL_DEPTH_BUFFER_BIT);
 
     // diffuse pass
-    targets[diffuse_pass_idx]->bind(FramebufferBinding::ReadWrite);
-
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDrawBuffers(1, diffuse_buffers.data());
@@ -262,33 +258,19 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
         last_program->unbind();
     }
 
-    targets[diffuse_pass_idx]->unbind(FramebufferBinding::ReadWrite);
-
     // transparent pass
-    targets[transparent_pass_idx]->bind(FramebufferBinding::ReadWrite);
-
     glEnable(GL_BLEND);
     glDepthMask(GL_FALSE);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glEnable(GL_CULL_FACE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glDrawBuffers(3, oit_buffers.data());
+    glDrawBuffers(1, diffuse_buffers.data());
 
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(1.0f, 1.0f);
 
-    glBlendFunci(0, GL_ONE, GL_ONE);
-    glBlendFunci(1, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-    glBlendFunci(2, GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-
     camera_variables = ShaderEnvironment{ *std::get<2>(mesh_list[0])->m_passes[transparent_pass_idx].m_shader,
         ParameterQualifier::Program };
-    camera_variables.set("img_a_buffer",
-        TextureImage<TextureBuffer>{ img_a_buffer_texture, TextureSlot::Slot0, 0, false, 0, GL_READ_WRITE,
-            TextureFormat::RGBA, TextureInternalFormat::UInt32 });
-    camera_variables.set("img_list_head",
-        TextureImage<Texture2DMultisample>{ img_counter_texture, TextureSlot::Slot1, 0, false, 0, GL_READ_WRITE,
-            TextureFormat::R, TextureInternalFormat::UInt32 });
 
     glBindBufferBase(atomic_counter_buffer->target(), atomic_counter_buffer->index(), atomic_counter_buffer->id());
 
@@ -329,23 +311,14 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
 
     glBindBufferBase(atomic_counter_buffer->target(), atomic_counter_buffer->index(), 0);
 
-    /// TODO: Remove when destructor is implemented
-    camera_variables.getPtr<TextureImage<TextureBuffer>>("img_a_buffer", 1)->~TextureImage<TextureBuffer>();
-    camera_variables.getPtr<TextureImage<Texture2DMultisample>>("img_list_head", 1)
-        ->~TextureImage<Texture2DMultisample>();
-
-    targets[transparent_pass_idx]->unbind(FramebufferBinding::ReadWrite);
-
     glDepthMask(GL_TRUE);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_POLYGON_OFFSET_FILL);
 
     // oit-blend pass
-    targets[oit_blend_pass_idx]->bind(FramebufferBinding::ReadWrite);
-
     glDrawBuffers(1, diffuse_buffers.data());
-    glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_ONE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     auto& oit_blend_shader = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_shader;
     auto& blend_variables = std::get<2>(mesh_list[0])->m_passes[oit_blend_pass_idx].m_material_variables;
@@ -365,7 +338,7 @@ void cuboid_render_pipeline(const Camera& camera, const std::vector<std::shared_
     fullscreen_quad_mesh->unbind();
     oit_blend_shader->unbind();
 
-    targets[oit_blend_pass_idx]->unbind(FramebufferBinding::ReadWrite);
+    targets[multisample_framebuffer_idx]->unbind(FramebufferBinding::ReadWrite);
 
     glDisable(GL_SCISSOR_TEST);
 

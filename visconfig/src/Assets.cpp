@@ -14,6 +14,9 @@ void to_json(nlohmann::json& j, const std::shared_ptr<AssetData>& v, AssetType t
     case AssetType::TextureFile:
         to_json(j, *std::static_pointer_cast<TextureFileAsset>(v));
         break;
+    case AssetType::TextureBufferRaw:
+        to_json(j, *std::static_pointer_cast<TextureBufferRawAsset>(v));
+        break;
     case AssetType::TextureRaw:
         to_json(j, *std::static_pointer_cast<TextureRawAsset>(v));
         break;
@@ -48,6 +51,11 @@ void from_json(const nlohmann::json& j, std::shared_ptr<AssetData>& v, AssetType
     } break;
     case AssetType::TextureFile: {
         auto ptr{ std::make_shared<TextureFileAsset>() };
+        from_json(j, *ptr);
+        v = std::static_pointer_cast<AssetData>(ptr);
+    } break;
+    case AssetType::TextureBufferRaw: {
+        auto ptr{ std::make_shared<TextureBufferRawAsset>() };
         from_json(j, *ptr);
         v = std::static_pointer_cast<AssetData>(ptr);
     } break;

@@ -10,6 +10,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <visconfig/Assets.hpp>
+
 namespace Visconfig::Components {
 
 enum class ComponentType {
@@ -79,6 +81,15 @@ enum class MaterialAttributeType {
     Mat4x4,
     Sampler2D,
     Sampler2DMS,
+    Image2D,
+    Image2DMS,
+    ImageBuffer,
+};
+
+enum class BufferUsageType {
+    Read,
+    Write,
+    ReadWrite,
 };
 
 struct MaterialAttributeData {
@@ -104,6 +115,36 @@ struct Sampler2DMaterialAttribute : MaterialAttributeData {
 struct Sampler2DMSMaterialAttribute : MaterialAttributeData {
     std::string asset;
     std::size_t slot;
+};
+
+struct Image2DMaterialAttribute : MaterialAttributeData {
+    std::string asset;
+    std::size_t slot;
+    int level;
+    bool layered;
+    int layer;
+    BufferUsageType usage;
+    Assets::TextureFormat format;
+};
+
+struct Image2DMSMaterialAttribute : MaterialAttributeData {
+    std::string asset;
+    std::size_t slot;
+    int level;
+    bool layered;
+    int layer;
+    BufferUsageType usage;
+    Assets::TextureFormat format;
+};
+
+struct ImageBufferMaterialAttribute : MaterialAttributeData {
+    std::string asset;
+    std::size_t slot;
+    int level;
+    bool layered;
+    int layer;
+    BufferUsageType usage;
+    Assets::TextureFormat format;
 };
 
 using BoolMaterialAttribute = TMaterialAttribute<bool>;
@@ -524,6 +565,16 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MaterialAttributeType,
         { MaterialAttributeType::Mat4x4, "mat4x4" },
         { MaterialAttributeType::Sampler2D, "sampler2D" },
         { MaterialAttributeType::Sampler2DMS, "sampler2DMS" },
+        { MaterialAttributeType::Image2D, "image2D" },
+        { MaterialAttributeType::Image2DMS, "image2DMS" },
+        { MaterialAttributeType::ImageBuffer, "imageBuffer" },
+    })
+
+NLOHMANN_JSON_SERIALIZE_ENUM(BufferUsageType,
+    {
+        { BufferUsageType::Read, "read" },
+        { BufferUsageType::Write, "write" },
+        { BufferUsageType::ReadWrite, "read_write" },
     })
 
 NLOHMANN_JSON_SERIALIZE_ENUM(IterationOrder,
@@ -618,6 +669,15 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(MaterialPass, asset, attributes)
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Sampler2DMaterialAttribute, asset, slot)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Sampler2DMSMaterialAttribute, asset, slot)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    Image2DMaterialAttribute, asset, slot, level, layered, layer, usage, format)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    Image2DMSMaterialAttribute, asset, slot, level, layered, layer, usage, format)
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(
+    ImageBufferMaterialAttribute, asset, slot, level, layered, layer, usage, format)
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NoopCommand, counter)
 

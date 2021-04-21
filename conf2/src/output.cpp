@@ -52,10 +52,7 @@ Visconfig::Config generate_config(
     config.assets.push_back(create_shader_asset(generation_options.view_composition_shader_asset_name,
         generation_options.view_composition_shader_vertex_path,
         generation_options.view_composition_shader_fragment_path));
-    config.assets.push_back(create_cuboid_render_pipeline_asset(generation_options.cuboid_pipeline_name,
-        generation_options.screen_msaa_samples, 2,
-        generation_options.render_resolution_multiplier * generation_options.screen_width,
-        generation_options.render_resolution_multiplier * generation_options.screen_height));
+    config.assets.push_back(create_cuboid_render_pipeline_asset(generation_options.cuboid_pipeline_name));
 
     config.worlds.push_back(generate_world(config_command_list, generation_options, config.assets));
 
@@ -147,10 +144,11 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
 {
     auto render_texture_name = "render_texture_" + std::to_string(view_idx);
     auto depth_buffer_name = "renderbuffer_depth_" + std::to_string(view_idx);
-    auto accumulation_texture_name = "accumulation_texture" + std::to_string(view_idx);
-    auto revealage_texture_name = "revealage_texture" + std::to_string(view_idx);
+    auto oit_head_texture_name = "oit_head_texture" + std::to_string(view_idx);
+    auto oit_buffer_texture_name = "oit_buffer_texture" + std::to_string(view_idx);
+
     auto framebuffer_name = "framebuffer_" + std::to_string(view_idx);
-    auto oit_framebuffer_name = "oit_" + framebuffer_name;
+    auto oit_cleanup_framebuffer_name = "cleanup_oit_" + framebuffer_name;
 
     auto render_resolution_width = static_cast<std::size_t>(
         generation_options.render_resolution_multiplier * generation_options.screen_width * view_commands.size);
@@ -169,38 +167,34 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
 
     auto render_texture_multisample_name = render_texture_name + "_multisample";
     auto depth_buffer_multisample_name = depth_buffer_name + "_multisample";
-    auto accumulation_multisample_texture_name = accumulation_texture_name + "_multisample";
-    auto revealage_multisample_texture_name = revealage_texture_name + "_multisample";
     auto framebuffer_multisample_name = framebuffer_name + "_multisample";
-    auto oit_framebuffer_multisample_name = oit_framebuffer_name + "_multisample";
 
     assets.push_back(create_multisample_render_texture_asset(render_texture_multisample_name, render_resolution_width,
         render_resolution_height, generation_options.screen_msaa_samples, Visconfig::Assets::TextureFormat::RGBA));
     assets.push_back(
         create_renderbuffer_asset(depth_buffer_multisample_name, render_resolution_width, render_resolution_height,
             generation_options.screen_msaa_samples, Visconfig::Assets::RenderbufferFormat::Depth24));
-    assets.push_back(create_multisample_render_texture_asset(accumulation_multisample_texture_name,
-        render_resolution_width, render_resolution_height, generation_options.screen_msaa_samples,
-        Visconfig::Assets::TextureFormat::RGBA16F));
-    assets.push_back(
-        create_multisample_render_texture_asset(revealage_multisample_texture_name, render_resolution_width,
-            render_resolution_height, generation_options.screen_msaa_samples, Visconfig::Assets::TextureFormat::R8));
     assets.push_back(
         create_framebuffer_asset(framebuffer_multisample_name, 0, 0, render_resolution_width, render_resolution_height,
             { { Visconfig::Assets::FramebufferType::TextureMultisample,
                   Visconfig::Assets::FramebufferDestination::Color0, render_texture_multisample_name },
                 { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
                     depth_buffer_multisample_name } }));
-    assets.push_back(create_framebuffer_asset(oit_framebuffer_multisample_name, 0, 0, render_resolution_width,
-        render_resolution_height,
-        { { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color0,
-              accumulation_multisample_texture_name },
-            { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color1,
-                revealage_multisample_texture_name },
-            { Visconfig::Assets::FramebufferType::TextureMultisample, Visconfig::Assets::FramebufferDestination::Color2,
-                render_texture_multisample_name },
-            { Visconfig::Assets::FramebufferType::Renderbuffer, Visconfig::Assets::FramebufferDestination::Depth,
-                depth_buffer_multisample_name } }));
+
+    std::size_t max_fragment_node_count
+        = render_resolution_width * render_resolution_height * generation_options.screen_msaa_samples * 2;
+    std::size_t fragment_node_buffer_size = max_fragment_node_count * 4 * sizeof(std::uint32_t);
+
+    assets.push_back(create_multisample_render_texture_asset(oit_head_texture_name, render_resolution_width,
+        render_resolution_height, generation_options.screen_msaa_samples, Visconfig::Assets::TextureFormat::RUI32));
+    assets.push_back(create_buffer_texture_asset(oit_buffer_texture_name, fragment_node_buffer_size,
+        Visconfig::Assets::TextureFormat::RGBAUI32, Visconfig::Assets::MeshAttributeUsage::DynamicDraw, {}));
+    assets.push_back(
+        create_framebuffer_asset(oit_cleanup_framebuffer_name, 0, 0, render_resolution_width, render_resolution_height,
+            {
+                { Visconfig::Assets::FramebufferType::TextureMultisample,
+                    Visconfig::Assets::FramebufferDestination::Color0, oit_head_texture_name },
+            }));
 
     auto max_cuboid_size = view_commands.cuboids.front().positions.front().size;
 
@@ -229,16 +223,16 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
         }
         ();
 
-        auto entity = generate_cuboid(world.entities.size(), view_idx, index == 0, *cuboid,
-            accumulation_multisample_texture_name, revealage_multisample_texture_name,
-            generation_options.cuboid_mesh_asset_name, generation_options.cuboid_pipeline_name,
+        auto entity = generate_cuboid(world.entities.size(), view_idx, index, index == 0, *cuboid,
+            oit_head_texture_name, oit_buffer_texture_name, generation_options.cuboid_mesh_asset_name,
+            generation_options.cuboid_pipeline_name,
             {
                 generation_options.cuboid_diffuse_shader_asset_name,
                 generation_options.cuboid_oit_shader_asset_name,
                 generation_options.cuboid_oit_blend_shader_asset_name,
             },
             max_cuboid_size, cuboid_size, border_width, view_commands.invert_x, view_commands.invert_y,
-            view_commands.invert_z);
+            view_commands.invert_z, max_fragment_node_count);
 
         generated_entities.push_back(entity.id);
         world.entities.push_back(std::move(entity));
@@ -250,9 +244,8 @@ std::vector<std::size_t> populate_view(Visconfig::World& world, const ViewComman
         { generation_options.cuboid_pipeline_name,
             {
                 framebuffer_multisample_name,
-                oit_framebuffer_multisample_name,
-                framebuffer_multisample_name,
                 framebuffer_name,
+                oit_cleanup_framebuffer_name,
             } },
     };
 

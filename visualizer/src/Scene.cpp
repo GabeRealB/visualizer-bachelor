@@ -214,6 +214,92 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::TextureF
     AssetDatabase::setAsset(name, { getTypeId<Texture2D>(), std::move(texture) });
 }
 
+void initialize_asset(const std::string& name, const Visconfig::Assets::TextureBufferRawAsset& asset)
+{
+    auto texture{ std::make_shared<TextureBuffer>() };
+
+    GLenum usage;
+    TextureFormat format{};
+    TextureInternalFormat internal_format{};
+
+    switch (asset.data_usage) {
+    case Visconfig::Assets::MeshAttributeUsage::StreamDraw:
+        usage = GL_STREAM_DRAW;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::StreamRead:
+        usage = GL_STREAM_READ;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::StreamCopy:
+        usage = GL_STREAM_COPY;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::StaticDraw:
+        usage = GL_STATIC_DRAW;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::StaticRead:
+        usage = GL_STATIC_READ;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::StaticCopy:
+        usage = GL_STATIC_COPY;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::DynamicDraw:
+        usage = GL_DYNAMIC_DRAW;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::DynamicRead:
+        usage = GL_DYNAMIC_READ;
+        break;
+    case Visconfig::Assets::MeshAttributeUsage::DynamicCopy:
+        usage = GL_DYNAMIC_COPY;
+        break;
+    }
+
+    switch (asset.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGB:
+        format = TextureFormat::RGB;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    }
+
+    auto texture_buffer{ std::make_shared<GenericBuffer>(
+        GL_TEXTURE_BUFFER, asset.size, usage, asset.fill_data.data()) };
+
+    if (asset.fill_data.empty()) {
+        auto buffer_ptr = texture_buffer->map(GL_READ_WRITE);
+        std::memset(buffer_ptr, 0, asset.size);
+        texture_buffer->unmap();
+    }
+
+    texture->bind_buffer(texture_buffer, format, internal_format);
+    AssetDatabase::setAsset(name, { getTypeId<TextureBuffer>(), texture });
+}
+
 void initialize_asset(const std::string& name, const Visconfig::Assets::TextureRawAsset& asset)
 {
     auto texture{ std::make_shared<Texture2D>() };
@@ -242,9 +328,17 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::TextureR
         format = TextureFormat::R;
         internalFormat = TextureInternalFormat::Byte;
         break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::UInt32;
+        break;
     case Visconfig::Assets::TextureFormat::RGBA16F:
         format = TextureFormat::RGBA;
         internalFormat = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internalFormat = TextureInternalFormat::UInt32;
         break;
     }
 
@@ -294,9 +388,17 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::TextureM
         format = TextureFormat::R;
         internalFormat = TextureInternalFormat::Byte;
         break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internalFormat = TextureInternalFormat::UInt32;
+        break;
     case Visconfig::Assets::TextureFormat::RGBA16F:
         format = TextureFormat::RGBA;
         internalFormat = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internalFormat = TextureInternalFormat::UInt32;
         break;
     }
 
@@ -318,30 +420,11 @@ void initialize_asset(const std::string& name, const Visconfig::Assets::TextureM
     AssetDatabase::setAsset(name, { getTypeId<Texture2DMultisample>(), texture });
 }
 
-void initialize_asset(const std::string& name, const Visconfig::Assets::CuboidRenderPipelineAsset& asset)
+void initialize_asset(
+    const std::string& name, [[maybe_unused]] const Visconfig::Assets::CuboidRenderPipelineAsset& asset)
 {
     constexpr GLuint zero_init[] = { 0 };
-
-    auto buffer_length
-        = asset.render_resolution[0] * asset.render_resolution[1] * asset.samples * asset.transparency_layers;
-
-    auto img_a_buffer_texture{ std::make_shared<TextureBuffer>() };
-    auto img_counter_texture{ std::make_shared<Texture2DMultisample>() };
     auto atomic_counter_buffer{ std::make_shared<AtomicCounterBuffer>(0, 1, GL_DYNAMIC_DRAW, zero_init) };
-
-    auto img_a_buffer{ std::make_shared<GenericBuffer>(
-        GL_TEXTURE_BUFFER, buffer_length * sizeof(GLuint), GL_DYNAMIC_DRAW) };
-    auto buffer_ptr = img_a_buffer->map(GL_READ_WRITE);
-    std::memset(buffer_ptr, 0, buffer_length * sizeof(GLuint));
-    img_a_buffer->unmap();
-
-    img_a_buffer_texture->bind_buffer(std::move(img_a_buffer), TextureFormat::RGBA, TextureInternalFormat::UInt32);
-
-    img_counter_texture->initialize(TextureFormat::R, TextureInternalFormat::UInt32, asset.samples,
-        asset.render_resolution[0], asset.render_resolution[1]);
-
-    AssetDatabase::setAsset(name + "_a_buffer", { getTypeId<TextureBuffer>(), img_a_buffer_texture });
-    AssetDatabase::setAsset(name + "_counter_buffer", { getTypeId<Texture2DMultisample>(), img_counter_texture });
     AssetDatabase::setAsset(name + "_counter", { getTypeId<AtomicCounterBuffer>(), atomic_counter_buffer });
 }
 
@@ -435,6 +518,10 @@ void initialize_asset(const Visconfig::Asset& asset)
         break;
     case Visconfig::Assets::AssetType::TextureFile:
         initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureFileAsset>(asset.data));
+        break;
+    case Visconfig::Assets::AssetType::TextureBufferRaw:
+        initialize_asset(
+            asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureBufferRawAsset>(asset.data));
         break;
     case Visconfig::Assets::AssetType::TextureRaw:
         initialize_asset(asset.name, *std::static_pointer_cast<const Visconfig::Assets::TextureRawAsset>(asset.data));
@@ -953,6 +1040,195 @@ void initialize_material_attribute(ShaderEnvironment& env, const std::string& na
 }
 
 void initialize_material_attribute(
+    ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Image2DMaterialAttribute& attribute)
+{
+    auto textureAsset{ std::static_pointer_cast<Texture2D>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset(attribute.asset).data)) };
+    auto slot{ static_cast<TextureSlot>(attribute.slot) };
+
+    GLenum usage = {};
+    TextureFormat format = {};
+    TextureInternalFormat internal_format = {};
+
+    switch (attribute.usage) {
+    case Visconfig::Components::BufferUsageType::Read:
+        usage = GL_READ_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::Write:
+        usage = GL_WRITE_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::ReadWrite:
+        usage = GL_READ_WRITE;
+        break;
+    }
+
+    switch (attribute.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGB:
+        format = TextureFormat::RGB;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    }
+
+    auto sampler{ TextureImage<Texture2D>{
+        textureAsset, slot, attribute.level, attribute.layered, attribute.layer, usage, format, internal_format } };
+    env.set(name, sampler);
+}
+
+void initialize_material_attribute(
+    ShaderEnvironment& env, const std::string& name, const Visconfig::Components::Image2DMSMaterialAttribute& attribute)
+{
+    auto textureAsset{ std::static_pointer_cast<Texture2DMultisample>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset(attribute.asset).data)) };
+    auto slot{ static_cast<TextureSlot>(attribute.slot) };
+
+    GLenum usage = {};
+    TextureFormat format = {};
+    TextureInternalFormat internal_format = {};
+
+    switch (attribute.usage) {
+    case Visconfig::Components::BufferUsageType::Read:
+        usage = GL_READ_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::Write:
+        usage = GL_WRITE_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::ReadWrite:
+        usage = GL_READ_WRITE;
+        break;
+    }
+
+    switch (attribute.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGB:
+        format = TextureFormat::RGB;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    }
+
+    auto sampler{ TextureImage<Texture2DMultisample>{
+        textureAsset, slot, attribute.level, attribute.layered, attribute.layer, usage, format, internal_format } };
+    env.set(name, sampler);
+}
+
+void initialize_material_attribute(ShaderEnvironment& env, const std::string& name,
+    const Visconfig::Components::ImageBufferMaterialAttribute& attribute)
+{
+    auto textureAsset{ std::static_pointer_cast<TextureBuffer>(
+        std::const_pointer_cast<void>(AssetDatabase::getAsset(attribute.asset).data)) };
+    auto slot{ static_cast<TextureSlot>(attribute.slot) };
+
+    GLenum usage = {};
+    TextureFormat format = {};
+    TextureInternalFormat internal_format = {};
+
+    switch (attribute.usage) {
+    case Visconfig::Components::BufferUsageType::Read:
+        usage = GL_READ_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::Write:
+        usage = GL_WRITE_ONLY;
+        break;
+    case Visconfig::Components::BufferUsageType::ReadWrite:
+        usage = GL_READ_WRITE;
+        break;
+    }
+
+    switch (attribute.format) {
+    case Visconfig::Assets::TextureFormat::R:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RG:
+        format = TextureFormat::RG;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGB:
+        format = TextureFormat::RGB;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Short;
+        break;
+    case Visconfig::Assets::TextureFormat::R8:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::Byte;
+        break;
+    case Visconfig::Assets::TextureFormat::RUI32:
+        format = TextureFormat::R;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBA16F:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::Float16;
+        break;
+    case Visconfig::Assets::TextureFormat::RGBAUI32:
+        format = TextureFormat::RGBA;
+        internal_format = TextureInternalFormat::UInt32;
+        break;
+    }
+
+    auto sampler{ TextureImage<TextureBuffer>{
+        textureAsset, slot, attribute.level, attribute.layered, attribute.layer, usage, format, internal_format } };
+    env.set(name, sampler);
+}
+
+void initialize_material_attribute(
     MaterialPass& material, const std::string& name, const Visconfig::Components::MaterialAttribute& attribute)
 {
     switch (attribute.type) {
@@ -1188,6 +1464,18 @@ void initialize_material_attribute(
     case Visconfig::Components::MaterialAttributeType::Sampler2DMS:
         initialize_material_attribute(material.m_material_variables, name,
             *std::static_pointer_cast<const Visconfig::Components::Sampler2DMSMaterialAttribute>(attribute.data));
+        break;
+    case Visconfig::Components::MaterialAttributeType::Image2D:
+        initialize_material_attribute(material.m_material_variables, name,
+            *std::static_pointer_cast<const Visconfig::Components::Image2DMaterialAttribute>(attribute.data));
+        break;
+    case Visconfig::Components::MaterialAttributeType::Image2DMS:
+        initialize_material_attribute(material.m_material_variables, name,
+            *std::static_pointer_cast<const Visconfig::Components::Image2DMSMaterialAttribute>(attribute.data));
+        break;
+    case Visconfig::Components::MaterialAttributeType::ImageBuffer:
+        initialize_material_attribute(material.m_material_variables, name,
+            *std::static_pointer_cast<const Visconfig::Components::ImageBufferMaterialAttribute>(attribute.data));
         break;
     }
 }
@@ -2115,5 +2403,4 @@ void draw(const Scene& scene)
         system_manager->run("composite"sv);
     }
 }
-
 }

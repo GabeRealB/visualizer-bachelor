@@ -367,6 +367,20 @@ Visconfig::Asset create_texture_asset(const std::string& texture_name, const std
     return asset;
 }
 
+Visconfig::Asset create_buffer_texture_asset(const std::string& texture_name, std::size_t size,
+    Visconfig::Assets::TextureFormat format, Visconfig::Assets::MeshAttributeUsage data_usage,
+    std::vector<std::byte> fill_data)
+{
+    auto texture_asset{ std::make_shared<Visconfig::Assets::TextureBufferRawAsset>() };
+    Visconfig::Asset asset{ texture_name, Visconfig::Assets::AssetType::TextureBufferRaw, texture_asset };
+    texture_asset->size = size;
+    texture_asset->format = format;
+    texture_asset->data_usage = data_usage;
+    texture_asset->fill_data = std::move(fill_data);
+
+    return asset;
+}
+
 Visconfig::Asset create_render_texture_asset(
     const std::string& texture_name, std::size_t width, std::size_t height, Visconfig::Assets::TextureFormat format)
 {
@@ -425,16 +439,10 @@ Visconfig::Asset create_framebuffer_asset(const std::string& renderbuffer_name, 
     return asset;
 }
 
-Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name, std::size_t samples,
-    std::size_t transparency_layers, std::size_t width, std::size_t height)
+Visconfig::Asset create_cuboid_render_pipeline_asset(const std::string& asset_name)
 {
     auto asset_data{ std::make_shared<Visconfig::Assets::CuboidRenderPipelineAsset>() };
     Visconfig::Asset asset{ asset_name, Visconfig::Assets::AssetType::CuboidRenderPipeline, asset_data };
-
-    asset_data->samples = samples;
-    asset_data->render_resolution = { width, height };
-    asset_data->transparency_layers = transparency_layers;
-
     return asset;
 }
 

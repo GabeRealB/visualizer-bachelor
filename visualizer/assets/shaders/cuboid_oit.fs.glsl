@@ -1,9 +1,11 @@
-#version 430 core
+#version 420 core
 
 @program float 1 far_plane
 @program uint 1 projection_mode
-@program uimageBuffer 1 img_a_buffer
-@program uimage2DMS 1 img_list_head
+@material uimage2DMS 1 img_list_head
+@material uimageBuffer 1 img_a_buffer
+@material uint 1 layer_idx
+@material uint 1 max_fragment_node_count
 @material float 10 heatmap_color_start
 @material uint 1 max_access_count
 @material uint 1 heatmap_color_count
@@ -39,9 +41,11 @@ in vec2 texture_coordinates;
 in vec4 vs_position;
 in vec3 vs_normal;
 
+uniform uint layer_idx;
+uniform uint max_fragment_node_count;
 layout(offset=0, binding=0) uniform atomic_uint counter;
-layout(rgba32ui) uniform coherent uimageBuffer img_a_buffer;
 layout(r32ui) uniform coherent uimage2DMS img_list_head;
+layout(rgba32ui) uniform coherent uimageBuffer img_a_buffer;
 
 layout(location = 0) out vec4 accum;
 layout(location = 1) out float revealage;
@@ -193,9 +197,9 @@ bool is_border() {
     float border_width = line_width * border_magnification;
 
     if (pos.x <= border_width ||
-        proj_size[0] - border_width <= pos.x ||
-        pos.y <= border_width ||
-        proj_size[1] - border_width <= pos.y) {
+    proj_size[0] - border_width <= pos.x ||
+    pos.y <= border_width ||
+    proj_size[1] - border_width <= pos.y) {
         return true;
     } else {
         return false;
@@ -216,11 +220,11 @@ void main() {
         }
 
         uint idx = atomicCounterIncrement(counter) + 1u;
-        if (idx < imageSize(img_a_buffer)) {
+        if (idx < max_fragment_node_count) {
             ivec2 c = ivec2(gl_FragCoord.xy);
-            uvec2 fragment = uvec2(packUnorm4x8(color), floatBitsToUint(gl_FragCoord.z));
+            uvec2 fragment = uvec2(packUnorm4x8(color), floatBitsToUint(gl_FragCoord.z * pow(1.05f, float(layer_idx))));
             uint prev = imageAtomicExchange(img_list_head, c, gl_SampleID, idx);
-            imageStore(img_a_buffer, int(idx), uvec4(fragment, 0, prev));
+            imageStore(img_a_buffer, int(idx), uvec4(fragment, layer_idx, prev));
         }
 
         color.r *= color.a;
